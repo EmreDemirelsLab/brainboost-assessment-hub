@@ -372,13 +372,27 @@ export function BurdonTest({ onComplete, studentId }: BurdonTestProps) {
       totalResults: { correct: 0, missed: 0, wrong: 0, score: 0, ratio: 0 }
     };
     
-    console.log('Starting test, setting state to:', newTestData);
-    setTestData(newTestData);
+    // İlk bölümün grid'ini hemen oluştur
+    const sectionData = sectionLetters[1];
+    for (let r = 0; r < 10; r++) {
+      const row = [];
+      for (let c = 0; c < 22; c++) {
+        const char = sectionData[r][c];
+        const isTarget = newTestData.targetChars.includes(char);
+        
+        row.push({
+          char: char,
+          isTarget: isTarget,
+          isMarked: false,
+          row: r,
+          col: c
+        });
+      }
+      newTestData.sections[1].grid.push(row);
+    }
     
-    // İlk bölümün grid'ini oluştur
-    setTimeout(() => {
-      generateTestGridForCurrentSection(newTestData);
-    }, 100);
+    console.log('Starting test with complete data:', newTestData);
+    setTestData(newTestData);
     
     const interval = setInterval(() => {
       setTestData(prev => {
@@ -497,7 +511,7 @@ export function BurdonTest({ onComplete, studentId }: BurdonTestProps) {
         return newData;
       } else {
         // Son bölümse testi tamamla
-        setTimeout(() => completeTest(), 100);
+        completeTest();
         return newData;
       }
     });
@@ -570,14 +584,17 @@ export function BurdonTest({ onComplete, studentId }: BurdonTestProps) {
       
       console.log('Final total results:', total);
       
-      // Veritabanına kaydet
-      setTimeout(async () => {
-        await saveResultsToDatabase();
-        setCurrentScreen('completion');
-      }, 100);
+      // State güncellemesi yapıldıktan sonra kaydet
+      setTestData(newTestData);
       
       return newTestData;
     });
+    
+    // Veritabanına kaydet ve completion screen'e geç
+    setTimeout(async () => {
+      await saveResultsToDatabase();
+      setCurrentScreen('completion');
+    }, 100);
   };
 
   // Örnek ızgara render etme
