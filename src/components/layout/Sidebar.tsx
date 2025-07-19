@@ -118,11 +118,7 @@ export function Sidebar({ userRole, isCollapsed, onToggle }: SidebarProps) {
     <ShadcnSidebar collapsible="icon" className="border-r bg-background">
       <SidebarHeader className="border-b p-4">
         <div className="flex items-center gap-2">
-          {state !== "collapsed" && (
-            <div className="font-semibold text-lg">
-              Okuma & Anlama
-            </div>
-          )}
+          {/* Logo/title removed */}
         </div>
       </SidebarHeader>
 
