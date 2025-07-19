@@ -13,7 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 interface BurdonTestResult {
   id: string;
@@ -129,7 +129,7 @@ export default function Reports() {
         ['BURDON DİKKAT TESTİ SONUÇLARI', ''],
         ['', ''],
         ['Test Bilgileri', ''],
-        ['Test ID', result.id],
+        ['Test ID', result.id.substring(0, 8) + '...'], // ID'yi kısalt
         ['Öğrenci Adı', result.student_name || 'Bilinmeyen'],
         ['Test Yapan', result.conducted_by_name || 'Bilinmeyen'],
         ['Test Başlangıç', new Date(result.test_start_time).toLocaleString('tr-TR')],
@@ -155,18 +155,23 @@ export default function Reports() {
       const worksheet = XLSX.utils.aoa_to_sheet(mainData);
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Test Sonuçları');
 
-      // Detaylı veri sayfası (eğer varsa)
+      // Detaylı veri sayfasını basit tut
       if (result.detailed_results) {
         const detailedData = [
-          ['DETAYLI TEST VERİLERİ', ''],
+          ['DETAYLI TEST BİLGİLERİ', ''],
           ['', ''],
-          ['Ham Veri:', JSON.stringify(result.detailed_results, null, 2)]
+          ['Test Süresi', result.test_elapsed_time_seconds + ' saniye'],
+          ['Başlangıç Zamanı', new Date(result.test_start_time).toLocaleString('tr-TR')],
+          ['Bitiş Zamanı', new Date(result.test_end_time).toLocaleString('tr-TR')],
+          ['Hedef Karakterler', result.detailed_results?.target_chars?.join(', ') || 'a, b, d, g'],
+          ['', ''],
+          ['Not: Detaylı grid verileri dosya boyutu nedeniyle dahil edilmemiştir.']
         ];
         const detailedWorksheet = XLSX.utils.aoa_to_sheet(detailedData);
         XLSX.utils.book_append_sheet(workbook, detailedWorksheet, 'Detaylı Veriler');
       }
 
-      const fileName = `Burdon_Test_${result.student_name}_${new Date(result.created_at).toLocaleDateString('tr-TR').replace(/\./g, '_')}.xlsx`;
+      const fileName = `Burdon_Test_${result.student_name?.replace(/[^a-zA-Z0-9]/g, '_') || 'Test'}_${new Date(result.created_at).toISOString().split('T')[0]}.xlsx`;
       XLSX.writeFile(workbook, fileName);
 
       toast({
@@ -189,7 +194,7 @@ export default function Reports() {
       
       // Başlık
       doc.setFontSize(20);
-      doc.text('BURDON DİKKAT TESTİ SONUÇLARI', 20, 20);
+      doc.text('BURDON DIKKAT TESTI SONUCLARI', 20, 20);
       
       // Test bilgileri
       doc.setFontSize(12);
@@ -200,31 +205,31 @@ export default function Reports() {
         yPos += 8;
       };
       
-      addLine('Test ID', result.id);
-      addLine('Öğrenci Adı', result.student_name || 'Bilinmeyen');
+      addLine('Test ID', result.id.substring(0, 8) + '...');
+      addLine('Ogrenci Adi', result.student_name || 'Bilinmeyen');
       addLine('Test Yapan', result.conducted_by_name || 'Bilinmeyen');
-      addLine('Test Başlangıç', new Date(result.test_start_time).toLocaleString('tr-TR'));
-      addLine('Test Bitiş', new Date(result.test_end_time).toLocaleString('tr-TR'));
-      addLine('Test Süresi', `${result.test_elapsed_time_seconds} saniye`);
-      addLine('Otomatik Tamamlandı', result.test_auto_completed ? 'Evet' : 'Hayır');
+      addLine('Test Baslangic', new Date(result.test_start_time).toLocaleString('tr-TR'));
+      addLine('Test Bitis', new Date(result.test_end_time).toLocaleString('tr-TR'));
+      addLine('Test Suresi', `${result.test_elapsed_time_seconds} saniye`);
+      addLine('Otomatik Tamamlandi', result.test_auto_completed ? 'Evet' : 'Hayir');
       
       yPos += 10;
       
       // Toplam sonuçlar tablosu
       doc.setFontSize(14);
-      doc.text('TOPLAM SONUÇLAR', 20, yPos);
+      doc.text('TOPLAM SONUCLAR', 20, yPos);
       yPos += 10;
       
       const totalData = [
-        ['Metrik', 'Değer'],
-        ['Toplam Doğru', result.total_correct.toString()],
-        ['Toplam Kaçırılan', result.total_missed.toString()],
-        ['Toplam Yanlış', result.total_wrong.toString()],
+        ['Metrik', 'Deger'],
+        ['Toplam Dogru', result.total_correct.toString()],
+        ['Toplam Kacirilan', result.total_missed.toString()],
+        ['Toplam Yanlis', result.total_wrong.toString()],
         ['Toplam Puan', result.total_score.toString()],
-        ['Dikkat Oranı', result.attention_ratio.toFixed(6)]
+        ['Dikkat Orani', result.attention_ratio.toFixed(6)]
       ];
       
-      (doc as any).autoTable({
+      autoTable(doc, {
         startY: yPos,
         head: [totalData[0]],
         body: totalData.slice(1),
@@ -235,25 +240,25 @@ export default function Reports() {
       
       // Bölüm sonuçları tablosu
       doc.setFontSize(14);
-      doc.text('BÖLÜM SONUÇLARI', 20, yPos);
+      doc.text('BOLUM SONUCLARI', 20, yPos);
       yPos += 10;
       
       const sectionData = [
-        ['Metrik', 'Bölüm 1', 'Bölüm 2', 'Bölüm 3'],
-        ['Doğru', result.section1_correct.toString(), result.section2_correct.toString(), result.section3_correct.toString()],
-        ['Kaçırılan', result.section1_missed.toString(), result.section2_missed.toString(), result.section3_missed.toString()],
-        ['Yanlış', result.section1_wrong.toString(), result.section2_wrong.toString(), result.section3_wrong.toString()],
+        ['Metrik', 'Bolum 1', 'Bolum 2', 'Bolum 3'],
+        ['Dogru', result.section1_correct.toString(), result.section2_correct.toString(), result.section3_correct.toString()],
+        ['Kacirilan', result.section1_missed.toString(), result.section2_missed.toString(), result.section3_missed.toString()],
+        ['Yanlis', result.section1_wrong.toString(), result.section2_wrong.toString(), result.section3_wrong.toString()],
         ['Puan', result.section1_score.toString(), result.section2_score.toString(), result.section3_score.toString()]
       ];
       
-      (doc as any).autoTable({
+      autoTable(doc, {
         startY: yPos,
         head: [sectionData[0]],
         body: sectionData.slice(1),
         margin: { left: 20, right: 20 }
       });
 
-      const fileName = `Burdon_Test_${result.student_name}_${new Date(result.created_at).toLocaleDateString('tr-TR').replace(/\./g, '_')}.pdf`;
+      const fileName = `Burdon_Test_${result.student_name?.replace(/[^a-zA-Z0-9]/g, '_') || 'Test'}_${new Date(result.created_at).toISOString().split('T')[0]}.pdf`;
       doc.save(fileName);
 
       toast({
