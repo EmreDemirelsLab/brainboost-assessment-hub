@@ -12,6 +12,9 @@ interface BurdonReportModalProps {
 export function BurdonReportModal({ result, open, onClose }: BurdonReportModalProps) {
   if (!result) return null;
 
+  // Debug - veri gelip gelmediğini görelim
+  console.log('Modal result data:', result);
+
   const handlePrint = () => {
     const printContent = document.getElementById('modal-report-content');
     if (printContent) {
