@@ -42,7 +42,7 @@ export function Header({ user, onRoleSwitch, onLogout }: HeaderProps) {
         {/* Logo */}
         <div className="flex items-center space-x-4">
           <img 
-            src="/lovable-uploads/3947b1e5-fc48-46da-be3b-318874ff50da.png" 
+            src="/lovable-uploads/eb89ac73-e0e3-47d9-847f-9fbd6a9b70bb.png" 
             alt="ForTest Logo" 
             className="h-8"
           />

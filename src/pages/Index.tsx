@@ -10,7 +10,7 @@ const Index = () => {
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <img 
-            src="/lovable-uploads/3947b1e5-fc48-46da-be3b-318874ff50da.png" 
+            src="/lovable-uploads/eb89ac73-e0e3-47d9-847f-9fbd6a9b70bb.png" 
             alt="ForTest Logo" 
             className="h-8"
           />
@@ -141,7 +141,7 @@ const Index = () => {
         <div className="container mx-auto px-4 py-8">
           <div className="text-center space-y-4">
             <img 
-              src="/lovable-uploads/3947b1e5-fc48-46da-be3b-318874ff50da.png" 
+              src="/lovable-uploads/eb89ac73-e0e3-47d9-847f-9fbd6a9b70bb.png" 
               alt="ForTest Logo" 
               className="h-12 mx-auto"
             />
