@@ -13,9 +13,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import { generateBurdonHTMLReport } from "@/components/reports/BurdonPDFTemplate";
 
-interface BurdonTestResult {
+export interface BurdonTestResult {
   id: string;
   test_start_time: string;
   test_end_time: string;
@@ -190,80 +190,29 @@ export default function Reports() {
 
   const exportToPDF = (result: BurdonTestResult) => {
     try {
-      const doc = new jsPDF();
+      // HTML template'ini oluştur
+      const htmlContent = generateBurdonHTMLReport(result);
       
-      // Başlık
-      doc.setFontSize(20);
-      doc.text('BURDON DIKKAT TESTI SONUCLARI', 20, 20);
-      
-      // Test bilgileri
-      doc.setFontSize(12);
-      let yPos = 40;
-      
-      const addLine = (label: string, value: string) => {
-        doc.text(`${label}: ${value}`, 20, yPos);
-        yPos += 8;
-      };
-      
-      addLine('Test ID', result.id.substring(0, 8) + '...');
-      addLine('Ogrenci Adi', result.student_name || 'Bilinmeyen');
-      addLine('Test Yapan', result.conducted_by_name || 'Bilinmeyen');
-      addLine('Test Baslangic', new Date(result.test_start_time).toLocaleString('tr-TR'));
-      addLine('Test Bitis', new Date(result.test_end_time).toLocaleString('tr-TR'));
-      addLine('Test Suresi', `${result.test_elapsed_time_seconds} saniye`);
-      addLine('Otomatik Tamamlandi', result.test_auto_completed ? 'Evet' : 'Hayir');
-      
-      yPos += 10;
-      
-      // Toplam sonuçlar tablosu
-      doc.setFontSize(14);
-      doc.text('TOPLAM SONUCLAR', 20, yPos);
-      yPos += 10;
-      
-      const totalData = [
-        ['Metrik', 'Deger'],
-        ['Toplam Dogru', result.total_correct.toString()],
-        ['Toplam Kacirilan', result.total_missed.toString()],
-        ['Toplam Yanlis', result.total_wrong.toString()],
-        ['Toplam Puan', result.total_score.toString()],
-        ['Dikkat Orani', result.attention_ratio.toFixed(6)]
-      ];
-      
-      autoTable(doc, {
-        startY: yPos,
-        head: [totalData[0]],
-        body: totalData.slice(1),
-        margin: { left: 20, right: 20 }
-      });
-      
-      yPos = (doc as any).lastAutoTable.finalY + 20;
-      
-      // Bölüm sonuçları tablosu
-      doc.setFontSize(14);
-      doc.text('BOLUM SONUCLARI', 20, yPos);
-      yPos += 10;
-      
-      const sectionData = [
-        ['Metrik', 'Bolum 1', 'Bolum 2', 'Bolum 3'],
-        ['Dogru', result.section1_correct.toString(), result.section2_correct.toString(), result.section3_correct.toString()],
-        ['Kacirilan', result.section1_missed.toString(), result.section2_missed.toString(), result.section3_missed.toString()],
-        ['Yanlis', result.section1_wrong.toString(), result.section2_wrong.toString(), result.section3_wrong.toString()],
-        ['Puan', result.section1_score.toString(), result.section2_score.toString(), result.section3_score.toString()]
-      ];
-      
-      autoTable(doc, {
-        startY: yPos,
-        head: [sectionData[0]],
-        body: sectionData.slice(1),
-        margin: { left: 20, right: 20 }
-      });
-
-      const fileName = `Burdon_Test_${result.student_name?.replace(/[^a-zA-Z0-9]/g, '_') || 'Test'}_${new Date(result.created_at).toISOString().split('T')[0]}.pdf`;
-      doc.save(fileName);
+      // Yeni pencere aç ve HTML'i yazdır
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+        
+        // Yazdırma işlemi tamamlandıktan sonra pencereyi kapat
+        printWindow.onafterprint = () => {
+          printWindow.close();
+        };
+        
+        // Kısa bir gecikme sonrası yazdır
+        setTimeout(() => {
+          printWindow.print();
+        }, 500);
+      }
 
       toast({
         title: "Başarılı",
-        description: "PDF raporu indirildi.",
+        description: "PDF raporu oluşturuldu ve yazdırma penceresi açıldı.",
       });
     } catch (error) {
       console.error('PDF export error:', error);
