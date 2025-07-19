@@ -46,30 +46,69 @@ export interface BurdonTestResult {
 }
 
 export default function Reports() {
+  const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
   const [selectedTest, setSelectedTest] = useState<string | null>(null);
+  const [students, setStudents] = useState<any[]>([]);
   const [burdonResults, setBurdonResults] = useState<BurdonTestResult[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedResult, setSelectedResult] = useState<BurdonTestResult | null>(null);
   const { toast } = useToast();
   const { user, switchRole, logout } = useAuth();
 
   useEffect(() => {
-    console.log('selectedTest changed:', selectedTest);
-    if (selectedTest === 'burdon') {
-      console.log('Fetching burdon results...');
+    fetchStudents();
+  }, []);
+
+  useEffect(() => {
+    if (selectedStudent && selectedTest === 'burdon') {
+      console.log('Fetching burdon results for student:', selectedStudent.id);
       setLoading(true);
       fetchBurdonResults();
     }
-  }, [selectedTest]);
+  }, [selectedStudent, selectedTest]);
+
+  const fetchStudents = async () => {
+    try {
+      setLoading(true);
+      const { data: studentsData, error } = await supabase
+        .from('students')
+        .select(`
+          id,
+          student_number,
+          birth_date,
+          grade_level,
+          users!students_user_id_fkey(first_name, last_name, email)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedStudents = studentsData?.map(student => ({
+        ...student,
+        full_name: student.users ? `${student.users.first_name} ${student.users.last_name}` : 'Bilinmeyen Öğrenci'
+      })) || [];
+
+      setStudents(formattedStudents);
+    } catch (error) {
+      console.error('Error fetching students:', error);
+      toast({
+        title: "Hata",
+        description: "Öğrenciler yüklenirken bir hata oluştu.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchBurdonResults = async () => {
-    console.log('fetchBurdonResults called');
+    if (!selectedStudent) return;
     try {
-      // İlk olarak test sonuçlarını al
       const { data: results, error: resultsError } = await supabase
         .from('burdon_test_results')
         .select('*')
+        .eq('student_id', selectedStudent.id)
         .order('created_at', { ascending: false });
 
       if (resultsError) throw resultsError;
@@ -616,7 +655,7 @@ export default function Reports() {
         onLogout={handleLogout}
       >
         <div className="flex items-center justify-center h-64">
-          <div className="text-lg">Burdon test sonuçları yükleniyor...</div>
+          <div className="text-lg">Yükleniyor...</div>
         </div>
       </DashboardLayout>
     );
@@ -757,8 +796,14 @@ export default function Reports() {
     );
   }
 
-  // Test seçimi yapılmamışsa test listesi göster
-  if (!selectedTest) {
+  // Öğrenci seçilmemişse öğrenci listesi göster
+  if (!selectedStudent) {
+    const filteredStudents = students.filter(student => {
+      const searchLower = searchTerm.toLowerCase();
+      return student.full_name?.toLowerCase().includes(searchLower) ||
+             student.student_number?.toLowerCase().includes(searchLower);
+    });
+
     return (
       <DashboardLayout
         user={user ? {
@@ -782,6 +827,99 @@ export default function Reports() {
               <div>
                 <h1 className="text-3xl font-bold">Test Raporları</h1>
                 <p className="text-muted-foreground">
+                  Hangi öğrencinin raporlarını görüntülemek istiyorsunuz?
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Öğrenci Arama</CardTitle>
+              <CardDescription>
+                Öğrenci adı veya numarasına göre arama yapabilirsiniz.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Öğrenci adı veya numarası ara..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Öğrenci Listesi</CardTitle>
+              <CardDescription>
+                Toplam {filteredStudents.length} öğrenci bulundu.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {filteredStudents.length === 0 ? (
+                <div className="text-center py-8">
+                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">Öğrenci bulunamadı.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredStudents.map((student) => (
+                    <Card 
+                      key={student.id} 
+                      className="cursor-pointer hover:shadow-lg transition-shadow"
+                      onClick={() => setSelectedStudent(student)}
+                    >
+                      <CardHeader>
+                        <CardTitle className="text-lg">{student.full_name}</CardTitle>
+                        <CardDescription>
+                          {student.student_number && `Öğrenci No: ${student.student_number}`}
+                          {student.grade_level && ` • ${student.grade_level}. Sınıf`}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <Button variant="outline" className="w-full">
+                          Testleri Görüntüle
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Test seçilmemişse test listesi göster
+  if (!selectedTest) {
+    return (
+      <DashboardLayout
+        user={user ? {
+          name: `${user.firstName} ${user.lastName}`,
+          email: user.email,
+          roles: user.roles,
+          currentRole: user.currentRole,
+        } : undefined}
+        onRoleSwitch={handleRoleSwitch}
+        onLogout={handleLogout}
+      >
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button variant="outline" onClick={() => setSelectedStudent(null)}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Öğrenci Listesi
+              </Button>
+              <div>
+                <h1 className="text-3xl font-bold">{selectedStudent.full_name} - Test Raporları</h1>
+                <p className="text-muted-foreground">
                   Hangi testin raporlarını görüntülemek istiyorsunuz?
                 </p>
               </div>
@@ -790,7 +928,7 @@ export default function Reports() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => {
-              console.log('Burdon card clicked!');
+              console.log('Burdon card clicked for student:', selectedStudent.id);
               setSelectedTest('burdon');
             }}>
               <CardHeader>
@@ -833,7 +971,7 @@ export default function Reports() {
               Test Seçimi
             </Button>
             <div>
-              <h1 className="text-3xl font-bold">Burdon Test Raporları</h1>
+              <h1 className="text-3xl font-bold">{selectedStudent.full_name} - Burdon Test Raporları</h1>
               <p className="text-muted-foreground">
                 Burdon dikkat testi sonuçlarını görüntüleyebilir ve indirebilirsiniz.
               </p>
