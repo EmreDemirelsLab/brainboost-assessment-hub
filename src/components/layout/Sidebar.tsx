@@ -36,8 +36,26 @@ interface SidebarProps {
 const mainMenuItems = [
   {
     icon: Brain,
-    label: "Test ve Egzersizler",
-    href: "/cognitive-assessment", 
+    label: "ForBrain Bilişsel Beceri Değerlendirme",
+    href: "/cognitive-assessment",
+    roles: ["admin", "trainer", "representative", "user"] as UserRole[]
+  },
+  {
+    icon: BookOpen,
+    label: "ForBrain Etkin ve Anlayarak Okuma",
+    href: "/reading-exercises",
+    roles: ["admin", "trainer", "representative", "user"] as UserRole[]
+  },
+  {
+    icon: GraduationCap,
+    label: "Uluslararası Alan Testleri",
+    href: "/international-tests",
+    roles: ["admin", "trainer", "representative", "user"] as UserRole[]
+  },
+  {
+    icon: FileText,
+    label: "Formlar",
+    href: "/forms",
     roles: ["admin", "trainer", "representative", "user"] as UserRole[]
   }
 ];
@@ -122,8 +140,12 @@ export function Sidebar({ userRole, isCollapsed, onToggle }: SidebarProps) {
                       to={item.href}
                       className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
                     >
-                      <item.icon className="h-4 w-4" />
-                      {state !== "collapsed" && <span>{item.label}</span>}
+                      <item.icon className="h-4 w-4 flex-shrink-0" />
+                      {state !== "collapsed" && (
+                        <span className="leading-tight line-clamp-2 break-words">
+                          {item.label}
+                        </span>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -146,13 +168,17 @@ export function Sidebar({ userRole, isCollapsed, onToggle }: SidebarProps) {
                       isActive={isActive(item.href)}
                       className="w-full justify-start"
                     >
-                      <NavLink
-                        to={item.href}
-                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
-                      >
-                        <item.icon className="h-4 w-4" />
-                        {state !== "collapsed" && <span>{item.label}</span>}
-                      </NavLink>
+                       <NavLink
+                         to={item.href}
+                         className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+                       >
+                         <item.icon className="h-4 w-4 flex-shrink-0" />
+                         {state !== "collapsed" && (
+                           <span className="leading-tight line-clamp-2 break-words">
+                             {item.label}
+                           </span>
+                         )}
+                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
@@ -174,13 +200,17 @@ export function Sidebar({ userRole, isCollapsed, onToggle }: SidebarProps) {
                     isActive={isActive(item.href)}
                     className="w-full justify-start"
                   >
-                    <NavLink
-                      to={item.href}
-                      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      {state !== "collapsed" && <span>{item.label}</span>}
-                    </NavLink>
+                     <NavLink
+                       to={item.href}
+                       className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+                     >
+                       <item.icon className="h-4 w-4 flex-shrink-0" />
+                       {state !== "collapsed" && (
+                         <span className="leading-tight line-clamp-2 break-words">
+                           {item.label}
+                         </span>
+                       )}
+                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
