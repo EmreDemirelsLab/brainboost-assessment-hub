@@ -36,13 +36,13 @@ interface SidebarProps {
 const mainMenuItems = [
   {
     icon: Brain,
-    label: "ForBrain Bilişsel Beceri Değerlendirme",
+    label: "ForBrain Bilişsel Beceri\nDeğerlendirme",
     href: "/cognitive-assessment",
     roles: ["admin", "trainer", "representative", "user"] as UserRole[]
   },
   {
     icon: BookOpen,
-    label: "ForBrain Etkin ve Anlayarak Okuma",
+    label: "ForBrain Etkin ve\nAnlayarak Okuma",
     href: "/reading-exercises",
     roles: ["admin", "trainer", "representative", "user"] as UserRole[]
   },
@@ -140,8 +140,12 @@ export function Sidebar({ userRole, isCollapsed, onToggle }: SidebarProps) {
                       to={item.href}
                       className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
                     >
-                      <item.icon className="h-4 w-4" />
-                      {state !== "collapsed" && <span>{item.label}</span>}
+                      <item.icon className="h-4 w-4 flex-shrink-0" />
+                      {state !== "collapsed" && (
+                        <span className="whitespace-pre-line leading-tight">
+                          {item.label}
+                        </span>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -168,8 +172,12 @@ export function Sidebar({ userRole, isCollapsed, onToggle }: SidebarProps) {
                         to={item.href}
                         className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
                       >
-                        <item.icon className="h-4 w-4" />
-                        {state !== "collapsed" && <span>{item.label}</span>}
+                        <item.icon className="h-4 w-4 flex-shrink-0" />
+                        {state !== "collapsed" && (
+                          <span className="whitespace-pre-line leading-tight">
+                            {item.label}
+                          </span>
+                        )}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -196,8 +204,12 @@ export function Sidebar({ userRole, isCollapsed, onToggle }: SidebarProps) {
                       to={item.href}
                       className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
                     >
-                      <item.icon className="h-4 w-4" />
-                      {state !== "collapsed" && <span>{item.label}</span>}
+                      <item.icon className="h-4 w-4 flex-shrink-0" />
+                      {state !== "collapsed" && (
+                        <span className="whitespace-pre-line leading-tight">
+                          {item.label}
+                        </span>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
