@@ -55,12 +55,16 @@ export default function Reports() {
   const { user, switchRole, logout } = useAuth();
 
   useEffect(() => {
+    console.log('selectedTest changed:', selectedTest);
     if (selectedTest === 'burdon') {
+      console.log('Fetching burdon results...');
+      setLoading(true);
       fetchBurdonResults();
     }
   }, [selectedTest]);
 
   const fetchBurdonResults = async () => {
+    console.log('fetchBurdonResults called');
     try {
       // İlk olarak test sonuçlarını al
       const { data: results, error: resultsError } = await supabase
@@ -785,7 +789,10 @@ export default function Reports() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setSelectedTest('burdon')}>
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => {
+              console.log('Burdon card clicked!');
+              setSelectedTest('burdon');
+            }}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5" />
