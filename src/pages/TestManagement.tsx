@@ -18,10 +18,7 @@ const mockStudents = [
 ];
 
 const mockTests = [
-  { id: "1", name: "ForBrain Bilişsel Beceri Değerlendirme", type: "cognitive", duration: 45 },
-  { id: "2", name: "Etkin Okuma Testi", type: "reading", duration: 30 },
-  { id: "3", name: "Matematik Alan Testi", type: "subject", duration: 60 },
-  { id: "4", name: "Fen Bilimleri Testi", type: "subject", duration: 40 },
+  { id: "1", name: "Burdon Dikkat Testi", type: "cognitive", duration: 5 }
 ];
 
 export default function TestManagement() {
