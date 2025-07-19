@@ -239,16 +239,6 @@ export default function Auth() {
           </CardContent>
         </Card>
 
-        {/* Info Card */}
-        <Card className="shadow-card bg-muted/50">
-          <CardContent className="pt-6">
-            <div className="text-center text-sm text-muted-foreground">
-              <p className="font-medium mb-2">Bilgilendirme:</p>
-              <p>Kullanıcı hesapları sadece sistem yöneticileri ve beyin antrenörleri tarafından oluşturulabilir.</p>
-              <p className="mt-2">Giriş bilgileriniz için lütfen yöneticinizle iletişime geçin.</p>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Footer */}
         <div className="text-center pt-8">
