@@ -18,50 +18,6 @@ export default function CognitiveAssessment() {
     logout();
   };
 
-  const assessmentTypes = [
-    {
-      id: 1,
-      title: "Dikkat ve Odaklanma",
-      description: "Öğrencinin dikkat süresi ve odaklanma kapasitesini ölçer",
-      duration: "15 dakika",
-      difficulty: "Kolay",
-      participants: 45
-    },
-    {
-      id: 2,
-      title: "Görsel Algı",
-      description: "Görsel bilgi işleme ve algılama yeteneklerini değerlendirir",
-      duration: "20 dakika", 
-      difficulty: "Orta",
-      participants: 38
-    },
-    {
-      id: 3,
-      title: "Bellek ve Hatırlama",
-      description: "Kısa ve uzun süreli bellek kapasitesini ölçer",
-      duration: "25 dakika",
-      difficulty: "Zor",
-      participants: 29
-    },
-    {
-      id: 4,
-      title: "Problem Çözme",
-      description: "Mantıksal düşünme ve problem çözme becerilerini değerlendirir",
-      duration: "30 dakika",
-      difficulty: "Zor",
-      participants: 22
-    }
-  ];
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "Kolay": return "bg-green-100 text-green-800";
-      case "Orta": return "bg-yellow-100 text-yellow-800";
-      case "Zor": return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
-    }
-  };
-
   return (
     <DashboardLayout
       user={user ? {
@@ -94,65 +50,13 @@ export default function CognitiveAssessment() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {assessmentTypes.map((assessment) => (
-            <Card key={assessment.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-xl">{assessment.title}</CardTitle>
-                    <CardDescription className="mt-2">
-                      {assessment.description}
-                    </CardDescription>
-                  </div>
-                  <Badge className={getDifficultyColor(assessment.difficulty)}>
-                    {assessment.difficulty}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      <span>{assessment.duration}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4" />
-                      <span>{assessment.participants} katılımcı</span>
-                    </div>
-                  </div>
-                  <Button className="w-full" variant="default">
-                    <Play className="h-4 w-4 mr-2" />
-                    Değerlendirmeyi Başlat
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
         <Card>
-          <CardHeader>
-            <CardTitle>Değerlendirme Hakkında</CardTitle>
-            <CardDescription>
-              ForBrain Bilişsel Beceri Değerlendirme sistemi hakkında detaylı bilgi
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="prose max-w-none">
-              <p>
-                Bu değerlendirme sistemi, öğrencilerin bilişsel becerilerini kapsamlı bir şekilde ölçmek 
-                için tasarlanmıştır. Her test, farklı bilişsel alanları hedefler ve öğrencinin güçlü 
-                yanları ile gelişim alanlarını belirler.
-              </p>
-              <ul className="mt-4 space-y-2">
-                <li>• Bilimsel araştırmalara dayalı test metodolojisi</li>
-                <li>• Yaş grubuna uygun sorular ve aktiviteler</li>
-                <li>• Detaylı sonuç raporları ve öneriler</li>
-                <li>• İlerleme takibi ve karşılaştırmalı analiz</li>
-              </ul>
-            </div>
+          <CardContent className="text-center py-16">
+            <Brain className="h-16 w-16 text-muted-foreground mx-auto mb-6" />
+            <h2 className="text-2xl font-semibold mb-4">Henüz Test Bulunmuyor</h2>
+            <p className="text-muted-foreground">
+              ForBrain Bilişsel Beceri Değerlendirme testleri yakında ekleneceektir.
+            </p>
           </CardContent>
         </Card>
       </div>

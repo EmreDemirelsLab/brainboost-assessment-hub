@@ -46,19 +46,6 @@ export default function InternationalTests() {
       country: "Burdon",
       nextSession: "Her Zaman",
       testType: "burdon"
-    },
-    {
-      id: 2,
-      title: "PISA Matematik Testi",
-      description: "15 yaş grubundaki öğrencilerin matematik alanındaki becerilerini ölçen uluslararası değerlendirme",
-      grade: "9-10",
-      subject: "Matematik",
-      duration: "180 dakika",
-      participants: "65 Ülke",
-      difficulty: "Orta-Zor",
-      country: "OECD",
-      nextSession: "15 Kasım 2024",
-      testType: "pisa"
     }
   ];
 
@@ -208,42 +195,6 @@ export default function InternationalTests() {
           ))}
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Uluslararası Testler Hakkında</CardTitle>
-            <CardDescription>
-              Dünya standartlarında değerlendirme sistemleri
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="space-y-3">
-                <Award className="h-8 w-8 text-primary" />
-                <h3 className="font-semibold">PISA Testleri</h3>
-                <p className="text-sm text-muted-foreground">
-                  OECD tarafından düzenlenen, 15 yaş grubundaki öğrencilerin matematik, 
-                  fen ve okuma becerilerini değerlendiren uluslararası test.
-                </p>
-              </div>
-              <div className="space-y-3">
-                <Award className="h-8 w-8 text-primary" />
-                <h3 className="font-semibold">TIMSS Testleri</h3>
-                <p className="text-sm text-muted-foreground">
-                  4. ve 8. sınıf öğrencilerinin matematik ve fen bilimleri alanındaki 
-                  başarılarını uluslararası düzeyde karşılaştıran değerlendirme.
-                </p>
-              </div>
-              <div className="space-y-3">
-                <Award className="h-8 w-8 text-primary" />
-                <h3 className="font-semibold">PIRLS Testleri</h3>
-                <p className="text-sm text-muted-foreground">
-                  4. sınıf öğrencilerinin okuma anlama becerilerini uluslararası 
-                  standartlarda ölçen kapsamlı değerlendirme sistemi.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Burdon Test Modal */}
