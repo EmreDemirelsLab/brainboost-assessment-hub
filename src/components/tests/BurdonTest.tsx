@@ -253,7 +253,6 @@ export function BurdonTest({ onComplete, studentId }: BurdonTestProps) {
         .from('students')
         .upsert({
           user_id: user.id,
-          // Diğer alanlar null olabilir çünkü nullable
         }, { 
           onConflict: 'user_id' 
         });
@@ -271,61 +270,84 @@ export function BurdonTest({ onComplete, studentId }: BurdonTestProps) {
 
       if (studentQueryError || !studentData) {
         console.error('Student ID alınamadı:', studentQueryError);
-        toast({
-          title: "Hata",
-          description: "Öğrenci bilgileri bulunamadı",
-          variant: "destructive"
-        });
-        return;
       }
 
-      // Önce Burdon testi ID'sini al
-      const { data: testInfo, error: testError } = await supabase
-        .from('tests')
-        .select('id')
-        .eq('test_type', 'burdon_attention')
-        .single();
-
-      if (testError || !testInfo) {
-        console.error('Test ID bulunamadı:', testError);
-        toast({
-          title: "Hata",
-          description: "Test bilgileri bulunamadı",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      const resultsData = {
+      // Detaylı sonuçları hazırla (HTML kodundaki tüm veriler)
+      const detailedResults = {
+        // Test timing bilgileri
         test_start_time: testData.startTime,
         test_end_time: testData.endTime,
         test_elapsed_time_seconds: testData.currentElapsedTime,
         test_auto_completed: testData.autoCompleted,
-        total_correct: testData.totalResults.correct,
-        total_missed: testData.totalResults.missed,
-        total_wrong: testData.totalResults.wrong,
-        total_score: testData.totalResults.score,
-        attention_ratio: testData.totalResults.ratio,
-        sections_results: {
-          section1: testData.sections[1].results,
-          section2: testData.sections[2].results,
-          section3: testData.sections[3].results
-        }
+        
+        // Hedef karakterler
+        target_chars: testData.targetChars,
+        
+        // Her bölümün detaylı verileri
+        sections_data: {
+          section1: {
+            marked_chars: testData.sections[1].markedChars,
+            grid_data: testData.sections[1].grid,
+            results: testData.sections[1].results
+          },
+          section2: {
+            marked_chars: testData.sections[2].markedChars,
+            grid_data: testData.sections[2].grid,
+            results: testData.sections[2].results
+          },
+          section3: {
+            marked_chars: testData.sections[3].markedChars,
+            grid_data: testData.sections[3].grid,
+            results: testData.sections[3].results
+          }
+        },
+        
+        // Test parametreleri
+        test_duration: testData.testDuration,
+        completed_sections: testData.completedSections
       };
 
+      // Burdon test results tablosuna kaydet
       const { error } = await supabase
-        .from('test_results')
+        .from('burdon_test_results')
         .insert({
-          test_id: testInfo.id,
-          student_id: studentData.id,
+          user_id: user.id,
+          student_id: studentData?.id || null,
           conducted_by: user.id,
-          start_time: new Date(testData.startTime || Date.now()).toISOString(),
-          end_time: new Date(testData.endTime || Date.now()).toISOString(),
-          score: testData.totalResults.score,
-          max_score: testData.totalResults.correct + testData.totalResults.missed,
-          percentage: testData.totalResults.ratio * 100,
-          results_data: resultsData,
-          status: 'completed'
+          
+          // Test zamanlaması
+          test_start_time: new Date(testData.startTime || Date.now()).toISOString(),
+          test_end_time: new Date(testData.endTime || Date.now()).toISOString(),
+          test_elapsed_time_seconds: testData.currentElapsedTime,
+          test_auto_completed: testData.autoCompleted,
+          
+          // Toplam sonuçlar
+          total_correct: testData.totalResults.correct,
+          total_missed: testData.totalResults.missed,
+          total_wrong: testData.totalResults.wrong,
+          total_score: testData.totalResults.score,
+          attention_ratio: testData.totalResults.ratio,
+          
+          // Bölüm 1 sonuçları
+          section1_correct: testData.sections[1].results.correct,
+          section1_missed: testData.sections[1].results.missed,
+          section1_wrong: testData.sections[1].results.wrong,
+          section1_score: testData.sections[1].results.score,
+          
+          // Bölüm 2 sonuçları
+          section2_correct: testData.sections[2].results.correct,
+          section2_missed: testData.sections[2].results.missed,
+          section2_wrong: testData.sections[2].results.wrong,
+          section2_score: testData.sections[2].results.score,
+          
+          // Bölüm 3 sonuçları
+          section3_correct: testData.sections[3].results.correct,
+          section3_missed: testData.sections[3].results.missed,
+          section3_wrong: testData.sections[3].results.wrong,
+          section3_score: testData.sections[3].results.score,
+          
+          // Detaylı veri JSON olarak
+          detailed_results: detailedResults
         });
 
       if (error) {
@@ -336,7 +358,7 @@ export function BurdonTest({ onComplete, studentId }: BurdonTestProps) {
           variant: "destructive"
         });
       } else {
-        console.log('Test sonuçları başarıyla kaydedildi');
+        console.log('Burdon test sonuçları başarıyla kaydedildi');
         toast({
           title: "Başarılı",
           description: "Test sonuçları başarıyla kaydedildi",

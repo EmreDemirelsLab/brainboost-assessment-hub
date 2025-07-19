@@ -14,6 +14,124 @@ export type Database = {
   }
   public: {
     Tables: {
+      burdon_test_results: {
+        Row: {
+          attention_ratio: number
+          conducted_by: string
+          created_at: string
+          detailed_results: Json | null
+          id: string
+          notes: string | null
+          section1_correct: number
+          section1_missed: number
+          section1_score: number
+          section1_wrong: number
+          section2_correct: number
+          section2_missed: number
+          section2_score: number
+          section2_wrong: number
+          section3_correct: number
+          section3_missed: number
+          section3_score: number
+          section3_wrong: number
+          student_id: string | null
+          test_auto_completed: boolean | null
+          test_elapsed_time_seconds: number
+          test_end_time: string | null
+          test_start_time: string
+          total_correct: number
+          total_missed: number
+          total_score: number
+          total_wrong: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attention_ratio?: number
+          conducted_by: string
+          created_at?: string
+          detailed_results?: Json | null
+          id?: string
+          notes?: string | null
+          section1_correct?: number
+          section1_missed?: number
+          section1_score?: number
+          section1_wrong?: number
+          section2_correct?: number
+          section2_missed?: number
+          section2_score?: number
+          section2_wrong?: number
+          section3_correct?: number
+          section3_missed?: number
+          section3_score?: number
+          section3_wrong?: number
+          student_id?: string | null
+          test_auto_completed?: boolean | null
+          test_elapsed_time_seconds: number
+          test_end_time?: string | null
+          test_start_time: string
+          total_correct?: number
+          total_missed?: number
+          total_score?: number
+          total_wrong?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attention_ratio?: number
+          conducted_by?: string
+          created_at?: string
+          detailed_results?: Json | null
+          id?: string
+          notes?: string | null
+          section1_correct?: number
+          section1_missed?: number
+          section1_score?: number
+          section1_wrong?: number
+          section2_correct?: number
+          section2_missed?: number
+          section2_score?: number
+          section2_wrong?: number
+          section3_correct?: number
+          section3_missed?: number
+          section3_score?: number
+          section3_wrong?: number
+          student_id?: string | null
+          test_auto_completed?: boolean | null
+          test_elapsed_time_seconds?: number
+          test_end_time?: string | null
+          test_start_time?: string
+          total_correct?: number
+          total_missed?: number
+          total_score?: number
+          total_wrong?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "burdon_test_results_conducted_by_fkey"
+            columns: ["conducted_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "burdon_test_results_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "burdon_test_results_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exercises: {
         Row: {
           created_at: string
