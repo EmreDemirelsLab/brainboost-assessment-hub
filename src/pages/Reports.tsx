@@ -55,6 +55,7 @@ export default function Reports() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedResult, setSelectedResult] = useState<BurdonTestResult | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
   const { toast } = useToast();
   const { user, switchRole, logout } = useAuth();
   const navigate = useNavigate();
@@ -1051,7 +1052,8 @@ export default function Reports() {
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                              setSelectedResult(result);
+                              console.log('Detay button clicked for result:', result.id);
+                              setSelectedResultId(result.id);
                               setModalOpen(true);
                             }}
                           >
@@ -1085,11 +1087,11 @@ export default function Reports() {
         </Card>
 
         <BurdonReportModal 
-          result={selectedResult}
+          resultId={selectedResultId}
           open={modalOpen}
           onClose={() => {
             setModalOpen(false);
-            setSelectedResult(null);
+            setSelectedResultId(null);
           }}
         />
       </div>
