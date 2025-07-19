@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import * as XLSX from 'xlsx';
 
 export default function AddUser() {
   const { user, switchRole, logout } = useAuth();
@@ -51,10 +52,68 @@ export default function AddUser() {
   };
 
   const downloadTemplate = () => {
-    // TODO: Implement template download
+    // Excel şablonu oluştur
+    const templateData = [
+      {
+        'Ad': 'Örnek',
+        'Soyad': 'Öğrenci',
+        'E-posta': 'ornek@email.com',
+        'Telefon': '+90 555 123 45 67',
+        'Okul Adı': 'Örnek İlkokulu',
+        'Sınıf Seviyesi': '4',
+        'Öğrenci Numarası': 'OGR001',
+        'Doğum Tarihi': '2015-01-15',
+        'Veli Adı': 'Veli Adı Soyadı',
+        'Veli Telefonu': '+90 555 987 65 43',
+        'Veli E-postası': 'veli@email.com',
+        'Notlar': 'Özel durumlar burada belirtilir'
+      },
+      {
+        'Ad': '',
+        'Soyad': '',
+        'E-posta': '',
+        'Telefon': '',
+        'Okul Adı': '',
+        'Sınıf Seviyesi': '',
+        'Öğrenci Numarası': '',
+        'Doğum Tarihi': '',
+        'Veli Adı': '',
+        'Veli Telefonu': '',
+        'Veli E-postası': '',
+        'Notlar': ''
+      }
+    ];
+
+    // Workbook oluştur
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(templateData);
+
+    // Sütun genişliklerini ayarla
+    const colWidths = [
+      { wch: 15 }, // Ad
+      { wch: 15 }, // Soyad
+      { wch: 25 }, // E-posta
+      { wch: 18 }, // Telefon
+      { wch: 20 }, // Okul Adı
+      { wch: 12 }, // Sınıf Seviyesi
+      { wch: 15 }, // Öğrenci Numarası
+      { wch: 12 }, // Doğum Tarihi
+      { wch: 20 }, // Veli Adı
+      { wch: 18 }, // Veli Telefonu
+      { wch: 25 }, // Veli E-postası
+      { wch: 30 }  // Notlar
+    ];
+    ws['!cols'] = colWidths;
+
+    // Worksheet'i workbook'a ekle
+    XLSX.utils.book_append_sheet(wb, ws, 'Öğrenci Listesi');
+
+    // Dosyayı indir
+    XLSX.writeFile(wb, 'ogrenci_ekleme_sablonu.xlsx');
+    
     toast({
-      title: "Şablon indiriliyor",
-      description: "Excel şablonu indirildi.",
+      title: "Şablon indirildi",
+      description: "Excel şablonu başarıyla indirildi.",
     });
   };
 
