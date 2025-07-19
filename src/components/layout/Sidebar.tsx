@@ -36,26 +36,8 @@ interface SidebarProps {
 const mainMenuItems = [
   {
     icon: Brain,
-    label: "ForBrain Bilişsel Beceri Değerlendirme",
-    href: "/cognitive-assessment",
-    roles: ["admin", "trainer", "representative", "user"] as UserRole[]
-  },
-  {
-    icon: BookOpen,
-    label: "ForBrain Etkin ve Anlayarak Okuma",
-    href: "/reading-exercises",
-    roles: ["admin", "trainer", "representative", "user"] as UserRole[]
-  },
-  {
-    icon: GraduationCap,
-    label: "Uluslararası Alan Testleri",
-    href: "/international-tests",
-    roles: ["admin", "trainer", "representative", "user"] as UserRole[]
-  },
-  {
-    icon: FileText,
-    label: "Formlar",
-    href: "/forms",
+    label: "Test ve Egzersizler",
+    href: "/cognitive-assessment", 
     roles: ["admin", "trainer", "representative", "user"] as UserRole[]
   }
 ];
