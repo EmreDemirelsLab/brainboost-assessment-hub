@@ -4,14 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ArrowLeft, GraduationCap, Globe, Clock, Users, Play, Award } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
+import { BurdonTest } from "@/components/tests/BurdonTest";
 
 export default function InternationalTests() {
   const { user, switchRole, logout } = useAuth();
   const [selectedGrade, setSelectedGrade] = useState("all");
   const [selectedSubject, setSelectedSubject] = useState("all");
+  const [showBurdonTest, setShowBurdonTest] = useState(false);
 
   const handleRoleSwitch = (role: any) => {
     switchRole(role);
@@ -21,78 +24,41 @@ export default function InternationalTests() {
     logout();
   };
 
+  const handleTestStart = (testType: string) => {
+    if (testType === 'burdon') {
+      setShowBurdonTest(true);
+    } else {
+      // Diğer testler için placeholder
+      alert('Bu test henüz aktif değil');
+    }
+  };
+
   const internationalTests = [
     {
       id: 1,
-      title: "PISA Matematik",
-      description: "Uluslararası Öğrenci Değerlendirme Programı - Matematik",
-      grade: "9-10",
-      subject: "Matematik",
-      duration: "150 dakika",
-      participants: 847,
-      difficulty: "Uluslararası",
-      country: "OECD",
-      nextSession: "15 Kasım 2024"
+      title: "Burdon Dikkat Testi",
+      description: "Dikkat sürdürme, odaklanma ve seçici dikkat becerilerini değerlendiren test",
+      grade: "Tüm Yaşlar",
+      subject: "Psikometri",
+      duration: "5 dakika",
+      participants: "Bireysel",
+      difficulty: "Orta",
+      country: "Burdon",
+      nextSession: "Her Zaman",
+      testType: "burdon"
     },
     {
       id: 2,
-      title: "PISA Fen Bilimleri",
-      description: "Uluslararası Öğrenci Değerlendirme Programı - Fen",
+      title: "PISA Matematik Testi",
+      description: "15 yaş grubundaki öğrencilerin matematik alanındaki becerilerini ölçen uluslararası değerlendirme",
       grade: "9-10",
-      subject: "Fen",
-      duration: "150 dakika",
-      participants: 756,
-      difficulty: "Uluslararası",
-      country: "OECD",
-      nextSession: "20 Kasım 2024"
-    },
-    {
-      id: 3,
-      title: "TIMSS Matematik",
-      description: "Uluslararası Matematik ve Fen Eğilimleri Araştırması",
-      grade: "4,8",
       subject: "Matematik",
-      duration: "90 dakika",
-      participants: 623,
-      difficulty: "Uluslararası",
-      country: "IEA",
-      nextSession: "25 Kasım 2024"
-    },
-    {
-      id: 4,
-      title: "PIRLS Okuma",
-      description: "Uluslararası Okuma Becerilerinin Gelişimi Araştırması",
-      grade: "4",
-      subject: "Türkçe",
-      duration: "80 dakika",
-      participants: 445,
-      difficulty: "Uluslararası",
-      country: "IEA",
-      nextSession: "30 Kasım 2024"
-    },
-    {
-      id: 5,
-      title: "TOEFL İngilizce",
-      description: "Test of English as a Foreign Language",
-      grade: "11-12",
-      subject: "İngilizce",
       duration: "180 dakika",
-      participants: 289,
-      difficulty: "Uluslararası",
-      country: "ETS",
-      nextSession: "5 Aralık 2024"
-    },
-    {
-      id: 6,
-      title: "Cambridge English",
-      description: "Cambridge İngilizce Yeterlilik Sınavları",
-      grade: "9-12",
-      subject: "İngilizce",
-      duration: "120 dakika",
-      participants: 356,
-      difficulty: "Uluslararası",
-      country: "Cambridge",
-      nextSession: "10 Aralık 2024"
+      participants: "65 Ülke",
+      difficulty: "Orta-Zor",
+      country: "OECD",
+      nextSession: "15 Kasım 2024",
+      testType: "pisa"
     }
   ];
 
@@ -228,7 +194,11 @@ export default function InternationalTests() {
                     <div className="font-medium">{test.nextSession}</div>
                   </div>
                   
-                  <Button className="w-full" variant="default">
+                  <Button 
+                    className="w-full" 
+                    variant="default"
+                    onClick={() => handleTestStart(test.testType || '')}
+                  >
                     <Play className="h-4 w-4 mr-2" />
                     Teste Başla
                   </Button>
@@ -275,6 +245,13 @@ export default function InternationalTests() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Burdon Test Modal */}
+      <Dialog open={showBurdonTest} onOpenChange={setShowBurdonTest}>
+        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto p-0">
+          <BurdonTest onComplete={() => setShowBurdonTest(false)} />
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
