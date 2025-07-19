@@ -10,7 +10,7 @@ import { Download, FileText, Search, Filter, ArrowLeft, FileSpreadsheet, Eye } f
 import { useToast } from "@/hooks/use-toast";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import { generateBurdonHTMLReport } from "@/components/reports/BurdonPDFTemplate";
@@ -55,6 +55,7 @@ export default function Reports() {
   const [selectedResult, setSelectedResult] = useState<BurdonTestResult | null>(null);
   const { toast } = useToast();
   const { user, switchRole, logout } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchStudents();
@@ -1047,7 +1048,7 @@ export default function Reports() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setSelectedResult(result)}
+                            onClick={() => navigate(`/reports/burdon/${result.id}`)}
                           >
                             <Eye className="h-4 w-4 mr-2" />
                             Detay
