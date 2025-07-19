@@ -41,9 +41,11 @@ export function Header({ user, onRoleSwitch, onLogout }: HeaderProps) {
       <div className="flex h-16 items-center justify-between px-6">
         {/* Logo */}
         <div className="flex items-center space-x-4">
-          <div className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            ForTest
-          </div>
+          <img 
+            src="/lovable-uploads/3947b1e5-fc48-46da-be3b-318874ff50da.png" 
+            alt="ForTest Logo" 
+            className="h-8"
+          />
         </div>
 
         {/* Right side - User menu */}

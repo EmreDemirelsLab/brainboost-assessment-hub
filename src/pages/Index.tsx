@@ -9,9 +9,11 @@ const Index = () => {
       {/* Header */}
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            ForTest
-          </div>
+          <img 
+            src="/lovable-uploads/3947b1e5-fc48-46da-be3b-318874ff50da.png" 
+            alt="ForTest Logo" 
+            className="h-8"
+          />
           <div className="space-x-4">
             <Button variant="ghost" asChild>
               <Link to="/auth">Giriş Yap</Link>
@@ -138,9 +140,11 @@ const Index = () => {
       <footer className="border-t bg-background/95 backdrop-blur">
         <div className="container mx-auto px-4 py-8">
           <div className="text-center space-y-4">
-            <div className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              ForTest
-            </div>
+            <img 
+              src="/lovable-uploads/3947b1e5-fc48-46da-be3b-318874ff50da.png" 
+              alt="ForTest Logo" 
+              className="h-12 mx-auto"
+            />
             <div className="text-sm text-muted-foreground space-y-1">
               <div>+90 212 351 32 12</div>
               <div>forbrain@forbrainacademy.com</div>

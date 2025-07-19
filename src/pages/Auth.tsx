@@ -75,9 +75,11 @@ export default function Auth() {
         <div className="w-full max-w-md space-y-6">
           {/* Logo */}
           <div className="text-center">
-            <div className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">
-              ForTest
-            </div>
+          <img 
+            src="/lovable-uploads/3947b1e5-fc48-46da-be3b-318874ff50da.png" 
+            alt="ForTest Logo" 
+            className="h-16 mx-auto mb-2"
+          />
             <p className="text-muted-foreground">ForBrain Academy Yönetim Sistemi</p>
           </div>
 
@@ -155,9 +157,11 @@ export default function Auth() {
       <div className="w-full max-w-md space-y-6">
         {/* Logo */}
         <div className="text-center">
-          <div className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">
-            ForTest
-          </div>
+          <img 
+            src="/lovable-uploads/3947b1e5-fc48-46da-be3b-318874ff50da.png" 
+            alt="ForTest Logo" 
+            className="h-16 mx-auto mb-2"
+          />
           <p className="text-muted-foreground">ForBrain Academy Yönetim Sistemi</p>
         </div>
 
