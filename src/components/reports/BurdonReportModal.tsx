@@ -83,100 +83,136 @@ export function BurdonReportModal({ resultId, open, onClose }: BurdonReportModal
   };
 
   const handlePrint = () => {
-    // Modal içeriğini alıp PDF'e dönüştür
-    const printContents = document.getElementById('modal-report-content');
-    if (!printContents) {
-      console.error('Modal content not found');
-      return;
-    }
-
-    // Yazdırma modunda aç
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      console.error('Could not open print window');
-      return;
-    }
-
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Burdon Test Raporu</title>
-        <style>
-          body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-            margin: 20px; 
-            color: #000;
-            background: white;
-          }
-          .space-y-6 > * + * { margin-top: 1.5rem; }
-          .grid { display: grid; gap: 1.5rem; }
-          .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
-          .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-          .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-          .bg-gradient-to-r { background: linear-gradient(to right, #3b82f6, #8b5cf6); }
-          .text-white { color: white; }
-          .p-6 { padding: 1.5rem; }
-          .p-4 { padding: 1rem; }
-          .p-3 { padding: 0.75rem; }
-          .rounded-lg { border-radius: 0.5rem; }
-          .text-center { text-align: center; }
-          .text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
-          .text-2xl { font-size: 1.5rem; line-height: 2rem; }
-          .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
-          .text-4xl { font-size: 2.25rem; line-height: 2.5rem; }
-          .font-bold { font-weight: 700; }
-          .font-semibold { font-weight: 600; }
-          .mb-2 { margin-bottom: 0.5rem; }
-          .mb-3 { margin-bottom: 0.75rem; }
-          .mb-4 { margin-bottom: 1rem; }
-          .mb-6 { margin-bottom: 1.5rem; }
-          .bg-muted { background-color: #f1f5f9; }
-          .border { border: 1px solid #e2e8f0; }
-          .space-y-2 > * + * { margin-top: 0.5rem; }
-          table { width: 100%; border-collapse: collapse; }
-          th, td { padding: 0.75rem; border-bottom: 1px solid #e2e8f0; }
-          th { font-weight: 600; text-align: left; }
-          .text-green-600 { color: #16a34a; }
-          .text-red-600 { color: #dc2626; }
-          .text-orange-600 { color: #ea580c; }
-          .text-blue-600 { color: #2563eb; }
-          .text-blue-700 { color: #1d4ed8; }
-          .text-blue-800 { color: #1e40af; }
-          .bg-green-50 { background-color: #f0fdf4; }
-          .bg-red-50 { background-color: #fef2f2; }
-          .bg-orange-50 { background-color: #fff7ed; }
-          .bg-blue-50 { background-color: #eff6ff; }
-          .bg-yellow-50 { background-color: #fefce8; }
-          .border-green-200 { border-color: #bbf7d0; }
-          .border-red-200 { border-color: #fecaca; }
-          .border-orange-200 { border-color: #fed7aa; }
-          .border-blue-200 { border-color: #bfdbfe; }
-          .border-yellow-200 { border-color: #fde047; }
-          .text-muted-foreground { color: #64748b; }
-          .border-t { border-top: 1px solid #e2e8f0; }
-          .pt-4 { padding-top: 1rem; }
-          .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
-          @media print {
-            body { margin: 0; }
-            .no-print { display: none; }
-          }
-        </style>
-      </head>
-      <body>
-        ${printContents.innerHTML}
-      </body>
-      </html>
-    `);
+    const pdf = new jsPDF('p', 'mm', 'a4');
     
-    printWindow.document.close();
-    printWindow.focus();
+    if (!result) return;
     
-    // Biraz bekle ve yazdır
-    setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-    }, 250);
+    const testDate = new Date(result.created_at).toLocaleDateString('tr-TR');
+    const startTime = new Date(result.test_start_time).toLocaleTimeString('tr-TR');
+    const endTime = new Date(result.test_end_time).toLocaleTimeString('tr-TR');
+    const durationMinutes = Math.floor(result.test_elapsed_time_seconds / 60);
+    const durationSeconds = result.test_elapsed_time_seconds % 60;
+    
+    // PDF içeriği
+    let yPosition = 20;
+    
+    // Başlık
+    pdf.setFontSize(20);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('BURDON DİKKAT TESTİ RAPORU', 105, yPosition, { align: 'center' });
+    yPosition += 15;
+    
+    // Test Bilgileri
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(`Öğrenci: ${result.student_name}`, 20, yPosition);
+    yPosition += 8;
+    pdf.text(`Test Yapan: ${result.conducted_by_name}`, 20, yPosition);
+    yPosition += 8;
+    pdf.text(`Test Tarihi: ${testDate}`, 20, yPosition);
+    yPosition += 8;
+    pdf.text(`Başlangıç: ${startTime} - Bitiş: ${endTime}`, 20, yPosition);
+    yPosition += 8;
+    pdf.text(`Süre: ${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`, 20, yPosition);
+    yPosition += 15;
+    
+    // Performans Metrikleri
+    pdf.setFontSize(14);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('PERFORMANS METRİKLERİ', 20, yPosition);
+    yPosition += 10;
+    
+    pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(`Doğru Cevaplar: ${result.total_correct}`, 20, yPosition);
+    pdf.text(`Yanlış Cevaplar: ${result.total_wrong}`, 110, yPosition);
+    yPosition += 8;
+    pdf.text(`Kaçırılan: ${result.total_missed}`, 20, yPosition);
+    pdf.text(`Toplam Puan: ${result.total_score}`, 110, yPosition);
+    yPosition += 15;
+    
+    // Bölümsel Analiz
+    pdf.setFontSize(14);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('BÖLÜMSEL ANALİZ', 20, yPosition);
+    yPosition += 10;
+    
+    // Tablo başlığı
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Bölüm', 20, yPosition);
+    pdf.text('Doğru', 60, yPosition);
+    pdf.text('Yanlış', 90, yPosition);
+    pdf.text('Kaçırılan', 120, yPosition);
+    pdf.text('Puan', 160, yPosition);
+    yPosition += 2;
+    
+    // Çizgi
+    pdf.line(20, yPosition, 180, yPosition);
+    yPosition += 5;
+    
+    // Bölüm 1
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('Bölüm 1', 20, yPosition);
+    pdf.text(result.section1_correct.toString(), 60, yPosition);
+    pdf.text(result.section1_wrong.toString(), 90, yPosition);
+    pdf.text(result.section1_missed.toString(), 120, yPosition);
+    pdf.text(result.section1_score.toString(), 160, yPosition);
+    yPosition += 8;
+    
+    // Bölüm 2
+    pdf.text('Bölüm 2', 20, yPosition);
+    pdf.text(result.section2_correct.toString(), 60, yPosition);
+    pdf.text(result.section2_wrong.toString(), 90, yPosition);
+    pdf.text(result.section2_missed.toString(), 120, yPosition);
+    pdf.text(result.section2_score.toString(), 160, yPosition);
+    yPosition += 8;
+    
+    // Bölüm 3
+    pdf.text('Bölüm 3', 20, yPosition);
+    pdf.text(result.section3_correct.toString(), 60, yPosition);
+    pdf.text(result.section3_wrong.toString(), 90, yPosition);
+    pdf.text(result.section3_missed.toString(), 120, yPosition);
+    pdf.text(result.section3_score.toString(), 160, yPosition);
+    yPosition += 15;
+    
+    // Dikkat Oranı
+    pdf.setFontSize(14);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('DİKKAT ORANI', 20, yPosition);
+    yPosition += 10;
+    
+    pdf.setFontSize(16);
+    pdf.text(`${(result.attention_ratio * 100).toFixed(2)}%`, 20, yPosition);
+    yPosition += 8;
+    
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('Bu oran, öğrencinin testteki genel dikkat performansını gösterir.', 20, yPosition);
+    yPosition += 15;
+    
+    // Notlar (varsa)
+    if (result.notes) {
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('NOTLAR', 20, yPosition);
+      yPosition += 10;
+      
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      const splitNotes = pdf.splitTextToSize(result.notes, 160);
+      pdf.text(splitNotes, 20, yPosition);
+      yPosition += splitNotes.length * 5 + 10;
+    }
+    
+    // Alt bilgi
+    pdf.setFontSize(8);
+    pdf.text(`Rapor Tarihi: ${new Date().toLocaleDateString('tr-TR')}`, 20, 280);
+    pdf.text(`Test ID: ${result.id.substring(0, 8)}...`, 20, 285);
+    
+    // PDF'i indir
+    const fileName = `Burdon_Test_${result.student_name?.replace(/[^a-zA-Z0-9]/g, '_') || 'Test'}_${testDate.replace(/\./g, '_')}.pdf`;
+    pdf.save(fileName);
   };
 
   if (!open) return null;
