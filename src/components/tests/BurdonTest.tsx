@@ -238,6 +238,23 @@ export function BurdonTest({ onComplete, studentId }: BurdonTestProps) {
         return;
       }
 
+      // Önce Burdon testi ID'sini al
+      const { data: testInfo, error: testError } = await supabase
+        .from('tests')
+        .select('id')
+        .eq('test_type', 'burdon_attention')
+        .single();
+
+      if (testError || !testInfo) {
+        console.error('Test ID bulunamadı:', testError);
+        toast({
+          title: "Hata",
+          description: "Test bilgileri bulunamadı",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const resultsData = {
         test_start_time: testData.startTime,
         test_end_time: testData.endTime,
@@ -258,7 +275,7 @@ export function BurdonTest({ onComplete, studentId }: BurdonTestProps) {
       const { error } = await supabase
         .from('test_results')
         .insert({
-          test_id: 'burdon-attention-test', // Sabit test ID'si
+          test_id: testInfo.id,
           student_id: studentId || user.id,
           conducted_by: user.id,
           start_time: new Date(testData.startTime || Date.now()).toISOString(),
