@@ -71,7 +71,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={
               <PublicRoute>
-                <Index />
+                <Auth />
               </PublicRoute>
             } />
             <Route path="/auth" element={
