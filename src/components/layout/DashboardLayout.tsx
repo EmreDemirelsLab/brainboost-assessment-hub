@@ -28,16 +28,19 @@ export function DashboardLayout({
         <div className="flex w-full">
           <Sidebar userRole={user?.currentRole || 'user'} isCollapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
           
-          <main className="flex-1 overflow-auto">
+          <main className="flex-1 overflow-auto pb-20">
             <div className="p-6 animate-fade-in">
               {children}
             </div>
             
-            {/* Footer */}
-            <footer className="bg-muted/30 border-t p-4 text-center text-sm text-muted-foreground">
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <span>📧 info@forbrain.com</span>
-                <span>📞 +90 (212) 123 45 67</span>
+            {/* Fixed Footer */}
+            <footer className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm z-50">
+              <div className="text-center py-3">
+                <div className="h-1 bg-primary rounded-full mb-3 mx-auto max-w-32"></div>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <div>+90 212 351 32 12</div>
+                  <div>forbrain@forbrainacademy.com</div>
+                </div>
               </div>
             </footer>
             
