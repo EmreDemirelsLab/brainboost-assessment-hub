@@ -80,7 +80,7 @@ export default function Auth() {
             alt="ForTest Logo" 
             className="h-16 mx-auto mb-2"
           />
-            <p className="text-muted-foreground text-2x1 font-medium">ForBrain Gelişim ve Takip Sistemiemre</p>
+            <p className="text-muted-foreground text-2x1 font-medium">ForBrain Gelişim ve Takip Sistemi</p>
           </div>
 
           {/* Reset Password Card */}
@@ -162,7 +162,7 @@ export default function Auth() {
             alt="ForTest Logo" 
             className="h-16 mx-auto mb-2"
           />
-          <p className="text-muted-foreground text-lg font-medium">ForBrain Gelişim ve Takip Sistemi</p>
+          <p className="text-muted-foreground text-2x1 font-medium">ForBrain Gelişim ve Takip Sistemi</p>
         </div>
 
         {/* Login Card */}
