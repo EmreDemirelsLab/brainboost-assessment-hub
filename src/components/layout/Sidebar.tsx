@@ -75,8 +75,14 @@ const managementItems = [
   },
   {
     icon: FileText,
-    label: "Test Yönetimi",
+    label: "Test Tanımla",
     href: "/test-management",
+    roles: ["admin", "trainer"] as UserRole[]
+  },
+  {
+    icon: BarChart3,
+    label: "Raporlar",
+    href: "/reports",
     roles: ["admin", "trainer"] as UserRole[]
   }
 ];

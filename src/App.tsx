@@ -19,6 +19,7 @@ import Students from "./pages/Students";
 import AddUser from "./pages/AddUser";
 import Settings from "./pages/Settings";
 import Help from "./pages/Help";
+import TestManagement from "./pages/TestManagement";
 
 const queryClient = new QueryClient();
 
@@ -136,6 +137,11 @@ const App = () => (
             <Route path="/help" element={
               <ProtectedRoute>
                 <Help />
+              </ProtectedRoute>
+            } />
+            <Route path="/test-management" element={
+              <ProtectedRoute>
+                <TestManagement />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

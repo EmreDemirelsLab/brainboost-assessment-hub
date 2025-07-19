@@ -209,60 +209,6 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Module Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="shadow-card hover:shadow-primary transition-all duration-300 cursor-pointer">
-            <CardHeader className="text-center">
-              <Brain className="h-12 w-12 mx-auto text-primary mb-2" />
-              <CardTitle className="text-lg">Bilişsel Beceri</CardTitle>
-              <CardDescription>Değerlendirme Testleri</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="gradient" className="w-full">
-                Teste Başla
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-card hover:shadow-primary transition-all duration-300 cursor-pointer">
-            <CardHeader className="text-center">
-              <BookOpen className="h-12 w-12 mx-auto text-primary mb-2" />
-              <CardTitle className="text-lg">Okuma Egzersizleri</CardTitle>
-              <CardDescription>Etkin ve Anlayarak</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="gradient" className="w-full">
-                Egzersize Başla
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-card hover:shadow-primary transition-all duration-300 cursor-pointer">
-            <CardHeader className="text-center">
-              <GraduationCap className="h-12 w-12 mx-auto text-primary mb-2" />
-              <CardTitle className="text-lg">Alan Testleri</CardTitle>
-              <CardDescription>Uluslararası Standartlar</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="gradient" className="w-full">
-                Teste Başla
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-card hover:shadow-primary transition-all duration-300 cursor-pointer">
-            <CardHeader className="text-center">
-              <FileText className="h-12 w-12 mx-auto text-primary mb-2" />
-              <CardTitle className="text-lg">Formlar</CardTitle>
-              <CardDescription>Değerlendirme Formları</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="gradient" className="w-full">
-                Form Doldur
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
       </div>
     </DashboardLayout>
   );
