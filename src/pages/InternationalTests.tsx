@@ -249,6 +249,10 @@ export default function InternationalTests() {
       {/* Burdon Test Modal */}
       <Dialog open={showBurdonTest} onOpenChange={setShowBurdonTest}>
         <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto p-0">
+          <div className="sr-only">
+            <h2>Burdon Dikkat Testi</h2>
+            <p>Dikkat sürdürme ve odaklanma testini başlatın</p>
+          </div>
           <BurdonTest onComplete={() => setShowBurdonTest(false)} />
         </DialogContent>
       </Dialog>

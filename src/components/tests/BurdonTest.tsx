@@ -135,10 +135,13 @@ export function BurdonTest({ onComplete, studentId }: BurdonTestProps) {
     const currentSection = testData.currentSection;
     const targetSectionData = testData.sections[currentSection];
     
+    console.log('generateTestGrid called for section:', currentSection);
+    
     targetSectionData.grid = [];
     targetSectionData.markedChars = [];
     
     const sectionData = sectionLetters[currentSection as keyof typeof sectionLetters];
+    console.log('Section data found:', !!sectionData);
     
     for (let r = 0; r < 10; r++) {
       const row = [];
@@ -156,6 +159,8 @@ export function BurdonTest({ onComplete, studentId }: BurdonTestProps) {
       }
       targetSectionData.grid.push(row);
     }
+    
+    console.log('Grid generated, size:', targetSectionData.grid.length);
   };
 
   // Karakter işaretleme
@@ -238,6 +243,37 @@ export function BurdonTest({ onComplete, studentId }: BurdonTestProps) {
         return;
       }
 
+      // Önce kullanıcıyı students tablosuna ekle (varsa zaten var demektir)
+      const { error: studentError } = await supabase
+        .from('students')
+        .upsert({
+          user_id: user.id,
+          // Diğer alanlar null olabilir çünkü nullable
+        }, { 
+          onConflict: 'user_id' 
+        });
+
+      if (studentError) {
+        console.error('Student ekleme hatası:', studentError);
+      }
+
+      // Student ID'sini al
+      const { data: studentData, error: studentQueryError } = await supabase
+        .from('students')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (studentQueryError || !studentData) {
+        console.error('Student ID alınamadı:', studentQueryError);
+        toast({
+          title: "Hata",
+          description: "Öğrenci bilgileri bulunamadı",
+          variant: "destructive"
+        });
+        return;
+      }
+
       // Önce Burdon testi ID'sini al
       const { data: testInfo, error: testError } = await supabase
         .from('tests')
@@ -276,7 +312,7 @@ export function BurdonTest({ onComplete, studentId }: BurdonTestProps) {
         .from('test_results')
         .insert({
           test_id: testInfo.id,
-          student_id: studentId || user.id,
+          student_id: studentData.id,
           conducted_by: user.id,
           start_time: new Date(testData.startTime || Date.now()).toISOString(),
           end_time: new Date(testData.endTime || Date.now()).toISOString(),
@@ -290,11 +326,12 @@ export function BurdonTest({ onComplete, studentId }: BurdonTestProps) {
       if (error) {
         console.error('Veritabanı hatası:', error);
         toast({
-          title: "Hata",
-          description: "Test sonuçları kaydedilemedi",
+          title: "Hata", 
+          description: `Test sonuçları kaydedilemedi: ${error.message}`,
           variant: "destructive"
         });
       } else {
+        console.log('Test sonuçları başarıyla kaydedildi');
         toast({
           title: "Başarılı",
           description: "Test sonuçları başarıyla kaydedildi",
@@ -312,13 +349,31 @@ export function BurdonTest({ onComplete, studentId }: BurdonTestProps) {
 
   // Test başlatma
   const startTest = () => {
-    resetTestData();
-    const newTestData = { ...testData };
-    newTestData.startTime = new Date().getTime();
-    newTestData.currentSection = 1;
-    newTestData.currentElapsedTime = 0;
+    const newTestData = {
+      startTime: new Date().getTime(),
+      endTime: null,
+      testDuration: 300,
+      currentElapsedTime: 0,
+      targetChars: ['a', 'b', 'd', 'g'],
+      currentSection: 1,
+      completedSections: 0,
+      timerInterval: null as NodeJS.Timeout | null,
+      autoCompleted: false,
+      sections: {
+        1: { grid: [], markedChars: [], results: { correct: 0, missed: 0, wrong: 0, score: 0 } },
+        2: { grid: [], markedChars: [], results: { correct: 0, missed: 0, wrong: 0, score: 0 } },
+        3: { grid: [], markedChars: [], results: { correct: 0, missed: 0, wrong: 0, score: 0 } }
+      },
+      totalResults: { correct: 0, missed: 0, wrong: 0, score: 0, ratio: 0 }
+    };
     
-    generateTestGrid();
+    console.log('Starting test, setting state to:', newTestData);
+    setTestData(newTestData);
+    
+    // İlk bölümün grid'ini oluştur
+    setTimeout(() => {
+      generateTestGridForCurrentSection(newTestData);
+    }, 100);
     
     const interval = setInterval(() => {
       setTestData(prev => {
@@ -334,23 +389,67 @@ export function BurdonTest({ onComplete, studentId }: BurdonTestProps) {
       });
     }, 1000);
     
-    newTestData.timerInterval = interval;
-    setTestData(newTestData);
+    setTestData(prev => ({ ...prev, timerInterval: interval }));
+  };
+
+  // Belirli bölüm için grid oluşturma
+  const generateTestGridForCurrentSection = (currentTestData: TestData) => {
+    const currentSection = currentTestData.currentSection;
+    const targetSectionData = currentTestData.sections[currentSection];
+    
+    console.log('generateTestGridForCurrentSection called for section:', currentSection);
+    
+    targetSectionData.grid = [];
+    targetSectionData.markedChars = [];
+    
+    const sectionData = sectionLetters[currentSection as keyof typeof sectionLetters];
+    console.log('Section data found:', !!sectionData);
+    
+    for (let r = 0; r < 10; r++) {
+      const row = [];
+      for (let c = 0; c < 22; c++) {
+        const char = sectionData[r][c];
+        const isTarget = currentTestData.targetChars.includes(char);
+        
+        row.push({
+          char: char,
+          isTarget: isTarget,
+          isMarked: false,
+          row: r,
+          col: c
+        });
+      }
+      targetSectionData.grid.push(row);
+    }
+    
+    console.log('Grid generated, size:', targetSectionData.grid.length);
+    setTestData(prev => ({ ...prev, sections: { ...prev.sections, [currentSection]: targetSectionData } }));
   };
 
   // Sonraki bölüme geçme
   const moveToNextSection = () => {
+    console.log('Moving to next section from:', testData.currentSection);
     calculateSectionResults(testData.currentSection);
-    const newTestData = { ...testData };
-    newTestData.completedSections = testData.currentSection;
     
-    if (testData.currentSection < 3) {
-      newTestData.currentSection++;
-      generateTestGrid();
-      setTestData(newTestData);
-    } else {
-      completeTest();
-    }
+    setTestData(prev => {
+      const newTestData = { ...prev };
+      newTestData.completedSections = prev.currentSection;
+      
+      if (prev.currentSection < 3) {
+        newTestData.currentSection++;
+        console.log('New section will be:', newTestData.currentSection);
+        
+        // Yeni bölümün grid'ini oluştur
+        setTimeout(() => {
+          generateTestGridForCurrentSection(newTestData);
+        }, 100);
+        
+        return newTestData;
+      } else {
+        completeTest();
+        return newTestData;
+      }
+    });
   };
 
   // Test tamamlama
