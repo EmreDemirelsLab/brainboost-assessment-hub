@@ -1,17 +1,76 @@
-import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Users, Search, Plus, Edit, Eye, Trash2, Phone, Mail } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ArrowLeft, Search, Users, Plus, Eye, Edit, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Student {
+  id: string;
+  user_id: string;
+  student_number: string | null;
+  birth_date: string | null;
+  grade_level: number | null;
+  school_name: string | null;
+  parent_name: string | null;
+  parent_phone: string | null;
+  parent_email: string | null;
+  notes: string | null;
+  created_at: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+}
 
 export default function Students() {
   const { user, switchRole, logout } = useAuth();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+  const [students, setStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchStudents();
+  }, []);
+
+  const fetchStudents = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('students')
+        .select(`
+          *,
+          users(first_name, last_name, email)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedStudents = data?.map(student => ({
+        ...student,
+        first_name: student.users?.first_name || 'Bilinmeyen',
+        last_name: student.users?.last_name || 'Öğrenci',
+        email: student.users?.email || 'E-posta yok'
+      })) || [];
+
+      setStudents(formattedStudents);
+    } catch (error) {
+      console.error('Error fetching students:', error);
+      toast({
+        title: "Hata",
+        description: "Öğrenciler yüklenirken bir hata oluştu.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleRoleSwitch = (role: any) => {
     switchRole(role);
@@ -21,94 +80,39 @@ export default function Students() {
     logout();
   };
 
-  // Sample student data
-  const students = [
-    {
-      id: 1,
-      studentNumber: "2024001",
-      firstName: "Elif",
-      lastName: "Kaya",
-      gradeLevel: 5,
-      schoolName: "Atatürk İlkokulu",
-      parentName: "Ahmet Kaya",
-      parentPhone: "+90 532 123 4567",
-      parentEmail: "ahmet.kaya@email.com",
-      birthDate: "2013-03-15",
-      enrollmentDate: "2024-01-10",
-      status: "Aktif"
-    },
-    {
-      id: 2,
-      studentNumber: "2024002", 
-      firstName: "Mehmet",
-      lastName: "Özkan",
-      gradeLevel: 7,
-      schoolName: "Cumhuriyet Ortaokulu",
-      parentName: "Fatma Özkan",
-      parentPhone: "+90 533 234 5678",
-      parentEmail: "fatma.ozkan@email.com",
-      birthDate: "2011-07-22",
-      enrollmentDate: "2024-01-12",
-      status: "Aktif"
-    },
-    {
-      id: 3,
-      studentNumber: "2024003",
-      firstName: "Ayşe",
-      lastName: "Demir",
-      gradeLevel: 9,
-      schoolName: "İstiklal Lisesi",
-      parentName: "Mustafa Demir",
-      parentPhone: "+90 534 345 6789",
-      parentEmail: "mustafa.demir@email.com",
-      birthDate: "2009-11-08",
-      enrollmentDate: "2024-01-15",
-      status: "Aktif"
-    },
-    {
-      id: 4,
-      studentNumber: "2024004",
-      firstName: "Ali",
-      lastName: "Yıldız",
-      gradeLevel: 3,
-      schoolName: "Mimar Sinan İlkokulu",
-      parentName: "Zeynep Yıldız",
-      parentPhone: "+90 535 456 7890",
-      parentEmail: "zeynep.yildiz@email.com",
-      birthDate: "2015-05-12",
-      enrollmentDate: "2024-01-08",
-      status: "Pasif"
-    },
-    {
-      id: 5,
-      studentNumber: "2024005",
-      firstName: "Selin",
-      lastName: "Arslan",
-      gradeLevel: 6,
-      schoolName: "Gazi Mustafa Kemal Ortaokulu",
-      parentName: "Hakan Arslan",
-      parentPhone: "+90 536 567 8901",
-      parentEmail: "hakan.arslan@email.com",
-      birthDate: "2012-09-25",
-      enrollmentDate: "2024-01-20",
-      status: "Aktif"
-    }
-  ];
+  const filteredStudents = students.filter(student => {
+    const searchTermLower = searchTerm.toLowerCase();
+    return (
+      student.first_name?.toLowerCase().includes(searchTermLower) ||
+      student.last_name?.toLowerCase().includes(searchTermLower) ||
+      student.student_number?.toLowerCase().includes(searchTermLower) ||
+      student.school_name?.toLowerCase().includes(searchTermLower)
+    );
+  });
 
-  const filteredStudents = students.filter(student =>
-    `${student.firstName} ${student.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.studentNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.schoolName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.parentName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Aktif": return "bg-green-100 text-green-800";
-      case "Pasif": return "bg-gray-100 text-gray-800";
-      default: return "bg-gray-100 text-gray-800";
-    }
+  const getStatusBadge = (birthDate: string | null) => {
+    // For now, all students are active - this is a placeholder
+    return <Badge variant="secondary" className="bg-success text-success-foreground">Aktif</Badge>;
   };
+
+  if (loading) {
+    return (
+      <DashboardLayout
+        user={user ? {
+          name: `${user.firstName} ${user.lastName}`,
+          email: user.email,
+          roles: user.roles,
+          currentRole: user.currentRole,
+        } : undefined}
+        onRoleSwitch={handleRoleSwitch}
+        onLogout={handleLogout}
+      >
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg">Öğrenciler yükleniyor...</div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout
@@ -199,47 +203,43 @@ export default function Students() {
                   {filteredStudents.map((student) => (
                     <TableRow key={student.id}>
                       <TableCell className="font-medium">
-                        {student.studentNumber}
+                        {student.student_number}
                       </TableCell>
                       <TableCell>
                         <div>
                           <div className="font-medium">
-                            {student.firstName} {student.lastName}
+                            {student.first_name} {student.last_name}
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            {new Date(student.birthDate).toLocaleDateString('tr-TR')}
+                            {student.birth_date ? new Date(student.birth_date).toLocaleDateString('tr-TR') : 'Tarih Belirtilmemiş'}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">{student.gradeLevel}. Sınıf</Badge>
+                        <Badge variant="outline">{student.grade_level || 'Sınıf Belirtilmemiş'}. Sınıf</Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="max-w-32 truncate" title={student.schoolName}>
-                          {student.schoolName}
+                        <div className="max-w-32 truncate" title={student.school_name || 'Okul Belirtilmemiş'}>
+                          {student.school_name || 'Okul Belirtilmemiş'}
                         </div>
                       </TableCell>
-                      <TableCell>{student.parentName}</TableCell>
+                      <TableCell>{student.parent_name || 'Veli Belirtilmemiş'}</TableCell>
                       <TableCell>
                         <div className="space-y-1">
                           <div className="flex items-center gap-1 text-sm">
-                            <Phone className="h-3 w-3" />
-                            <span className="truncate max-w-24" title={student.parentPhone}>
-                              {student.parentPhone}
+                            <span className="truncate max-w-24" title={student.parent_phone || 'Telefon Belirtilmemiş'}>
+                              {student.parent_phone || 'Telefon Belirtilmemiş'}
                             </span>
                           </div>
                           <div className="flex items-center gap-1 text-sm">
-                            <Mail className="h-3 w-3" />
-                            <span className="truncate max-w-24" title={student.parentEmail}>
-                              {student.parentEmail}
+                            <span className="truncate max-w-24" title={student.parent_email || 'E-posta Belirtilmemiş'}>
+                              {student.parent_email || 'E-posta Belirtilmemiş'}
                             </span>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge className={getStatusColor(student.status)}>
-                          {student.status}
-                        </Badge>
+                        {getStatusBadge(student.birth_date)}
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
@@ -280,7 +280,7 @@ export default function Students() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-green-600">
-                {students.filter(s => s.status === "Aktif").length}
+                {students.filter(s => s.birth_date && new Date(s.birth_date).getMonth() === new Date().getMonth()).length}
               </div>
             </CardContent>
           </Card>
@@ -292,7 +292,7 @@ export default function Students() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-blue-600">
-                {students.filter(s => new Date(s.enrollmentDate).getMonth() === new Date().getMonth()).length}
+                {students.filter(s => s.created_at && new Date(s.created_at).getMonth() === new Date().getMonth()).length}
               </div>
             </CardContent>
           </Card>

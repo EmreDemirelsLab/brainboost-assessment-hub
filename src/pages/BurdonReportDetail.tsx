@@ -3,8 +3,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Printer } from "lucide-react";
-// import { generateBurdonHTMLReport } from "@/components/reports/BurdonPDFTemplate";
 import { BurdonTestResult } from "./Reports";
+import { BurdonPremiumReport } from "@/components/reports/BurdonPremiumReport";
 
 export default function BurdonReportDetail() {
   const { resultId } = useParams();
@@ -121,112 +121,9 @@ export default function BurdonReportDetail() {
         </Button>
       </div>
 
-      {/* PDF Report Content */}
-      <div className="report-content bg-white">
-        <div className="max-w-4xl mx-auto p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-primary mb-2">BURDON</h1>
-            <h2 className="text-2xl text-gray-700">Dikkat Testi Raporu</h2>
-          </div>
-
-          {/* Test Bilgileri */}
-          <div className="grid grid-cols-2 gap-6 mb-8">
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-gray-700 mb-2">Öğrenci Bilgileri</h3>
-              <p><strong>Ad Soyad:</strong> {result.student_name}</p>
-              <p><strong>Test Tarihi:</strong> {new Date(result.created_at).toLocaleDateString('tr-TR')}</p>
-              <p><strong>Test Yapan:</strong> {result.conducted_by_name}</p>
-            </div>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-gray-700 mb-2">Test Detayları</h3>
-              <p><strong>Başlangıç:</strong> {new Date(result.test_start_time).toLocaleTimeString('tr-TR')}</p>
-              <p><strong>Bitiş:</strong> {new Date(result.test_end_time).toLocaleTimeString('tr-TR')}</p>
-              <p><strong>Süre:</strong> {Math.floor(result.test_elapsed_time_seconds / 60)}:{(result.test_elapsed_time_seconds % 60).toString().padStart(2, '0')}</p>
-            </div>
-          </div>
-
-          {/* Performans Metrikleri */}
-          <div className="grid grid-cols-4 gap-4 mb-8">
-            <div className="bg-green-50 border border-green-200 p-4 rounded-lg text-center">
-              <div className="text-2xl font-bold text-green-600">{result.total_correct}</div>
-              <div className="text-sm text-gray-600">Doğru Cevaplar</div>
-            </div>
-            <div className="bg-red-50 border border-red-200 p-4 rounded-lg text-center">
-              <div className="text-2xl font-bold text-red-600">{result.total_wrong}</div>
-              <div className="text-sm text-gray-600">Yanlış Cevaplar</div>
-            </div>
-            <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg text-center">
-              <div className="text-2xl font-bold text-orange-600">{result.total_missed}</div>
-              <div className="text-sm text-gray-600">Kaçırılan</div>
-            </div>
-            <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg text-center">
-              <div className="text-2xl font-bold text-blue-600">{result.total_score}</div>
-              <div className="text-sm text-gray-600">Toplam Puan</div>
-            </div>
-          </div>
-
-          {/* Bölüm Analizi */}
-          <div className="mb-8">
-            <h3 className="text-xl font-semibold mb-4">Bölümsel Analiz</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse border border-gray-300">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="border border-gray-300 p-3 text-left">Bölüm</th>
-                    <th className="border border-gray-300 p-3 text-center">Doğru</th>
-                    <th className="border border-gray-300 p-3 text-center">Yanlış</th>
-                    <th className="border border-gray-300 p-3 text-center">Kaçırılan</th>
-                    <th className="border border-gray-300 p-3 text-center">Puan</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td className="border border-gray-300 p-3 font-medium">Bölüm 1</td>
-                    <td className="border border-gray-300 p-3 text-center text-green-600">{result.section1_correct}</td>
-                    <td className="border border-gray-300 p-3 text-center text-red-600">{result.section1_wrong}</td>
-                    <td className="border border-gray-300 p-3 text-center text-orange-600">{result.section1_missed}</td>
-                    <td className="border border-gray-300 p-3 text-center font-semibold">{result.section1_score}</td>
-                  </tr>
-                  <tr>
-                    <td className="border border-gray-300 p-3 font-medium">Bölüm 2</td>
-                    <td className="border border-gray-300 p-3 text-center text-green-600">{result.section2_correct}</td>
-                    <td className="border border-gray-300 p-3 text-center text-red-600">{result.section2_wrong}</td>
-                    <td className="border border-gray-300 p-3 text-center text-orange-600">{result.section2_missed}</td>
-                    <td className="border border-gray-300 p-3 text-center font-semibold">{result.section2_score}</td>
-                  </tr>
-                  <tr>
-                    <td className="border border-gray-300 p-3 font-medium">Bölüm 3</td>
-                    <td className="border border-gray-300 p-3 text-center text-green-600">{result.section3_correct}</td>
-                    <td className="border border-gray-300 p-3 text-center text-red-600">{result.section3_wrong}</td>
-                    <td className="border border-gray-300 p-3 text-center text-orange-600">{result.section3_missed}</td>
-                    <td className="border border-gray-300 p-3 text-center font-semibold">{result.section3_score}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Dikkat Oranı */}
-          <div className="bg-blue-50 border border-blue-200 p-6 rounded-lg mb-8">
-            <h3 className="text-xl font-semibold text-blue-800 mb-2">Dikkat Oranı</h3>
-            <div className="text-3xl font-bold text-blue-600">
-              {(result.attention_ratio * 100).toFixed(2)}%
-            </div>
-            <p className="text-blue-700 mt-2">
-              Bu oran, öğrencinin testteki genel dikkat performansını gösterir.
-            </p>
-          </div>
-
-          {/* Notlar */}
-          {result.notes && (
-            <div className="bg-yellow-50 border border-yellow-200 p-6 rounded-lg">
-              <h3 className="text-xl font-semibold text-yellow-800 mb-2">Notlar</h3>
-              <p className="text-yellow-700">{result.notes}</p>
-            </div>
-          )}
-        </div>
-      </div>
-
+      {/* Premium PDF Report Content */}
+      <BurdonPremiumReport testData={result} />
+      
       <style>{`
         @media print {
           .no-print {
@@ -236,12 +133,6 @@ export default function BurdonReportDetail() {
           body {
             margin: 0;
             background: white !important;
-          }
-          
-          .report-content {
-            width: 100% !important;
-            height: auto !important;
-            overflow: visible !important;
           }
           
           @page {

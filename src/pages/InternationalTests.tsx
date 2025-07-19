@@ -10,6 +10,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { BurdonTest } from "@/components/tests/BurdonTest";
 
+interface TestResult {
+  testType: string;
+  studentId: string | null;
+  results: any;
+}
+
 export default function InternationalTests() {
   const { user, switchRole, logout } = useAuth();
   const [selectedGrade, setSelectedGrade] = useState("all");
@@ -28,48 +34,53 @@ export default function InternationalTests() {
     if (testType === 'burdon') {
       setShowBurdonTest(true);
     } else {
-      // Diğer testler için placeholder
+      // Diğer testler henüz aktif değil
       alert('Bu test henüz aktif değil');
     }
   };
 
-  const internationalTests = [
+  const handleTestComplete = () => {
+    console.log('Burdon test tamamlandı');
+    setShowBurdonTest(false);
+    // Here you could show a success message or redirect
+  };
+
+  // Only the Burdon test is available - other tests are removed
+  const availableTests = [
     {
       id: 1,
       title: "Burdon Dikkat Testi",
-      description: "Dikkat sürdürme, odaklanma ve seçici dikkat becerilerini değerlendiren test",
+      description: "Dikkat sürdürme, odaklanma ve seçici dikkat becerilerini değerlendiren uluslararası standart test",
       grade: "Tüm Yaşlar",
       subject: "Psikometri",
       duration: "5 dakika",
       participants: "Bireysel",
       difficulty: "Orta",
-      country: "Burdon",
+      country: "Burdon Standardı",
       nextSession: "Her Zaman",
-      testType: "burdon"
-    },
-    {
-      id: 2,
-      title: "PISA Matematik Testi",
-      description: "15 yaş grubundaki öğrencilerin matematik alanındaki becerilerini ölçen uluslararası değerlendirme",
-      grade: "9-10",
-      subject: "Matematik",
-      duration: "180 dakika",
-      participants: "65 Ülke",
-      difficulty: "Orta-Zor",
-      country: "OECD",
-      nextSession: "15 Kasım 2024",
-      testType: "pisa"
+      testType: "burdon",
+      isActive: true
     }
   ];
 
-  const filteredTests = internationalTests.filter(test => {
+  // Filter tests based on grade and subject
+  const filteredTests = availableTests.filter(test => {
     const gradeMatch = selectedGrade === "all" || test.grade.includes(selectedGrade);
     const subjectMatch = selectedSubject === "all" || test.subject === selectedSubject;
-    return gradeMatch && subjectMatch;
+    return gradeMatch && subjectMatch && test.isActive;
   });
 
-  const subjects = [...new Set(internationalTests.map(test => test.subject))];
-  const grades = ["4", "8", "9", "10", "11", "12"];
+  const subjects = ["Psikometri"]; // Only available subject
+  const grades = ["Tüm Yaşlar"]; // Available for all ages
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case "Kolay": return "bg-green-100 text-green-800";
+      case "Orta": return "bg-yellow-100 text-yellow-800";
+      case "Zor": return "bg-red-100 text-red-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
 
   return (
     <DashboardLayout
@@ -120,7 +131,7 @@ export default function InternationalTests() {
                   <SelectItem value="all">Tüm Sınıflar</SelectItem>
                   {grades.map(grade => (
                     <SelectItem key={grade} value={grade}>
-                      {grade}. Sınıf
+                      {grade}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -253,7 +264,7 @@ export default function InternationalTests() {
             <h2>Burdon Dikkat Testi</h2>
             <p>Dikkat sürdürme ve odaklanma testini başlatın</p>
           </div>
-          <BurdonTest onComplete={() => setShowBurdonTest(false)} />
+          <BurdonTest onComplete={handleTestComplete} />
         </DialogContent>
       </Dialog>
     </DashboardLayout>

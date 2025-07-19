@@ -4,7 +4,7 @@ import { Printer, X } from "lucide-react";
 import { BurdonTestResult } from "@/pages/Reports";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import jsPDF from 'jspdf';
+import { BurdonPremiumReport } from "./BurdonPremiumReport";
 
 interface BurdonReportModalProps {
   resultId: string | null;
@@ -83,136 +83,10 @@ export function BurdonReportModal({ resultId, open, onClose }: BurdonReportModal
   };
 
   const handlePrint = () => {
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    
-    if (!result) return;
-    
-    const testDate = new Date(result.created_at).toLocaleDateString('tr-TR');
-    const startTime = new Date(result.test_start_time).toLocaleTimeString('tr-TR');
-    const endTime = new Date(result.test_end_time).toLocaleTimeString('tr-TR');
-    const durationMinutes = Math.floor(result.test_elapsed_time_seconds / 60);
-    const durationSeconds = result.test_elapsed_time_seconds % 60;
-    
-    // PDF içeriği
-    let yPosition = 20;
-    
-    // Başlık
-    pdf.setFontSize(20);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('BURDON DİKKAT TESTİ RAPORU', 105, yPosition, { align: 'center' });
-    yPosition += 15;
-    
-    // Test Bilgileri
-    pdf.setFontSize(12);
-    pdf.setFont('helvetica', 'normal');
-    pdf.text(`Öğrenci: ${result.student_name}`, 20, yPosition);
-    yPosition += 8;
-    pdf.text(`Test Yapan: ${result.conducted_by_name}`, 20, yPosition);
-    yPosition += 8;
-    pdf.text(`Test Tarihi: ${testDate}`, 20, yPosition);
-    yPosition += 8;
-    pdf.text(`Başlangıç: ${startTime} - Bitiş: ${endTime}`, 20, yPosition);
-    yPosition += 8;
-    pdf.text(`Süre: ${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`, 20, yPosition);
-    yPosition += 15;
-    
-    // Performans Metrikleri
-    pdf.setFontSize(14);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('PERFORMANS METRİKLERİ', 20, yPosition);
-    yPosition += 10;
-    
-    pdf.setFontSize(11);
-    pdf.setFont('helvetica', 'normal');
-    pdf.text(`Doğru Cevaplar: ${result.total_correct}`, 20, yPosition);
-    pdf.text(`Yanlış Cevaplar: ${result.total_wrong}`, 110, yPosition);
-    yPosition += 8;
-    pdf.text(`Kaçırılan: ${result.total_missed}`, 20, yPosition);
-    pdf.text(`Toplam Puan: ${result.total_score}`, 110, yPosition);
-    yPosition += 15;
-    
-    // Bölümsel Analiz
-    pdf.setFontSize(14);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('BÖLÜMSEL ANALİZ', 20, yPosition);
-    yPosition += 10;
-    
-    // Tablo başlığı
-    pdf.setFontSize(10);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('Bölüm', 20, yPosition);
-    pdf.text('Doğru', 60, yPosition);
-    pdf.text('Yanlış', 90, yPosition);
-    pdf.text('Kaçırılan', 120, yPosition);
-    pdf.text('Puan', 160, yPosition);
-    yPosition += 2;
-    
-    // Çizgi
-    pdf.line(20, yPosition, 180, yPosition);
-    yPosition += 5;
-    
-    // Bölüm 1
-    pdf.setFont('helvetica', 'normal');
-    pdf.text('Bölüm 1', 20, yPosition);
-    pdf.text(result.section1_correct.toString(), 60, yPosition);
-    pdf.text(result.section1_wrong.toString(), 90, yPosition);
-    pdf.text(result.section1_missed.toString(), 120, yPosition);
-    pdf.text(result.section1_score.toString(), 160, yPosition);
-    yPosition += 8;
-    
-    // Bölüm 2
-    pdf.text('Bölüm 2', 20, yPosition);
-    pdf.text(result.section2_correct.toString(), 60, yPosition);
-    pdf.text(result.section2_wrong.toString(), 90, yPosition);
-    pdf.text(result.section2_missed.toString(), 120, yPosition);
-    pdf.text(result.section2_score.toString(), 160, yPosition);
-    yPosition += 8;
-    
-    // Bölüm 3
-    pdf.text('Bölüm 3', 20, yPosition);
-    pdf.text(result.section3_correct.toString(), 60, yPosition);
-    pdf.text(result.section3_wrong.toString(), 90, yPosition);
-    pdf.text(result.section3_missed.toString(), 120, yPosition);
-    pdf.text(result.section3_score.toString(), 160, yPosition);
-    yPosition += 15;
-    
-    // Dikkat Oranı
-    pdf.setFontSize(14);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('DİKKAT ORANI', 20, yPosition);
-    yPosition += 10;
-    
-    pdf.setFontSize(16);
-    pdf.text(`${(result.attention_ratio * 100).toFixed(2)}%`, 20, yPosition);
-    yPosition += 8;
-    
-    pdf.setFontSize(10);
-    pdf.setFont('helvetica', 'normal');
-    pdf.text('Bu oran, öğrencinin testteki genel dikkat performansını gösterir.', 20, yPosition);
-    yPosition += 15;
-    
-    // Notlar (varsa)
-    if (result.notes) {
-      pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('NOTLAR', 20, yPosition);
-      yPosition += 10;
-      
-      pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'normal');
-      const splitNotes = pdf.splitTextToSize(result.notes, 160);
-      pdf.text(splitNotes, 20, yPosition);
-      yPosition += splitNotes.length * 5 + 10;
-    }
-    
-    // Alt bilgi
-    pdf.setFontSize(8);
-    pdf.text(`Rapor Tarihi: ${new Date().toLocaleDateString('tr-TR')}`, 20, 280);
-    pdf.text(`Test ID: ${result.id.substring(0, 8)}...`, 20, 285);
-    
-    // PDF'i indir
-    const fileName = `Burdon_Test_${result.student_name?.replace(/[^a-zA-Z0-9]/g, '_') || 'Test'}_${testDate.replace(/\./g, '_')}.pdf`;
-    pdf.save(fileName);
+    // Premium PDF print fonksiyonu
+    setTimeout(() => {
+      window.print();
+    }, 500);
   };
 
   if (!open) return null;
@@ -243,18 +117,12 @@ export function BurdonReportModal({ resultId, open, onClose }: BurdonReportModal
     );
   }
 
-  const testDate = new Date(result.created_at).toLocaleDateString('tr-TR');
-  const startTime = new Date(result.test_start_time).toLocaleTimeString('tr-TR');
-  const endTime = new Date(result.test_end_time).toLocaleTimeString('tr-TR');
-  const durationMinutes = Math.floor(result.test_elapsed_time_seconds / 60);
-  const durationSeconds = result.test_elapsed_time_seconds % 60;
-
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto p-2">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
-            <span>Burdon Test Raporu Detayı</span>
+            <span>Burdon Test Premium Raporu</span>
             <div className="flex gap-2">
               <Button onClick={handlePrint} size="sm" variant="outline">
                 <Printer className="h-4 w-4 mr-2" />
@@ -267,121 +135,8 @@ export function BurdonReportModal({ resultId, open, onClose }: BurdonReportModal
           </DialogTitle>
         </DialogHeader>
 
-        <div id="modal-report-content" className="space-y-6">
-          {/* Header */}
-          <div className="text-center bg-gradient-to-r from-primary to-secondary text-white p-6 rounded-lg">
-            <h1 className="text-3xl font-bold mb-2">BURDON</h1>
-            <h2 className="text-xl">Dikkat Testi Raporu</h2>
-          </div>
-
-          {/* Test Bilgileri */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-muted p-4 rounded-lg">
-              <h3 className="font-semibold text-muted-foreground mb-3">Öğrenci Bilgileri</h3>
-              <div className="space-y-2">
-                <p><strong>Ad Soyad:</strong> {result.student_name}</p>
-                <p><strong>Test Tarihi:</strong> {testDate}</p>
-                <p><strong>Test Yapan:</strong> {result.conducted_by_name}</p>
-              </div>
-            </div>
-            <div className="bg-muted p-4 rounded-lg">
-              <h3 className="font-semibold text-muted-foreground mb-3">Test Detayları</h3>
-              <div className="space-y-2">
-                <p><strong>Başlangıç:</strong> {startTime}</p>
-                <p><strong>Bitiş:</strong> {endTime}</p>
-                <p><strong>Süre:</strong> {durationMinutes}:{durationSeconds.toString().padStart(2, '0')}</p>
-                <p><strong>Otomatik Tamamlandı:</strong> {result.test_auto_completed ? 'Evet' : 'Hayır'}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Performans Metrikleri */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-green-50 border border-green-200 p-4 rounded-lg text-center">
-              <div className="text-2xl font-bold text-green-600">{result.total_correct}</div>
-              <div className="text-sm text-muted-foreground">Doğru Cevaplar</div>
-            </div>
-            <div className="bg-red-50 border border-red-200 p-4 rounded-lg text-center">
-              <div className="text-2xl font-bold text-red-600">{result.total_wrong}</div>
-              <div className="text-sm text-muted-foreground">Yanlış Cevaplar</div>
-            </div>
-            <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg text-center">
-              <div className="text-2xl font-bold text-orange-600">{result.total_missed}</div>
-              <div className="text-sm text-muted-foreground">Kaçırılan</div>
-            </div>
-            <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg text-center">
-              <div className="text-2xl font-bold text-blue-600">{result.total_score}</div>
-              <div className="text-sm text-muted-foreground">Toplam Puan</div>
-            </div>
-          </div>
-
-          {/* Bölüm Analizi */}
-          <div className="bg-card border rounded-lg p-6">
-            <h3 className="text-xl font-semibold mb-4">Bölümsel Analiz</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-3 font-semibold">Bölüm</th>
-                    <th className="text-center p-3 font-semibold">Doğru</th>
-                    <th className="text-center p-3 font-semibold">Yanlış</th>
-                    <th className="text-center p-3 font-semibold">Kaçırılan</th>
-                    <th className="text-center p-3 font-semibold">Puan</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b">
-                    <td className="p-3 font-medium">Bölüm 1</td>
-                    <td className="p-3 text-center text-green-600 font-semibold">{result.section1_correct}</td>
-                    <td className="p-3 text-center text-red-600 font-semibold">{result.section1_wrong}</td>
-                    <td className="p-3 text-center text-orange-600 font-semibold">{result.section1_missed}</td>
-                    <td className="p-3 text-center font-bold">{result.section1_score}</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="p-3 font-medium">Bölüm 2</td>
-                    <td className="p-3 text-center text-green-600 font-semibold">{result.section2_correct}</td>
-                    <td className="p-3 text-center text-red-600 font-semibold">{result.section2_wrong}</td>
-                    <td className="p-3 text-center text-orange-600 font-semibold">{result.section2_missed}</td>
-                    <td className="p-3 text-center font-bold">{result.section2_score}</td>
-                  </tr>
-                  <tr>
-                    <td className="p-3 font-medium">Bölüm 3</td>
-                    <td className="p-3 text-center text-green-600 font-semibold">{result.section3_correct}</td>
-                    <td className="p-3 text-center text-red-600 font-semibold">{result.section3_wrong}</td>
-                    <td className="p-3 text-center text-orange-600 font-semibold">{result.section3_missed}</td>
-                    <td className="p-3 text-center font-bold">{result.section3_score}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Dikkat Oranı */}
-          <div className="bg-blue-50 border border-blue-200 p-6 rounded-lg">
-            <h3 className="text-xl font-semibold text-blue-800 mb-4 text-center">Dikkat Oranı</h3>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600 mb-2">
-                {(result.attention_ratio * 100).toFixed(2)}%
-              </div>
-              <p className="text-blue-700">
-                Bu oran, öğrencinin testteki genel dikkat performansını gösterir.
-              </p>
-            </div>
-          </div>
-
-          {/* Notlar */}
-          {result.notes && (
-            <div className="bg-yellow-50 border border-yellow-200 p-6 rounded-lg">
-              <h3 className="text-xl font-semibold text-yellow-800 mb-3">Notlar</h3>
-              <p className="text-yellow-700">{result.notes}</p>
-            </div>
-          )}
-
-          {/* Rapor Bilgileri */}
-          <div className="text-center text-sm text-muted-foreground pt-4 border-t">
-            <p>Bu rapor {new Date().toLocaleDateString('tr-TR')} tarihinde oluşturulmuştur.</p>
-            <p>Test ID: {result.id.substring(0, 8)}...</p>
-          </div>
+        <div id="premium-report-content">
+          <BurdonPremiumReport testData={result} />
         </div>
       </DialogContent>
     </Dialog>
