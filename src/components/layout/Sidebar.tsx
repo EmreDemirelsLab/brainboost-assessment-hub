@@ -1,17 +1,15 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
+  Brain,
   BookOpen,
-  Users,
+  GraduationCap,
   FileText,
   BarChart3,
   Settings,
   HelpCircle,
   Home,
-  PanelLeftClose,
-  PanelLeftOpen,
-  User,
-  GraduationCap,
+  Users,
   UserPlus
 } from "lucide-react";
 import { UserRole } from "@/types/auth";
@@ -37,28 +35,28 @@ interface SidebarProps {
 
 const mainMenuItems = [
   {
-    icon: Home,
-    label: "Ana Sayfa",
-    href: "/dashboard",
+    icon: Brain,
+    label: "ForBrain Bilişsel Beceri Değerlendirme",
+    href: "/cognitive-assessment",
     roles: ["admin", "trainer", "representative", "user"] as UserRole[]
   },
   {
     icon: BookOpen,
-    label: "Okuma Testleri",
-    href: "/reading-tests",
+    label: "ForBrain Etkin ve Anlayarak Okuma",
+    href: "/reading-exercises",
     roles: ["admin", "trainer", "representative", "user"] as UserRole[]
   },
   {
     icon: GraduationCap,
-    label: "Alan Testleri",
-    href: "/subject-tests",
+    label: "Uluslararası Alan Testleri",
+    href: "/international-tests",
     roles: ["admin", "trainer", "representative", "user"] as UserRole[]
   },
   {
-    icon: BarChart3,
-    label: "Raporlar",
-    href: "/reports",
-    roles: ["admin", "trainer", "representative"] as UserRole[]
+    icon: FileText,
+    label: "Formlar",
+    href: "/forms",
+    roles: ["admin", "trainer", "representative", "user"] as UserRole[]
   }
 ];
 

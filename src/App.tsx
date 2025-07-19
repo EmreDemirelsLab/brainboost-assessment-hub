@@ -11,6 +11,14 @@ import Index from "./pages/Index";
 import Reports from "./pages/Reports";
 import ReadingTests from "./pages/ReadingTests";
 import SubjectTests from "./pages/SubjectTests";
+import CognitiveAssessment from "./pages/CognitiveAssessment";
+import ReadingExercises from "./pages/ReadingExercises";
+import InternationalTests from "./pages/InternationalTests";
+import Forms from "./pages/Forms";
+import Students from "./pages/Students";
+import AddUser from "./pages/AddUser";
+import Settings from "./pages/Settings";
+import Help from "./pages/Help";
 
 const queryClient = new QueryClient();
 
@@ -88,6 +96,46 @@ const App = () => (
             <Route path="/subject-tests" element={
               <ProtectedRoute>
                 <SubjectTests />
+              </ProtectedRoute>
+            } />
+            <Route path="/cognitive-assessment" element={
+              <ProtectedRoute>
+                <CognitiveAssessment />
+              </ProtectedRoute>
+            } />
+            <Route path="/reading-exercises" element={
+              <ProtectedRoute>
+                <ReadingExercises />
+              </ProtectedRoute>
+            } />
+            <Route path="/international-tests" element={
+              <ProtectedRoute>
+                <InternationalTests />
+              </ProtectedRoute>
+            } />
+            <Route path="/forms" element={
+              <ProtectedRoute>
+                <Forms />
+              </ProtectedRoute>
+            } />
+            <Route path="/students" element={
+              <ProtectedRoute>
+                <Students />
+              </ProtectedRoute>
+            } />
+            <Route path="/add-user" element={
+              <ProtectedRoute>
+                <AddUser />
+              </ProtectedRoute>
+            } />
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            } />
+            <Route path="/help" element={
+              <ProtectedRoute>
+                <Help />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -6,8 +6,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Download, FileText, Search, Filter } from "lucide-react";
+import { Download, FileText, Search, Filter, ArrowLeft, FileSpreadsheet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { useAuth } from "@/contexts/AuthContext";
+import { Link } from "react-router-dom";
 
 interface Report {
   id: string;
@@ -67,7 +70,7 @@ export default function Reports() {
     }
   };
 
-  const handleDownload = async (report: Report) => {
+  const handleDownload = async (report: Report, format: 'pdf' | 'excel') => {
     if (!report.file_url) {
       toast({
         title: "Hata",
@@ -78,10 +81,22 @@ export default function Reports() {
     }
 
     try {
-      // File download logic would go here
+      // Create a downloadable file based on format
+      const blob = new Blob([JSON.stringify(report)], { 
+        type: format === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${report.title}.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
       toast({
         title: "Başarılı",
-        description: `${report.title} raporu indiriliyor...`,
+        description: `${report.title} raporu ${format.toUpperCase()} formatında indiriliyor...`,
       });
     } catch (error) {
       toast({
@@ -101,24 +116,63 @@ export default function Reports() {
 
   const reportTypes = [...new Set(reports.map(r => r.report_type))];
 
+  const { user, switchRole, logout } = useAuth();
+
+  const handleRoleSwitch = (role: any) => {
+    switchRole(role);
+  };
+
+  const handleLogout = () => {
+    logout();
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg">Raporlar yükleniyor...</div>
-      </div>
+      <DashboardLayout
+        user={user ? {
+          name: `${user.firstName} ${user.lastName}`,
+          email: user.email,
+          roles: user.roles,
+          currentRole: user.currentRole,
+        } : undefined}
+        onRoleSwitch={handleRoleSwitch}
+        onLogout={handleLogout}
+      >
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg">Raporlar yükleniyor...</div>
+        </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Raporlar</h1>
-          <p className="text-muted-foreground">
-            Öğrenci raporlarını görüntüleyebilir ve indirebilirsiniz.
-          </p>
+    <DashboardLayout
+      user={user ? {
+        name: `${user.firstName} ${user.lastName}`,
+        email: user.email,
+        roles: user.roles,
+        currentRole: user.currentRole,
+      } : undefined}
+      onRoleSwitch={handleRoleSwitch}
+      onLogout={handleLogout}
+    >
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="outline" asChild>
+              <Link to="/dashboard">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Ana Sayfa
+              </Link>
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold">Raporlar</h1>
+              <p className="text-muted-foreground">
+                Öğrenci raporlarını görüntüleyebilir ve indirebilirsiniz.
+              </p>
+            </div>
+          </div>
         </div>
-      </div>
 
       <Card>
         <CardHeader>
@@ -202,15 +256,26 @@ export default function Reports() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDownload(report)}
-                        disabled={!report.file_url}
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        İndir
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownload(report, 'pdf')}
+                          disabled={!report.file_url}
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          PDF
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownload(report, 'excel')}
+                          disabled={!report.file_url}
+                        >
+                          <FileSpreadsheet className="h-4 w-4 mr-2" />
+                          Excel
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -219,6 +284,7 @@ export default function Reports() {
           )}
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }
