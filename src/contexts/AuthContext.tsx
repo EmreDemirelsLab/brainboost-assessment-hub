@@ -22,7 +22,7 @@ interface AuthContextType {
   currentRole: UserRole | null;
   switchRole: (role: UserRole) => void;
   login: (email: string, password: string) => Promise<{ error?: string }>;
-  signup: (email: string, password: string, firstName: string, lastName: string) => Promise<{ error?: string }>;
+  createUser: (email: string, password: string, firstName: string, lastName: string, roles: UserRole[]) => Promise<{ error?: string }>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error?: string }>;
   isLoading: boolean;
@@ -148,11 +148,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signup = async (
+  const createUser = async (
     email: string, 
     password: string, 
     firstName: string, 
-    lastName: string
+    lastName: string,
+    roles: UserRole[] = ['user']
   ): Promise<{ error?: string }> => {
     try {
       const redirectUrl = `${window.location.origin}/`;
@@ -173,9 +174,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: error.message };
       }
 
+      // TODO: After user is created, assign roles via admin function
+      // This will require additional API call to assign specific roles
+
       return {};
     } catch (error) {
-      return { error: 'Kayıt olurken beklenmeyen bir hata oluştu.' };
+      return { error: 'Kullanıcı oluşturulurken beklenmeyen bir hata oluştu.' };
     }
   };
 
@@ -226,7 +230,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     currentRole,
     switchRole,
     login,
-    signup,
+    createUser,
     logout,
     resetPassword,
     isLoading,

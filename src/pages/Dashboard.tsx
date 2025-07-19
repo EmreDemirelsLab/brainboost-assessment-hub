@@ -15,6 +15,7 @@ import {
   Award
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { CreateUserModal } from "@/components/admin/CreateUserModal";
 
 const quickStats = [
   {
@@ -153,10 +154,14 @@ export default function Dashboard() {
                   <Brain className="h-6 w-6" />
                   <span className="text-sm">Yeni Test</span>
                 </Button>
-                <Button variant="outline" className="h-20 flex-col space-y-2">
-                  <Users className="h-6 w-6" />
-                  <span className="text-sm">Öğrenci Ekle</span>
-                </Button>
+                <CreateUserModal
+                  trigger={
+                    <Button variant="outline" className="h-20 flex-col space-y-2">
+                      <Users className="h-6 w-6" />
+                      <span className="text-sm">Kullanıcı Ekle</span>
+                    </Button>
+                  }
+                />
                 <Button variant="outline" className="h-20 flex-col space-y-2">
                   <BarChart3 className="h-6 w-6" />
                   <span className="text-sm">Raporlar</span>
