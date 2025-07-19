@@ -543,6 +543,8 @@ export function BurdonTest({ onComplete, studentId }: BurdonTestProps) {
   const completeTest = async () => {
     console.log('Completing test...');
     
+    let finalTestData: TestData;
+    
     setTestData(prevData => {
       const newTestData = { ...prevData };
       newTestData.endTime = new Date().getTime();
@@ -606,17 +608,155 @@ export function BurdonTest({ onComplete, studentId }: BurdonTestProps) {
       
       console.log('Final total results:', total);
       
-      // State güncellemesi yapıldıktan sonra kaydet
-      setTestData(newTestData);
+      // Güncellenmiş veriyi sakla
+      finalTestData = newTestData;
       
       return newTestData;
     });
     
-    // Veritabanına kaydet ve completion screen'e geç
+    // Güncellenmiş veriyi kullanarak kaydet
     setTimeout(async () => {
-      await saveResultsToDatabase();
+      await saveResultsWithData(finalTestData);
       setCurrentScreen('completion');
     }, 100);
+  };
+
+  // Belirli test verisi ile kaydetme fonksiyonu
+  const saveResultsWithData = async (testDataToSave: TestData) => {
+    try {
+      if (!user) {
+        toast({
+          title: "Hata",
+          description: "Kullanıcı oturumu bulunamadı",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Önce kullanıcıyı students tablosuna ekle (varsa zaten var demektir)
+      const { error: studentError } = await supabase
+        .from('students')
+        .upsert({
+          user_id: user.id,
+        }, { 
+          onConflict: 'user_id' 
+        });
+
+      if (studentError) {
+        console.error('Student ekleme hatası:', studentError);
+      }
+
+      // Student ID'sini al
+      const { data: studentData, error: studentQueryError } = await supabase
+        .from('students')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (studentQueryError || !studentData) {
+        console.error('Student ID alınamadı:', studentQueryError);
+      }
+
+      // Detaylı sonuçları hazırla (HTML kodundaki tüm veriler)
+      const detailedResults = {
+        // Test timing bilgileri
+        test_start_time: testDataToSave.startTime,
+        test_end_time: testDataToSave.endTime,
+        test_elapsed_time_seconds: testDataToSave.currentElapsedTime,
+        test_auto_completed: testDataToSave.autoCompleted,
+        
+        // Hedef karakterler
+        target_chars: testDataToSave.targetChars,
+        
+        // Her bölümün detaylı verileri
+        sections_data: {
+          section1: {
+            marked_chars: testDataToSave.sections[1].markedChars,
+            grid_data: testDataToSave.sections[1].grid,
+            results: testDataToSave.sections[1].results
+          },
+          section2: {
+            marked_chars: testDataToSave.sections[2].markedChars,
+            grid_data: testDataToSave.sections[2].grid,
+            results: testDataToSave.sections[2].results
+          },
+          section3: {
+            marked_chars: testDataToSave.sections[3].markedChars,
+            grid_data: testDataToSave.sections[3].grid,
+            results: testDataToSave.sections[3].results
+          }
+        },
+        
+        // Test parametreleri
+        test_duration: testDataToSave.testDuration,
+        completed_sections: testDataToSave.completedSections
+      };
+
+      // Burdon test results tablosuna kaydet
+      const { error } = await supabase
+        .from('burdon_test_results')
+        .insert({
+          user_id: user.id,
+          student_id: studentData?.id || null,
+          conducted_by: user.id,
+          
+          // Test zamanlaması
+          test_start_time: new Date(testDataToSave.startTime || Date.now()).toISOString(),
+          test_end_time: new Date(testDataToSave.endTime || Date.now()).toISOString(),
+          test_elapsed_time_seconds: testDataToSave.currentElapsedTime,
+          test_auto_completed: testDataToSave.autoCompleted,
+          
+          // Toplam sonuçlar
+          total_correct: testDataToSave.totalResults.correct,
+          total_missed: testDataToSave.totalResults.missed,
+          total_wrong: testDataToSave.totalResults.wrong,
+          total_score: testDataToSave.totalResults.score,
+          attention_ratio: testDataToSave.totalResults.ratio,
+          
+          // Bölüm 1 sonuçları
+          section1_correct: testDataToSave.sections[1].results.correct,
+          section1_missed: testDataToSave.sections[1].results.missed,
+          section1_wrong: testDataToSave.sections[1].results.wrong,
+          section1_score: testDataToSave.sections[1].results.score,
+          
+          // Bölüm 2 sonuçları
+          section2_correct: testDataToSave.sections[2].results.correct,
+          section2_missed: testDataToSave.sections[2].results.missed,
+          section2_wrong: testDataToSave.sections[2].results.wrong,
+          section2_score: testDataToSave.sections[2].results.score,
+          
+          // Bölüm 3 sonuçları
+          section3_correct: testDataToSave.sections[3].results.correct,
+          section3_missed: testDataToSave.sections[3].results.missed,
+          section3_wrong: testDataToSave.sections[3].results.wrong,
+          section3_score: testDataToSave.sections[3].results.score,
+          
+          // Detaylı veri JSON olarak
+          detailed_results: detailedResults
+        });
+
+      if (error) {
+        console.error('Veritabanı hatası:', error);
+        toast({
+          title: "Hata", 
+          description: `Test sonuçları kaydedilemedi: ${error.message}`,
+          variant: "destructive"
+        });
+      } else {
+        console.log('Burdon test sonuçları başarıyla kaydedildi');
+        toast({
+          title: "Başarılı",
+          description: "Test sonuçları başarıyla kaydedildi",
+        });
+      }
+    } catch (error) {
+      console.error('Test sonuçları kaydedilirken hata:', error);
+      toast({
+        title: "Hata",
+        description: "Test sonuçları kaydedilemedi",
+        variant: "destructive"
+      });
+    }
   };
 
   // Örnek ızgara render etme
