@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
 import { UserRole } from "@/types/auth";
+import { SidebarProvider } from "@/components/ui/sidebar";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -24,26 +25,28 @@ export function DashboardLayout({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
-    <div className="min-h-screen bg-background w-full">
-      <Header 
-        user={user} 
-        onRoleSwitch={onRoleSwitch} 
-        onLogout={onLogout} 
-      />
-      
-      <div className="flex">
-        <Sidebar
-          userRole={user?.currentRole || 'user'}
-          isCollapsed={sidebarCollapsed}
-          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+    <SidebarProvider>
+      <div className="min-h-screen bg-background w-full">
+        <Header 
+          user={user} 
+          onRoleSwitch={onRoleSwitch} 
+          onLogout={onLogout} 
         />
         
-        <main className="flex-1 overflow-auto">
-          <div className="p-6">
-            {children}
-          </div>
-        </main>
+        <div className="flex w-full">
+          <Sidebar
+            userRole={user?.currentRole || 'user'}
+            isCollapsed={sidebarCollapsed}
+            onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+          />
+          
+          <main className="flex-1 overflow-auto">
+            <div className="p-6 animate-fade-in">
+              {children}
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 }
