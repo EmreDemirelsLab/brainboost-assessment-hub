@@ -93,126 +93,55 @@ export function BurdonReportModal({ resultId, open, onClose }: BurdonReportModal
     const durationMinutes = Math.floor(result.test_elapsed_time_seconds / 60);
     const durationSeconds = result.test_elapsed_time_seconds % 60;
     
-    // PDF içeriği
+    // PDF içeriği - Kısaltılmış versiyon
     let yPosition = 20;
     
     // Başlık
-    pdf.setFontSize(20);
+    pdf.setFontSize(18);
     pdf.setFont('helvetica', 'bold');
     pdf.text('BURDON DİKKAT TESTİ RAPORU', 105, yPosition, { align: 'center' });
     yPosition += 15;
     
     // Test Bilgileri
-    pdf.setFontSize(12);
-    pdf.setFont('helvetica', 'normal');
-    pdf.text(`Öğrenci: ${result.student_name}`, 20, yPosition);
-    yPosition += 8;
-    pdf.text(`Test Yapan: ${result.conducted_by_name}`, 20, yPosition);
-    yPosition += 8;
-    pdf.text(`Test Tarihi: ${testDate}`, 20, yPosition);
-    yPosition += 8;
-    pdf.text(`Başlangıç: ${startTime} - Bitiş: ${endTime}`, 20, yPosition);
-    yPosition += 8;
-    pdf.text(`Süre: ${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`, 20, yPosition);
-    yPosition += 15;
-    
-    // Performans Metrikleri
-    pdf.setFontSize(14);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('PERFORMANS METRİKLERİ', 20, yPosition);
-    yPosition += 10;
-    
     pdf.setFontSize(11);
     pdf.setFont('helvetica', 'normal');
-    pdf.text(`Doğru Cevaplar: ${result.total_correct}`, 20, yPosition);
-    pdf.text(`Yanlış Cevaplar: ${result.total_wrong}`, 110, yPosition);
-    yPosition += 8;
-    pdf.text(`Kaçırılan: ${result.total_missed}`, 20, yPosition);
-    pdf.text(`Toplam Puan: ${result.total_score}`, 110, yPosition);
-    yPosition += 15;
+    pdf.text(`Öğrenci: ${result.student_name}`, 20, yPosition);
+    yPosition += 7;
+    pdf.text(`Test Yapan: ${result.conducted_by_name}`, 20, yPosition);
+    yPosition += 7;
+    pdf.text(`Test Tarihi: ${testDate}`, 20, yPosition);
+    yPosition += 7;
+    pdf.text(`Süre: ${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`, 20, yPosition);
+    yPosition += 12;
     
-    // Bölümsel Analiz
-    pdf.setFontSize(14);
+    // Performans Metrikleri
+    pdf.setFontSize(13);
     pdf.setFont('helvetica', 'bold');
-    pdf.text('BÖLÜMSEL ANALİZ', 20, yPosition);
-    yPosition += 10;
+    pdf.text('PERFORMANS', 20, yPosition);
+    yPosition += 8;
     
-    // Tablo başlığı
     pdf.setFontSize(10);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('Bölüm', 20, yPosition);
-    pdf.text('Doğru', 60, yPosition);
-    pdf.text('Yanlış', 90, yPosition);
-    pdf.text('Kaçırılan', 120, yPosition);
-    pdf.text('Puan', 160, yPosition);
-    yPosition += 2;
-    
-    // Çizgi
-    pdf.line(20, yPosition, 180, yPosition);
-    yPosition += 5;
-    
-    // Bölüm 1
     pdf.setFont('helvetica', 'normal');
-    pdf.text('Bölüm 1', 20, yPosition);
-    pdf.text(result.section1_correct.toString(), 60, yPosition);
-    pdf.text(result.section1_wrong.toString(), 90, yPosition);
-    pdf.text(result.section1_missed.toString(), 120, yPosition);
-    pdf.text(result.section1_score.toString(), 160, yPosition);
-    yPosition += 8;
-    
-    // Bölüm 2
-    pdf.text('Bölüm 2', 20, yPosition);
-    pdf.text(result.section2_correct.toString(), 60, yPosition);
-    pdf.text(result.section2_wrong.toString(), 90, yPosition);
-    pdf.text(result.section2_missed.toString(), 120, yPosition);
-    pdf.text(result.section2_score.toString(), 160, yPosition);
-    yPosition += 8;
-    
-    // Bölüm 3
-    pdf.text('Bölüm 3', 20, yPosition);
-    pdf.text(result.section3_correct.toString(), 60, yPosition);
-    pdf.text(result.section3_wrong.toString(), 90, yPosition);
-    pdf.text(result.section3_missed.toString(), 120, yPosition);
-    pdf.text(result.section3_score.toString(), 160, yPosition);
-    yPosition += 15;
+    pdf.text(`Doğru: ${result.total_correct}`, 20, yPosition);
+    pdf.text(`Yanlış: ${result.total_wrong}`, 70, yPosition);
+    pdf.text(`Kaçırılan: ${result.total_missed}`, 120, yPosition);
+    yPosition += 6;
+    pdf.text(`Toplam Puan: ${result.total_score}`, 20, yPosition);
+    yPosition += 12;
     
     // Dikkat Oranı
-    pdf.setFontSize(14);
+    pdf.setFontSize(13);
     pdf.setFont('helvetica', 'bold');
     pdf.text('DİKKAT ORANI', 20, yPosition);
-    yPosition += 10;
-    
-    pdf.setFontSize(16);
-    pdf.text(`${(result.attention_ratio * 100).toFixed(2)}%`, 20, yPosition);
     yPosition += 8;
     
-    pdf.setFontSize(10);
-    pdf.setFont('helvetica', 'normal');
-    pdf.text('Bu oran, öğrencinin testteki genel dikkat performansını gösterir.', 20, yPosition);
-    yPosition += 15;
+    pdf.setFontSize(14);
+    pdf.text(`${(result.attention_ratio * 100).toFixed(2)}%`, 20, yPosition);
     
-    // Notlar (varsa)
-    if (result.notes) {
-      pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('NOTLAR', 20, yPosition);
-      yPosition += 10;
-      
-      pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'normal');
-      const splitNotes = pdf.splitTextToSize(result.notes, 160);
-      pdf.text(splitNotes, 20, yPosition);
-      yPosition += splitNotes.length * 5 + 10;
-    }
-    
-    // Alt bilgi
-    pdf.setFontSize(8);
-    pdf.text(`Rapor Tarihi: ${new Date().toLocaleDateString('tr-TR')}`, 20, 280);
-    pdf.text(`Test ID: ${result.id.substring(0, 8)}...`, 20, 285);
-    
-    // PDF'i indir
-    const fileName = `Burdon_Test_${result.student_name?.replace(/[^a-zA-Z0-9]/g, '_') || 'Test'}_${testDate.replace(/\./g, '_')}.pdf`;
-    pdf.save(fileName);
+    // PDF'i yeni sekmede aç
+    const pdfBlob = pdf.output('blob');
+    const url = URL.createObjectURL(pdfBlob);
+    window.open(url, '_blank');
   };
 
   if (!open) return null;
