@@ -140,9 +140,11 @@ export default function Students() {
               </p>
             </div>
           </div>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Yeni Öğrenci
+          <Button asChild>
+            <Link to="/add-user">
+              <Plus className="h-4 w-4 mr-2" />
+              Yeni Öğrenci
+            </Link>
           </Button>
         </div>
 
