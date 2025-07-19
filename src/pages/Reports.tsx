@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
+import { BurdonReportModal } from "@/components/reports/BurdonReportModal";
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import { generateBurdonHTMLReport } from "@/components/reports/BurdonPDFTemplate";
@@ -53,6 +54,7 @@ export default function Reports() {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedResult, setSelectedResult] = useState<BurdonTestResult | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
   const { toast } = useToast();
   const { user, switchRole, logout } = useAuth();
   const navigate = useNavigate();
@@ -1048,7 +1050,10 @@ export default function Reports() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => navigate(`/reports/burdon/${result.id}`)}
+                            onClick={() => {
+                              setSelectedResult(result);
+                              setModalOpen(true);
+                            }}
                           >
                             <Eye className="h-4 w-4 mr-2" />
                             Detay
@@ -1078,6 +1083,15 @@ export default function Reports() {
             )}
           </CardContent>
         </Card>
+
+        <BurdonReportModal 
+          result={selectedResult}
+          open={modalOpen}
+          onClose={() => {
+            setModalOpen(false);
+            setSelectedResult(null);
+          }}
+        />
       </div>
     </DashboardLayout>
   );
