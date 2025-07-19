@@ -14,16 +14,376 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      exercises: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          difficulty_level: number | null
+          exercise_data: Json | null
+          exercise_type: string
+          id: string
+          instructions: string | null
+          is_active: boolean | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          difficulty_level?: number | null
+          exercise_data?: Json | null
+          exercise_type: string
+          id?: string
+          instructions?: string | null
+          is_active?: boolean | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          difficulty_level?: number | null
+          exercise_data?: Json | null
+          exercise_type?: string
+          id?: string
+          instructions?: string | null
+          is_active?: boolean | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercises_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reports: {
+        Row: {
+          content_data: Json | null
+          created_at: string
+          created_by: string
+          file_url: string | null
+          generated_at: string | null
+          id: string
+          is_published: boolean | null
+          report_type: string
+          student_id: string
+          template_data: Json | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content_data?: Json | null
+          created_at?: string
+          created_by: string
+          file_url?: string | null
+          generated_at?: string | null
+          id?: string
+          is_published?: boolean | null
+          report_type: string
+          student_id: string
+          template_data?: Json | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content_data?: Json | null
+          created_at?: string
+          created_by?: string
+          file_url?: string | null
+          generated_at?: string | null
+          id?: string
+          is_published?: boolean | null
+          report_type?: string
+          student_id?: string
+          template_data?: Json | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      students: {
+        Row: {
+          birth_date: string | null
+          created_at: string
+          grade_level: number | null
+          id: string
+          notes: string | null
+          parent_email: string | null
+          parent_name: string | null
+          parent_phone: string | null
+          school_name: string | null
+          student_number: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          birth_date?: string | null
+          created_at?: string
+          grade_level?: number | null
+          id?: string
+          notes?: string | null
+          parent_email?: string | null
+          parent_name?: string | null
+          parent_phone?: string | null
+          school_name?: string | null
+          student_number?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          birth_date?: string | null
+          created_at?: string
+          grade_level?: number | null
+          id?: string
+          notes?: string | null
+          parent_email?: string | null
+          parent_name?: string | null
+          parent_phone?: string | null
+          school_name?: string | null
+          student_number?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "students_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      test_results: {
+        Row: {
+          conducted_by: string
+          created_at: string
+          end_time: string | null
+          id: string
+          max_score: number | null
+          notes: string | null
+          percentage: number | null
+          results_data: Json | null
+          score: number | null
+          start_time: string
+          status: string | null
+          student_id: string
+          test_id: string
+          updated_at: string
+        }
+        Insert: {
+          conducted_by: string
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          max_score?: number | null
+          notes?: string | null
+          percentage?: number | null
+          results_data?: Json | null
+          score?: number | null
+          start_time: string
+          status?: string | null
+          student_id: string
+          test_id: string
+          updated_at?: string
+        }
+        Update: {
+          conducted_by?: string
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          max_score?: number | null
+          notes?: string | null
+          percentage?: number | null
+          results_data?: Json | null
+          score?: number | null
+          start_time?: string
+          status?: string | null
+          student_id?: string
+          test_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_results_conducted_by_fkey"
+            columns: ["conducted_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_results_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_results_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tests: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          duration_minutes: number | null
+          id: string
+          instructions: string | null
+          is_active: boolean | null
+          test_type: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          instructions?: string | null
+          is_active?: boolean | null
+          test_type: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          instructions?: string | null
+          is_active?: boolean | null
+          test_type?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tests_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          auth_user_id: string
+          avatar_url: string | null
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          is_active: boolean | null
+          last_name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          auth_user_id: string
+          avatar_url?: string | null
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          is_active?: boolean | null
+          last_name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          auth_user_id?: string
+          avatar_url?: string | null
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          is_active?: boolean | null
+          last_name?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_current_user: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      has_role: {
+        Args: {
+          user_id: string
+          required_role: Database["public"]["Enums"]["user_role"]
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      user_role: "admin" | "trainer" | "representative" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +510,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["admin", "trainer", "representative", "user"],
+    },
   },
 } as const

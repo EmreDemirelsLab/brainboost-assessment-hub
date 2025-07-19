@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,15 +14,7 @@ import {
   Clock,
   Award
 } from "lucide-react";
-import { UserRole } from "@/types/auth";
-
-// Mock user data - will be replaced with real authentication
-const mockUser = {
-  name: "Ahmet Yılmaz",
-  email: "ahmet@forbrainacademy.com",
-  roles: ["admin", "trainer"] as UserRole[],
-  currentRole: "trainer" as UserRole
-};
+import { useAuth } from "@/contexts/AuthContext";
 
 const quickStats = [
   {
@@ -84,15 +75,14 @@ const recentActivities = [
 ];
 
 export default function Dashboard() {
-  const [currentUser, setCurrentUser] = useState(mockUser);
+  const { user, switchRole, logout } = useAuth();
 
-  const handleRoleSwitch = (role: UserRole) => {
-    setCurrentUser(prev => ({ ...prev, currentRole: role }));
+  const handleRoleSwitch = (role: any) => {
+    switchRole(role);
   };
 
   const handleLogout = () => {
-    console.log("Logging out...");
-    // Will implement with real auth
+    logout();
   };
 
   const getStatusBadge = (status: string) => {
@@ -108,7 +98,12 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout
-      user={currentUser}
+      user={user ? {
+        name: `${user.firstName} ${user.lastName}`,
+        email: user.email,
+        roles: user.roles,
+        currentRole: user.currentRole,
+      } : undefined}
       onRoleSwitch={handleRoleSwitch}
       onLogout={handleLogout}
     >
@@ -116,7 +111,7 @@ export default function Dashboard() {
         {/* Welcome Section */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            Hoş geldiniz, {currentUser.name}
+            Hoş geldiniz, {user?.firstName} {user?.lastName}
           </h1>
           <p className="text-muted-foreground">
             ForBrain Academy yönetim paneline hoş geldiniz. Bugün öğrencilerinizin gelişimini takip edebilir ve yeni testler tanımlayabilirsiniz.
