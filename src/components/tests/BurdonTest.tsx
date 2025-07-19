@@ -165,22 +165,27 @@ export function BurdonTest({ onComplete, studentId }: BurdonTestProps) {
 
   // Karakter işaretleme
   const toggleCharMark = (row: number, col: number) => {
-    const section = testData.sections[testData.currentSection];
-    const charData = section.grid[row][col];
-    
-    if (charData.isMarked) return;
-    
-    charData.isMarked = true;
-    
-    section.markedChars.push({
-      row: row,
-      col: col,
-      char: charData.char,
-      isTarget: charData.isTarget,
-      time: testData.startTime ? new Date().getTime() - testData.startTime : 0
+    setTestData(prevData => {
+      const newData = { ...prevData };
+      const section = newData.sections[newData.currentSection];
+      const charData = section.grid[row][col];
+      
+      if (charData.isMarked) return prevData;
+      
+      charData.isMarked = true;
+      
+      section.markedChars.push({
+        row: row,
+        col: col,
+        char: charData.char,
+        isTarget: charData.isTarget,
+        time: newData.startTime ? new Date().getTime() - newData.startTime : 0
+      });
+      
+      console.log(`Marked char: ${charData.char}, isTarget: ${charData.isTarget}, total marked: ${section.markedChars.length}`);
+      
+      return newData;
     });
-    
-    setTestData({ ...testData });
   };
 
   // Bölüm sonuçlarını hesaplama
@@ -429,68 +434,150 @@ export function BurdonTest({ onComplete, studentId }: BurdonTestProps) {
   // Sonraki bölüme geçme
   const moveToNextSection = () => {
     console.log('Moving to next section from:', testData.currentSection);
-    calculateSectionResults(testData.currentSection);
     
-    setTestData(prev => {
-      const newTestData = { ...prev };
-      newTestData.completedSections = prev.currentSection;
+    // Önce mevcut bölümün sonuçlarını hesapla ve state'i güncelle
+    setTestData(prevData => {
+      const newData = { ...prevData };
       
-      if (prev.currentSection < 3) {
-        newTestData.currentSection++;
-        console.log('New section will be:', newTestData.currentSection);
+      // Mevcut bölüm sonuçlarını hesapla
+      const currentSectionNum = prevData.currentSection;
+      const section = newData.sections[currentSectionNum];
+      const results = { correct: 0, missed: 0, wrong: 0, score: 0 };
+      
+      console.log('Calculating results for section:', currentSectionNum);
+      console.log('Marked chars in section:', section.markedChars.length);
+      
+      section.markedChars.forEach(mark => {
+        if (mark.isTarget) results.correct++;
+        else results.wrong++;
+      });
+      
+      section.grid.forEach(row => {
+        row.forEach((cell: any) => {
+          if (cell.isTarget && !cell.isMarked) results.missed++;
+        });
+      });
+      
+      results.score = results.correct - (results.missed + results.wrong);
+      section.results = results;
+      
+      console.log('Section results:', results);
+      
+      newData.completedSections = currentSectionNum;
+      
+      if (currentSectionNum < 3) {
+        newData.currentSection++;
+        console.log('Moving to section:', newData.currentSection);
         
-        // Yeni bölümün grid'ini oluştur
-        setTimeout(() => {
-          generateTestGridForCurrentSection(newTestData);
-        }, 100);
+        // Yeni bölümün grid'ini temizle ve oluştur
+        const newSection = newData.sections[newData.currentSection];
+        newSection.grid = [];
+        newSection.markedChars = [];
         
-        return newTestData;
+        const sectionData = sectionLetters[newData.currentSection as keyof typeof sectionLetters];
+        
+        for (let r = 0; r < 10; r++) {
+          const row = [];
+          for (let c = 0; c < 22; c++) {
+            const char = sectionData[r][c];
+            const isTarget = newData.targetChars.includes(char);
+            
+            row.push({
+              char: char,
+              isTarget: isTarget,
+              isMarked: false,
+              row: r,
+              col: c
+            });
+          }
+          newSection.grid.push(row);
+        }
+        
+        console.log('New section grid created, size:', newSection.grid.length);
+        return newData;
       } else {
-        completeTest();
-        return newTestData;
+        // Son bölümse testi tamamla
+        setTimeout(() => completeTest(), 100);
+        return newData;
       }
     });
   };
 
   // Test tamamlama
   const completeTest = async () => {
-    const newTestData = { ...testData };
-    newTestData.endTime = new Date().getTime();
+    console.log('Completing test...');
     
-    if (newTestData.timerInterval) {
-      clearInterval(newTestData.timerInterval);
-    }
-    
-    calculateSectionResults(newTestData.currentSection);
-    newTestData.completedSections = newTestData.currentSection;
-    
-    // Tamamlanmamış bölümler için hedef karakterleri say
-    for (let i = 1; i <= 3; i++) {
-      if (i > newTestData.completedSections && 
-          newTestData.sections[i].results.missed === 0 && 
-          newTestData.sections[i].results.correct === 0 && 
-          newTestData.sections[i].results.wrong === 0) {
-        
-        let totalTargets = 0;
+    setTestData(prevData => {
+      const newTestData = { ...prevData };
+      newTestData.endTime = new Date().getTime();
+      
+      if (newTestData.timerInterval) {
+        clearInterval(newTestData.timerInterval);
+        newTestData.timerInterval = null;
+      }
+      
+      // Mevcut bölümün sonuçlarını hesapla
+      const currentSectionNum = newTestData.currentSection;
+      const section = newTestData.sections[currentSectionNum];
+      const results = { correct: 0, missed: 0, wrong: 0, score: 0 };
+      
+      console.log('Final calculation for section:', currentSectionNum);
+      console.log('Marked chars in final section:', section.markedChars.length);
+      
+      section.markedChars.forEach(mark => {
+        if (mark.isTarget) results.correct++;
+        else results.wrong++;
+      });
+      
+      section.grid.forEach(row => {
+        row.forEach((cell: any) => {
+          if (cell.isTarget && !cell.isMarked) results.missed++;
+        });
+      });
+      
+      results.score = results.correct - (results.missed + results.wrong);
+      section.results = results;
+      
+      console.log('Final section results:', results);
+      
+      newTestData.completedSections = currentSectionNum;
+      
+      // Toplam sonuçları hesapla
+      const total = { correct: 0, missed: 0, wrong: 0, score: 0, ratio: 0 };
+      for (let i = 1; i <= 3; i++) {
+        const sectionResults = newTestData.sections[i].results;
+        total.correct += sectionResults.correct;
+        total.missed += sectionResults.missed;
+        total.wrong += sectionResults.wrong;
+        total.score += sectionResults.score;
+      }
+      
+      // Toplam hedef sayısını hesaplama
+      let totalPossibleTargets = 0;
+      for (let i = 1; i <= 3; i++) {
         const sectionData = sectionLetters[i as keyof typeof sectionLetters];
         sectionData.forEach(row => {
           row.forEach(char => {
             if (newTestData.targetChars.includes(char)) {
-              totalTargets++;
+              totalPossibleTargets++;
             }
           });
         });
-        
-        newTestData.sections[i].results.missed = totalTargets;
-        newTestData.sections[i].results.score = 0 - newTestData.sections[i].results.missed;
       }
-    }
-    
-    calculateTotalResults();
-    setTestData(newTestData);
-    
-    await saveResultsToDatabase();
-    setCurrentScreen('completion');
+      
+      total.ratio = totalPossibleTargets > 0 ? (total.score / totalPossibleTargets) : 0;
+      newTestData.totalResults = total;
+      
+      console.log('Final total results:', total);
+      
+      // Veritabanına kaydet
+      setTimeout(async () => {
+        await saveResultsToDatabase();
+        setCurrentScreen('completion');
+      }, 100);
+      
+      return newTestData;
+    });
   };
 
   // Örnek ızgara render etme
