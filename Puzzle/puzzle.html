@@ -3768,8 +3768,25 @@
 
         // Sonraki bölüme geç
         function goToNextSection() {
-            // Bu fonksiyon daha sonra genişletilebilir
-            alert('Testi tamamladınız!');
+            console.log('Test tamamlandı, sıradaki bölüme geçiliyor...');
+            
+            // Loading göster
+            showLoading('Sıradaki teste geçiliyor...', 0);
+            
+            // React parent'a test tamamlandığını bildir
+            if (window.parent !== window) {
+                try {
+                    const savedResults = localStorage.getItem('puzzleTestResults');
+                    window.parent.postMessage({
+                        type: 'test-complete',
+                        testName: 'puzzle',
+                        results: savedResults ? JSON.parse(savedResults) : testResults,
+                        timestamp: new Date().toISOString()
+                    }, window.location.origin);
+                } catch (e) {
+                    console.error('Parent message failed:', e);
+                }
+            }
         }
 
         // Transition screen'dan practice'a geç

@@ -2315,7 +2315,25 @@
            // Test tamamlama
            completeTest() {
                console.log('Test completed, navigating to next section...');
+               
+               // Loading göster
+               showLoading('Sıradaki teste geçiliyor...', 0);
+               
+               // Cleanup ve parent'a mesaj gönder
                testState.cleanup();
+               
+               // Parent window'a test tamamlandığını bildir
+               try {
+                   window.parent.postMessage({
+                       type: 'test-complete',
+                       testName: 'dikkat',
+                       results: localStorage.getItem('attentionTestResults') ? 
+                           JSON.parse(localStorage.getItem('attentionTestResults')) : {},
+                       timestamp: new Date().toISOString()
+                   }, window.location.origin);
+               } catch (e) {
+                   console.error('Parent message error:', e);
+               }
            }
        };
 

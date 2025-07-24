@@ -2148,8 +2148,26 @@
             // Sesi durdur
             stopCurrentAudio();
             
+            // Loading göster
+            showLoading('Sıradaki teste geçiliyor...', 0);
+            
             // Sıradaki bölüme yönlendirme yapılabilir
             console.log('Test tamamlandı, sıradaki bölüme geçiliyor...');
+            
+            // React parent'a test tamamlandığını bildir
+            if (window.parent !== window) {
+                try {
+                    const savedResults = localStorage.getItem('akilMantikTestResults');
+                    window.parent.postMessage({
+                        type: 'test-complete',
+                        testName: 'akil-mantik',
+                        results: savedResults ? JSON.parse(savedResults) : {},
+                        timestamp: new Date().toISOString()
+                    }, window.location.origin);
+                } catch (e) {
+                    console.error('Parent message failed:', e);
+                }
+            }
         }
 
         // ==================== YARDIMCI FONKSİYONLAR ====================

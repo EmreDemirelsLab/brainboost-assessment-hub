@@ -1380,6 +1380,29 @@
 
         function completeTest() {
             console.log('Test tamamlandı, sıradaki bölüme geçiliyor...');
+            
+            // Loading göster
+            showLoading('Sıradaki teste geçiliyor...', 0);
+            
+            // React parent'a test tamamlandığını bildir
+            if (window.parent !== window) {
+                try {
+                    window.parent.postMessage({
+                        type: 'test-complete',
+                        testName: 'stroop',
+                        results: {
+                            stage1Data: state.stageData.stage1,
+                            stage2Data: state.stageData.stage2,
+                            stage3Data: state.stageData.stage3,
+                            totalDuration: Date.now() - state.testStartTime,
+                            completedAt: new Date().toISOString()
+                        },
+                        timestamp: new Date().toISOString()
+                    }, window.location.origin);
+                } catch (e) {
+                    console.error('Parent message failed:', e);
+                }
+            }
         }
 
         // ==================== YARDIMCI FONKSİYONLAR ====================

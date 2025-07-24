@@ -44,7 +44,7 @@ export function Header({ user, onRoleSwitch, onLogout }: HeaderProps) {
         <div className="flex items-center space-x-4">
           <Link to="/" className="block">
             <img 
-              src="/lovable-uploads/eb89ac73-e0e3-47d9-847f-9fbd6a9b70bb.png" 
+              src="/assets/images/logo.png" 
               alt="ForTest Logo" 
               className="h-8 hover:scale-105 transition-transform cursor-pointer"
             />

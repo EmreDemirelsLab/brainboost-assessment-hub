@@ -1,170 +1,73 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Button } from "@/components/ui/button";
 
 export function CognitiveAssessmentTest() {
-  const [currentTestIndex, setCurrentTestIndex] = useState(-1); // -1 = başlangıç, 0-4 = testler, 5 = bitiş
-
   const handleStartTest = () => {
-    setCurrentTestIndex(0); // Dikkat testini başlat
-  };
-
-  const handleTestComplete = () => {
-    const nextIndex = currentTestIndex + 1;
-    if (nextIndex >= 5) {
-      setCurrentTestIndex(5); // Bitiş ekranı
+    // Test penceresi açma işlemi - tam ekran
+    const screenWidth = window.screen.availWidth;
+    const screenHeight = window.screen.availHeight;
+    
+    const testWindow = window.open('/cognitive-tests/dikkat/dikkat.html', '_blank', 
+      `width=${screenWidth},height=${screenHeight},left=0,top=0,toolbar=no,menubar=no,scrollbars=yes,resizable=yes,status=no,fullscreen=yes`);
+    
+    if (!testWindow) {
+      alert('Test penceresi açılamadı. Lütfen popup engelleyiciyi kapatın.');
     } else {
-      setCurrentTestIndex(nextIndex); // Sonraki test
+      // Test penceresi yüklendikten sonra başlığı değiştir ve tam ekran moduna geç
+      testWindow.addEventListener('load', () => {
+        try {
+          // Pencere başlığını değiştir
+          testWindow.document.title = 'ForBrain Bilişsel Beceriler Testi';
+          
+          // Tam ekran moduna geçmeye çalış
+          if (testWindow.document.documentElement && testWindow.document.documentElement.requestFullscreen) {
+            testWindow.document.documentElement.requestFullscreen().catch(err => {
+              console.log('Tam ekran modu başlatılamadı:', err);
+            });
+          }
+        } catch (error) {
+          console.log('Pencere ayarları uygulanamadı:', error);
+        }
+      });
     }
   };
 
-  // Başlangıç ekranı
-  if (currentTestIndex === -1) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[600px] space-y-8">
-        <h1 className="text-4xl font-bold text-center text-slate-800">
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[600px] space-y-8 p-6">
+      {/* Logo */}
+      <div className="text-center">
+        <img 
+          src="/assets/images/forbrain logo.png" 
+          alt="ForBrain Logo" 
+          className="h-20 mx-auto mb-6"
+        />
+        
+        {/* Başlık */}
+        <h1 className="text-4xl font-bold text-slate-800 mb-6">
           Bilişsel Beceriler Testi
         </h1>
-        <p className="text-lg text-center text-slate-600 max-w-2xl">
-          Bu test 5 farklı bilişsel beceriyi değerlendirir: Dikkat, Hafıza, Stroop, Puzzle ve Akıl-Mantık testleri sırasıyla uygulanacaktır.
+        
+        {/* Açıklama */}
+        <p className="text-lg text-slate-600 max-w-2xl mb-6">
+          Bu test bilişsel becerilerinizi değerlendirmek için tasarlanmıştır. Toplam 5 alt testten oluşmaktadır.
         </p>
-        <Button 
-          onClick={handleStartTest}
-          size="lg"
-          className="text-lg px-8 py-4"
-        >
-          Bilişsel Beceriler Testi
-        </Button>
+        
+        {/* Uyarı */}
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-8 max-w-2xl">
+          <p className="text-sm text-amber-800">
+            <strong>Önemli:</strong> Test ayrı bir pencerede açılacaktır. Pop-up engelleyici ayarlarınızın kapalı olduğundan emin olun.
+          </p>
+        </div>
       </div>
-    );
-  }
-
-  // Bitiş ekranı
-  if (currentTestIndex === 5) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[600px] space-y-8">
-        <h1 className="text-4xl font-bold text-center text-slate-800">
-          Testler Tamamlandı
-        </h1>
-      </div>
-    );
-  }
-
-  // Test ekranları
-  return <TestIframe testIndex={currentTestIndex} onComplete={handleTestComplete} />;
-}
-
-interface TestIframeProps {
-  testIndex: number;
-  onComplete: () => void;
-}
-
-function TestIframe({ testIndex, onComplete }: TestIframeProps) {
-  useEffect(() => {
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.top = '0';
-    iframe.style.left = '0';
-    iframe.style.width = '100vw';
-    iframe.style.height = '100vh';
-    iframe.style.border = 'none';
-    iframe.style.zIndex = '9999';
-    iframe.style.backgroundColor = 'white';
-
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data?.type === 'test-complete') {
-        document.body.removeChild(iframe);
-        window.removeEventListener('message', handleMessage);
-        onComplete();
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
-
-    // Test HTML içeriklerini yükle
-    const testContents = [
-      getDikkatHTML(),
-      getHafizaHTML(), 
-      getStroopHTML(),
-      getPuzzleHTML(),
-      getAkilMantikHTML()
-    ];
-
-    iframe.srcdoc = testContents[testIndex];
-    document.body.appendChild(iframe);
-
-    return () => {
-      if (document.body.contains(iframe)) {
-        document.body.removeChild(iframe);
-      }
-      window.removeEventListener('message', handleMessage);
-    };
-  }, [testIndex, onComplete]);
-
-  return null;
-}
-
-// HTML içeriklerini döndüren fonksiyonlar - basitçe placeholder döndür
-function getDikkatHTML() {
-  return `<!DOCTYPE html>
-<html><head><title>Dikkat Testi</title></head>
-<body>
-  <h1>Dikkat Testi Yükleniyor...</h1>
-  <script>
-    setTimeout(() => {
-      window.parent.postMessage({type: 'test-complete', test: 'dikkat'}, '*');
-    }, 3000);
-  </script>
-</body></html>`;
-}
-
-function getHafizaHTML() {
-  return `<!DOCTYPE html>
-<html><head><title>Hafıza Testi</title></head>
-<body>
-  <h1>Hafıza Testi Yükleniyor...</h1>
-  <script>
-    setTimeout(() => {
-      window.parent.postMessage({type: 'test-complete', test: 'hafiza'}, '*');
-    }, 3000);
-  </script>
-</body></html>`;
-}
-
-function getStroopHTML() {
-  return `<!DOCTYPE html>
-<html><head><title>Stroop Testi</title></head>
-<body>
-  <h1>Stroop Testi Yükleniyor...</h1>
-  <script>
-    setTimeout(() => {
-      window.parent.postMessage({type: 'test-complete', test: 'stroop'}, '*');
-    }, 3000);
-  </script>
-</body></html>`;
-}
-
-function getPuzzleHTML() {
-  return `<!DOCTYPE html>
-<html><head><title>Puzzle Testi</title></head>
-<body>
-  <h1>Puzzle Testi Yükleniyor...</h1>
-  <script>
-    setTimeout(() => {
-      window.parent.postMessage({type: 'test-complete', test: 'puzzle'}, '*');
-    }, 3000);
-  </script>
-</body></html>`;
-}
-
-function getAkilMantikHTML() {
-  return `<!DOCTYPE html>
-<html><head><title>Akıl Mantık Testi</title></head>
-<body>
-  <h1>Akıl Mantık Testi Yükleniyor...</h1>
-  <script>
-    setTimeout(() => {
-      window.parent.postMessage({type: 'test-complete', test: 'akil-mantik'}, '*');
-    }, 3000);
-  </script>
-</body></html>`;
+      
+      {/* Testi Başlat Butonu */}
+      <Button 
+        onClick={handleStartTest}
+        size="lg"
+        className="text-lg px-8 py-4 bg-blue-600 hover:bg-blue-700"
+      >
+        Testi Başlat
+      </Button>
+    </div>
+  );
 }

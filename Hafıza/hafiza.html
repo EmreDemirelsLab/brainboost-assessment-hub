@@ -1857,6 +1857,24 @@
         function completeTest() {
             // Sıradaki bölüme yönlendirme yapılabilir
             console.log('Test tamamlandı, sıradaki bölüme geçiliyor...');
+            
+            // Loading göster
+            showLoading('Sıradaki teste geçiliyor...', 0);
+            
+            // React parent'a test tamamlandığını bildir
+            if (window.parent !== window) {
+                try {
+                    const savedResults = localStorage.getItem('memoryTestResults');
+                    window.parent.postMessage({
+                        type: 'test-complete',
+                        testName: 'hafiza',
+                        results: savedResults ? JSON.parse(savedResults) : {},
+                        timestamp: new Date().toISOString()
+                    }, window.location.origin);
+                } catch (e) {
+                    console.error('Parent message failed:', e);
+                }
+            }
         }
 
         // ==================== YARDIMCI FONKSİYONLAR ====================
