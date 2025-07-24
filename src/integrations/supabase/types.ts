@@ -132,6 +132,102 @@ export type Database = {
           },
         ]
       }
+      cognitive_assessment_results: {
+        Row: {
+          akil_mantik_test_completed_at: string | null
+          akil_mantik_test_results: Json | null
+          akil_mantik_test_score: number | null
+          cognitive_assessment_summary: Json | null
+          conducted_by: string
+          created_at: string
+          current_test_step: number | null
+          dikkat_test_completed_at: string | null
+          dikkat_test_results: Json | null
+          dikkat_test_score: number | null
+          hafiza_test_completed_at: string | null
+          hafiza_test_results: Json | null
+          hafiza_test_score: number | null
+          id: string
+          notes: string | null
+          overall_cognitive_score: number | null
+          puzzle_test_completed_at: string | null
+          puzzle_test_results: Json | null
+          puzzle_test_score: number | null
+          stroop_test_completed_at: string | null
+          stroop_test_results: Json | null
+          stroop_test_score: number | null
+          student_id: string | null
+          test_end_time: string | null
+          test_start_time: string
+          test_status: string | null
+          total_test_duration_seconds: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          akil_mantik_test_completed_at?: string | null
+          akil_mantik_test_results?: Json | null
+          akil_mantik_test_score?: number | null
+          cognitive_assessment_summary?: Json | null
+          conducted_by: string
+          created_at?: string
+          current_test_step?: number | null
+          dikkat_test_completed_at?: string | null
+          dikkat_test_results?: Json | null
+          dikkat_test_score?: number | null
+          hafiza_test_completed_at?: string | null
+          hafiza_test_results?: Json | null
+          hafiza_test_score?: number | null
+          id?: string
+          notes?: string | null
+          overall_cognitive_score?: number | null
+          puzzle_test_completed_at?: string | null
+          puzzle_test_results?: Json | null
+          puzzle_test_score?: number | null
+          stroop_test_completed_at?: string | null
+          stroop_test_results?: Json | null
+          stroop_test_score?: number | null
+          student_id?: string | null
+          test_end_time?: string | null
+          test_start_time?: string
+          test_status?: string | null
+          total_test_duration_seconds?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          akil_mantik_test_completed_at?: string | null
+          akil_mantik_test_results?: Json | null
+          akil_mantik_test_score?: number | null
+          cognitive_assessment_summary?: Json | null
+          conducted_by?: string
+          created_at?: string
+          current_test_step?: number | null
+          dikkat_test_completed_at?: string | null
+          dikkat_test_results?: Json | null
+          dikkat_test_score?: number | null
+          hafiza_test_completed_at?: string | null
+          hafiza_test_results?: Json | null
+          hafiza_test_score?: number | null
+          id?: string
+          notes?: string | null
+          overall_cognitive_score?: number | null
+          puzzle_test_completed_at?: string | null
+          puzzle_test_results?: Json | null
+          puzzle_test_score?: number | null
+          stroop_test_completed_at?: string | null
+          stroop_test_results?: Json | null
+          stroop_test_score?: number | null
+          student_id?: string | null
+          test_end_time?: string | null
+          test_start_time?: string
+          test_status?: string | null
+          total_test_duration_seconds?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       exercises: {
         Row: {
           created_at: string
