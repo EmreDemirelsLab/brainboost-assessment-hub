@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 interface TestResultsProps {
   assessmentId: string;
   testResults: Record<string, any>;
+  onNewTest?: () => void;
 }
 
 const TEST_ICONS = {
@@ -27,7 +28,7 @@ const TEST_NAMES = {
   'akil-mantik': 'Akıl ve Mantık Testi'
 };
 
-export function TestResults({ assessmentId, testResults }: TestResultsProps) {
+export function TestResults({ assessmentId, testResults, onNewTest }: TestResultsProps) {
   const [assessmentData, setAssessmentData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -259,7 +260,7 @@ export function TestResults({ assessmentId, testResults }: TestResultsProps) {
           <Button 
             variant="outline" 
             size="lg"
-            onClick={() => window.location.reload()}
+            onClick={onNewTest || (() => window.location.reload())}
           >
             Yeni Test Başlat
           </Button>
