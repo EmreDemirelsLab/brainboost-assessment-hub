@@ -1,17 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Play, Clock, Brain, Target, Puzzle, Lightbulb, CheckCircle } from "lucide-react";
-import { DikkatTest } from "./dikkat/DikkatTest";
-import { HafizaTest } from "./hafiza/HafizaTest";
-import { StroopTest } from "./stroop/StroopTest";
-import { PuzzleTest } from "./puzzle/PuzzleTest";
-import { AkilMantikTest } from "./akil-mantik/AkilMantikTest";
-import { TestResults } from "./TestResults";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
+import { Play, Clock, Brain, Target, Puzzle, Lightbulb } from "lucide-react";
 
 type TestStep = 'welcome' | 'dikkat' | 'hafiza' | 'stroop' | 'puzzle' | 'akil-mantik' | 'results';
 
@@ -67,163 +57,90 @@ const TESTS = [
 ];
 
 export function CognitiveAssessmentTest() {
-  const { user } = useAuth();
-  const [state, setState] = useState<CognitiveAssessmentState>({
-    currentStep: 'welcome',
-    assessmentId: null,
-    startTime: null,
-    completedTests: new Set(),
-    testResults: {}
-  });
+  const [currentStep, setCurrentStep] = useState<TestStep>('welcome');
 
-  const currentTestIndex = TESTS.findIndex(test => test.id === state.currentStep);
-  const progress = state.currentStep === 'welcome' ? 0 : 
-                  state.currentStep === 'results' ? 100 : 
-                  ((currentTestIndex + 1) / TESTS.length) * 100;
-
-  const handleStartAssessment = async () => {
-    try {
-      const startTime = new Date();
-      
-      const { data, error } = await supabase
-        .from('cognitive_assessment_results')
-        .insert({
-          user_id: user?.id,
-          conducted_by: user?.id,
-          test_start_time: startTime.toISOString(),
-          current_test_step: 1
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setState(prev => ({
-        ...prev,
-        currentStep: 'dikkat',
-        assessmentId: data.id,
-        startTime
-      }));
-    } catch (error) {
-      console.error('Assessment başlatma hatası:', error);
-      toast.error('Test başlatılırken bir hata oluştu');
-    }
+  const handleStartAssessment = () => {
+    console.log('Test başlatıldı');
+    setCurrentStep('dikkat');
   };
 
-  const handleTestComplete = async (testId: string, results: any) => {
-    try {
-      const updateData = {
-        [`${testId}_test_results`]: results,
-        [`${testId}_test_score`]: results.score || 0,
-        [`${testId}_test_completed_at`]: new Date().toISOString(),
-        current_test_step: currentTestIndex + 2
-      };
-
-      const { error } = await supabase
-        .from('cognitive_assessment_results')
-        .update(updateData)
-        .eq('id', state.assessmentId);
-
-      if (error) throw error;
-
-      setState(prev => ({
-        ...prev,
-        completedTests: new Set([...prev.completedTests, testId]),
-        testResults: { ...prev.testResults, [testId]: results }
-      }));
-
-      // Next test'e geç
-      const nextTestIndex = currentTestIndex + 1;
-      if (nextTestIndex < TESTS.length) {
-        const nextTestId = TESTS[nextTestIndex].id as TestStep;
-        setState(prev => ({ ...prev, currentStep: nextTestId }));
-      } else {
-        await handleAllTestsComplete();
-      }
-    } catch (error) {
-      console.error('Test sonucu kaydetme hatası:', error);
-      toast.error('Test sonucu kaydedilirken bir hata oluştu');
-    }
-  };
-
-  const handleAllTestsComplete = async () => {
-    try {
-      const endTime = new Date();
-      const duration = state.startTime ? 
-        Math.floor((endTime.getTime() - state.startTime.getTime()) / 1000) : 0;
-
-      // Calculate overall cognitive score
-      const scores = Object.values(state.testResults).map((result: any) => result.score || 0);
-      const overallScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
-
-      const { error } = await supabase
-        .from('cognitive_assessment_results')
-        .update({
-          test_end_time: endTime.toISOString(),
-          total_test_duration_seconds: duration,
-          test_status: 'completed',
-          overall_cognitive_score: overallScore,
-          cognitive_assessment_summary: {
-            tests_completed: TESTS.length,
-            total_duration: duration,
-            individual_scores: state.testResults
-          }
-        })
-        .eq('id', state.assessmentId);
-
-      if (error) throw error;
-
-      setState(prev => ({ ...prev, currentStep: 'results' }));
-      toast.success('Tüm testler başarıyla tamamlandı!');
-    } catch (error) {
-      console.error('Assessment tamamlama hatası:', error);
-      toast.error('Test tamamlanırken bir hata oluştu');
+  const handleTestComplete = (testId: string, results: any) => {
+    console.log(`${testId} testi tamamlandı:`, results);
+    // Sonraki teste geç
+    const currentIndex = TESTS.findIndex(test => test.id === currentStep);
+    const nextIndex = currentIndex + 1;
+    
+    if (nextIndex < TESTS.length) {
+      setCurrentStep(TESTS[nextIndex].id as TestStep);
+    } else {
+      setCurrentStep('results');
     }
   };
 
   const renderCurrentTest = () => {
-    switch (state.currentStep) {
+    switch (currentStep) {
       case 'dikkat':
-        return <DikkatTest onComplete={(results) => handleTestComplete('dikkat', results)} />;
+        return <div className="min-h-screen bg-blue-100 flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-4">Dikkat Testi</h2>
+            <Button onClick={() => handleTestComplete('dikkat', { score: 85 })}>
+              Test Tamamla (Demo)
+            </Button>
+          </div>
+        </div>;
       case 'hafiza':
-        return <HafizaTest onComplete={(results) => handleTestComplete('hafiza', results)} />;
+        return <div className="min-h-screen bg-green-100 flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-4">Hafıza Testi</h2>
+            <Button onClick={() => handleTestComplete('hafiza', { score: 78 })}>
+              Test Tamamla (Demo)
+            </Button>
+          </div>
+        </div>;
       case 'stroop':
-        return <StroopTest onComplete={(results) => handleTestComplete('stroop', results)} />;
+        return <div className="min-h-screen bg-purple-100 flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-4">Stroop Testi</h2>
+            <Button onClick={() => handleTestComplete('stroop', { score: 92 })}>
+              Test Tamamla (Demo)
+            </Button>
+          </div>
+        </div>;
       case 'puzzle':
-        return <PuzzleTest onComplete={(results) => handleTestComplete('puzzle', results)} />;
+        return <div className="min-h-screen bg-orange-100 flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-4">Puzzle Testi</h2>
+            <Button onClick={() => handleTestComplete('puzzle', { score: 88 })}>
+              Test Tamamla (Demo)
+            </Button>
+          </div>
+        </div>;
       case 'akil-mantik':
-        return <AkilMantikTest onComplete={(results) => handleTestComplete('akil-mantik', results)} />;
+        return <div className="min-h-screen bg-red-100 flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-4">Akıl ve Mantık Testi</h2>
+            <Button onClick={() => handleTestComplete('akil-mantik', { score: 95 })}>
+              Test Tamamla (Demo)
+            </Button>
+          </div>
+        </div>;
       case 'results':
-        return <TestResults assessmentId={state.assessmentId!} testResults={state.testResults} />;
+        return <div className="min-h-screen bg-green-50 flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold text-green-600 mb-4">🎉 Tüm Testler Tamamlandı!</h2>
+            <p className="text-lg">Sonuçlarınız hazırlanıyor...</p>
+            <Button className="mt-4" onClick={() => setCurrentStep('welcome')}>
+              Yeni Test Başlat
+            </Button>
+          </div>
+        </div>;
       default:
         return null;
     }
   };
 
-  if (state.currentStep !== 'welcome') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-        {/* Progress Bar */}
-        <div className="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-sm border-b border-gray-200 z-50">
-          <div className="container mx-auto px-4 py-3">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-600">
-                {state.currentStep === 'results' ? 'Test Tamamlandı' : `Test ${currentTestIndex + 1} / ${TESTS.length}`}
-              </span>
-              <span className="text-sm text-gray-500">
-                {Math.round(progress)}% Tamamlandı
-              </span>
-            </div>
-            <Progress value={progress} className="h-2" />
-          </div>
-        </div>
-
-        {/* Test Content */}
-        <div className="pt-20">
-          {renderCurrentTest()}
-        </div>
-      </div>
-    );
+  if (currentStep !== 'welcome') {
+    return renderCurrentTest();
   }
 
   return (
@@ -243,7 +160,6 @@ export function CognitiveAssessmentTest() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             {TESTS.map((test, index) => {
               const Icon = test.icon;
-              const isCompleted = state.completedTests.has(test.id);
               
               return (
                 <div 
@@ -252,11 +168,7 @@ export function CognitiveAssessmentTest() {
                 >
                   <div className="flex items-start space-x-3">
                     <div className={`flex-shrink-0 ${test.color}`}>
-                      {isCompleted ? (
-                        <CheckCircle className="w-6 h-6 text-green-600" />
-                      ) : (
-                        <Icon className="w-6 h-6" />
-                      )}
+                      <Icon className="w-6 h-6" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="text-sm font-medium text-gray-900 mb-1">
