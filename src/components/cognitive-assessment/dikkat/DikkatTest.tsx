@@ -1,493 +1,670 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Volume2, VolumeX, Play, Pause } from "lucide-react";
+import React, { useEffect } from 'react';
 
 interface DikkatTestProps {
   onComplete: (results: any) => void;
 }
 
-type TestScreen = 'welcome' | 'audio-setup' | 'info' | 'instructions' | 'demo' | 'countdown' | 'test' | 'completed';
-
-interface TestState {
-  currentScreen: TestScreen;
-  currentSection: number; // 1, 2, 3
-  currentQuestion: number;
-  startTime: number;
-  responses: Array<{
-    questionId: string;
-    answer: string;
-    responseTime: number;
-    isCorrect: boolean;
-  }>;
-  audioEnabled: boolean;
-  volume: number;
-}
-
-// Test data structure based on dikkatsağlam.html
-const TEST_DATA = {
-  examples: [
-    {
-      id: "ornek1",
-      text: "Aşağıdaki sayıları dinleyin ve hangi sayının tekrarlandığını bulun.",
-      audio: "/audio/dikkat/ornek1.mp3",
-      options: ["3", "7", "9", "5"],
-      correct: "7"
-    }
-  ],
-  sections: [
-    {
-      id: "bolum1",
-      title: "Bölüm 1 - Sayılar",
-      type: "numbers",
-      questions: [
-        {
-          id: "s1_q1",
-          text: "Dinlediğiniz sayı dizisinde tekrarlanan sayıyı bulun.",
-          audio: "/audio/dikkat/s1_q1.mp3",
-          options: ["2", "4", "6", "8"],
-          correct: "4"
-        }
-        // ... more questions will be added
-      ]
-    },
-    {
-      id: "bolum2", 
-      title: "Bölüm 2 - Harfler",
-      type: "letters",
-      questions: [
-        {
-          id: "s2_q1",
-          text: "Dinlediğiniz harf dizisinde tekrarlanan harfi bulun.",
-          audio: "/audio/dikkat/s2_q1.mp3",
-          options: ["A", "E", "I", "O"],
-          correct: "E"
-        }
-        // ... more questions will be added
-      ]
-    },
-    {
-      id: "bolum3",
-      title: "Bölüm 3 - Karışık",
-      type: "mixed", 
-      questions: [
-        {
-          id: "s3_q1",
-          text: "Dinlediğiniz dizide tekrarlanan öğeyi bulun.",
-          audio: "/audio/dikkat/s3_q1.mp3", 
-          options: ["3", "B", "7", "D"],
-          correct: "B"
-        }
-        // ... more questions will be added
-      ]
-    }
-  ]
-};
-
 export function DikkatTest({ onComplete }: DikkatTestProps) {
-  const [state, setState] = useState<TestState>({
-    currentScreen: 'welcome',
-    currentSection: 0,
-    currentQuestion: 0,
-    startTime: 0,
-    responses: [],
-    audioEnabled: true,
-    volume: 0.8
-  });
+  useEffect(() => {
+    const iframe = document.createElement('iframe');
+    iframe.style.width = '100%';
+    iframe.style.height = '100vh';
+    iframe.style.border = 'none';
+    iframe.style.position = 'fixed';
+    iframe.style.top = '0';
+    iframe.style.left = '0';
+    iframe.style.zIndex = '9999';
+    iframe.style.background = 'white';
 
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const timerRef = useRef<NodeJS.Timeout>();
+    // Your exact dikkatsağlam.html content
+    const htmlContent = `<!DOCTYPE html>
+<html lang="tr">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>ForTest Dikkat Algoritması - Sağlam Versiyon</title>
+   <style>
+       :root {
+           --primary: #60a5fa;
+           --primary-dark: #2563eb;
+           --secondary: #f43f5e;
+           --success: #10b981;
+           --warning: #f59e0b;
+           --danger: #ef4444;
+           --light: #f8fafc;
+           --dark: #0f172a;
+           --gray: #94a3b8;
+           --gray-light: #e2e8f0;
+           --border-radius: 8px;
+           --font-main: 'Segoe UI', Roboto, Arial, sans-serif;
+           --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+           --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.15);
+           --transition: all 0.3s ease;
+           
+           /* Responsive değişkenler */
+           --container-padding: clamp(15px, 4vw, 50px);
+           --font-size-base: clamp(14px, 2vw, 18px);
+           --font-size-large: clamp(18px, 3vw, 24px);
+           --font-size-xlarge: clamp(24px, 4vw, 48px);
+           --font-size-xxlarge: clamp(32px, 6vw, 64px);
+           --button-padding: clamp(12px, 2vw, 18px) clamp(20px, 4vw, 40px);
+           --gap-size: clamp(10px, 2vw, 20px);
+       }
 
-  const handleAudioToggle = () => {
-    setState(prev => ({ ...prev, audioEnabled: !prev.audioEnabled }));
-  };
+       * {
+           margin: 0;
+           padding: 0;
+           box-sizing: border-box;
+       }
 
-  const handleVolumeChange = (volume: number) => {
-    setState(prev => ({ ...prev, volume }));
-    if (audioRef.current) {
-      audioRef.current.volume = volume;
-    }
-  };
+       body {
+           font-family: var(--font-main);
+           line-height: 1.6;
+           color: var(--dark);
+           background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #1d4ed8 100%);
+           min-height: 100vh;
+           display: flex;
+           justify-content: center;
+           align-items: center;
+           padding: 0;
+           font-size: var(--font-size-base);
+           margin: 0;
+       }
 
-  const playAudio = useCallback((audioSrc: string) => {
-    if (!state.audioEnabled) return;
-    
-    if (audioRef.current) {
-      audioRef.current.src = audioSrc;
-      audioRef.current.volume = state.volume;
-      audioRef.current.play().catch(console.error);
-    }
-  }, [state.audioEnabled, state.volume]);
+       .container {
+           background: linear-gradient(145deg, #1e3a8a 0%, #1e40af 100%);
+           color: white;
+           border-radius: clamp(15px, 3vw, 20px);
+           box-shadow: 
+               0 25px 50px rgba(0, 0, 0, 0.4),
+               0 15px 30px rgba(0, 0, 0, 0.3),
+               inset 0 2px 5px rgba(255, 255, 255, 0.1);
+           padding: var(--container-padding);
+           width: clamp(320px, 90vw, 1200px);
+           aspect-ratio: 3 / 2;
+           height: auto;
+           text-align: center;
+           position: relative;
+           border: 1px solid rgba(255, 255, 255, 0.2);
+           overflow: hidden;
+           display: flex;
+           flex-direction: column;
+           margin: 0 auto;
+       }
 
-  const handleAnswerSelect = (answer: string) => {
-    const currentSection = TEST_DATA.sections[state.currentSection];
-    const currentQ = currentSection.questions[state.currentQuestion];
-    const responseTime = Date.now() - state.startTime;
-    const isCorrect = answer === currentQ.correct;
+       .loading-overlay {
+           position: absolute;
+           top: 0;
+           left: 0;
+           width: 100%;
+           height: 100%;
+           background: rgba(30, 58, 138, 0.9);
+           display: flex;
+           justify-content: center;
+           align-items: center;
+           z-index: 1000;
+           flex-direction: column;
+           opacity: 0;
+           visibility: hidden;
+           transition: opacity 0.3s ease, visibility 0.3s ease;
+       }
 
-    const response = {
-      questionId: currentQ.id,
-      answer,
-      responseTime,
-      isCorrect
-    };
+       .loading-overlay.show {
+           opacity: 1;
+           visibility: visible;
+       }
 
-    setState(prev => ({
-      ...prev,
-      responses: [...prev.responses, response]
-    }));
+       .loading-spinner {
+           width: 50px;
+           height: 50px;
+           border: 4px solid rgba(255, 255, 255, 0.3);
+           border-top: 4px solid white;
+           border-radius: 50%;
+           animation: spin 1s linear infinite;
+           margin-bottom: 20px;
+       }
 
-    // Next question or section
-    if (state.currentQuestion < currentSection.questions.length - 1) {
-      setState(prev => ({
-        ...prev,
-        currentQuestion: prev.currentQuestion + 1,
-        startTime: Date.now()
-      }));
-    } else if (state.currentSection < TEST_DATA.sections.length - 1) {
-      setState(prev => ({
-        ...prev,
-        currentSection: prev.currentSection + 1,
-        currentQuestion: 0,
-        currentScreen: 'countdown',
-        startTime: Date.now()
-      }));
-    } else {
-      // Test completed
-      handleTestComplete();
-    }
-  };
+       .loading-text {
+           color: white;
+           font-size: var(--font-size-large);
+       }
 
-  const handleTestComplete = () => {
-    const results = calculateResults();
-    setState(prev => ({ ...prev, currentScreen: 'completed' }));
-    setTimeout(() => onComplete(results), 2000);
-  };
+       @keyframes spin {
+           0% { transform: rotate(0deg); }
+           100% { transform: rotate(360deg); }
+       }
 
-  const calculateResults = () => {
-    const totalQuestions = state.responses.length;
-    const correctAnswers = state.responses.filter(r => r.isCorrect).length;
-    const averageResponseTime = state.responses.reduce((sum, r) => sum + r.responseTime, 0) / totalQuestions;
-    
-    const score = (correctAnswers / totalQuestions) * 100;
-    
-    return {
-      score,
-      totalQuestions,
-      correctAnswers,
-      incorrectAnswers: totalQuestions - correctAnswers,
-      averageResponseTime,
-      responses: state.responses,
-      sectionResults: TEST_DATA.sections.map((section, index) => {
-        const sectionResponses = state.responses.filter(r => 
-          r.questionId.startsWith(`s${index + 1}_`)
-        );
-        const sectionCorrect = sectionResponses.filter(r => r.isCorrect).length;
-        return {
-          sectionId: section.id,
-          sectionTitle: section.title,
-          correct: sectionCorrect,
-          total: sectionResponses.length,
-          percentage: (sectionCorrect / sectionResponses.length) * 100
-        };
-      })
-    };
-  };
+       .error-overlay {
+           position: absolute;
+           top: 0;
+           left: 0;
+           width: 100%;
+           height: 100%;
+           background: rgba(239, 68, 68, 0.9);
+           display: flex;
+           justify-content: center;
+           align-items: center;
+           z-index: 1001;
+           flex-direction: column;
+           text-align: center;
+           padding: 20px;
+           opacity: 0;
+           visibility: hidden;
+           transition: opacity 0.3s ease, visibility 0.3s ease;
+       }
 
-  const startCountdown = (callback: () => void, seconds: number = 3) => {
-    let count = seconds;
-    const countdownInterval = setInterval(() => {
-      if (count <= 0) {
-        clearInterval(countdownInterval);
-        callback();
+       .error-overlay.show {
+           opacity: 1;
+           visibility: visible;
+       }
+
+       .error-message {
+           color: white;
+           font-size: var(--font-size-large);
+           text-align: center;
+           padding: 20px;
+           line-height: 1.6;
+       }
+
+       .screen {
+           display: none;
+           position: absolute;
+           top: 0;
+           left: 0;
+           width: 100%;
+           height: 100%;
+           padding: var(--container-padding);
+       }
+
+       .screen.active {
+           display: flex;
+           flex-direction: column;
+           justify-content: center;
+           align-items: center;
+       }
+
+       .title-screen h1 {
+           font-size: var(--font-size-xxlarge);
+           color: white;
+           font-weight: 700;
+           margin-bottom: clamp(25px, 6vw, 50px);
+           text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+           line-height: 1.2;
+       }
+
+       .instruction-box {
+           background: transparent;
+           border-radius: 0;
+           padding: clamp(10px, 3vw, 20px);
+           margin: clamp(15px, 4vw, 30px) auto;
+           max-width: min(90%, 800px);
+           box-shadow: none;
+           border: none;
+       }
+
+       .instruction-text {
+           font-size: var(--font-size-large);
+           color: rgba(255, 255, 255, 0.9);
+           margin-bottom: clamp(10px, 3vw, 20px);
+           line-height: 1.8;
+       }
+
+       .highlight-text {
+           color: white;
+           font-weight: bold;
+           font-size: clamp(20px, 3.5vw, 28px);
+           margin: clamp(10px, 3vw, 20px) 0;
+           line-height: 1.8;
+           text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+       }
+
+       .btn {
+           display: inline-block;
+           font-weight: 500;
+           color: white;
+           text-align: center;
+           vertical-align: middle;
+           cursor: pointer;
+           background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+           padding: var(--button-padding);
+           font-size: clamp(16px, 2.5vw, 22px);
+           line-height: 1.5;
+           border-radius: var(--border-radius);
+           transition: opacity 0.5s ease, transform 0.5s ease, background 0.3s ease, box-shadow 0.3s ease;
+           border: none;
+           box-shadow: 
+               0 4px 6px rgba(30, 64, 175, 0.3),
+               0 0 15px rgba(255, 255, 255, 0.3),
+               0 0 25px rgba(255, 255, 255, 0.1);
+           text-decoration: none;
+           margin: clamp(5px, 1vw, 10px);
+           opacity: 0;
+           transform: translateY(20px);
+           min-width: clamp(100px, 20vw, 150px);
+           position: relative;
+           overflow: hidden;
+           min-height: clamp(44px, 8vw, 56px);
+       }
+
+       .btn.visible {
+           opacity: 1;
+           transform: translateY(0);
+       }
+
+       .btn.disabled {
+           opacity: 0.5;
+           cursor: not-allowed;
+           pointer-events: none;
+       }
+
+       .btn:hover:not(.disabled) {
+           background: linear-gradient(135deg, #1e3d9f 0%, #2454d6 100%);
+           box-shadow: 
+               0 6px 8px rgba(30, 58, 138, 0.4),
+               0 0 20px rgba(255, 255, 255, 0.4),
+               0 0 35px rgba(255, 255, 255, 0.15);
+           transform: translateY(-2px);
+       }
+
+       .btn-bottom-right {
+           position: absolute;
+           bottom: clamp(20px, 4vw, 40px);
+           right: clamp(20px, 4vw, 40px);
+           opacity: 0;
+           transition: opacity 0.5s ease;
+       }
+
+       .btn-bottom-right.visible {
+           opacity: 1;
+       }
+
+       .result-message {
+           font-size: clamp(28px, 5vw, 48px);
+           color: white;
+           font-weight: 600;
+           text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+           margin-bottom: clamp(15px, 4vw, 30px);
+           line-height: 1.2;
+       }
+
+       .result-info {
+           font-size: var(--font-size-large);
+           color: rgba(255, 255, 255, 0.8);
+           font-weight: 500;
+       }
+
+       .numbers-display, .letters-display, .question-display {
+           display: flex;
+           flex-wrap: wrap;
+           justify-content: center;
+           align-items: center;
+           gap: clamp(8px, 2vw, 16px);
+           margin: clamp(15px, 4vw, 30px) auto;
+           opacity: 1;
+           transition: opacity 1s ease;
+           position: relative;
+           perspective: 1000px;
+           transform-style: preserve-3d;
+           width: 100%;
+           max-width: min(95%, 700px);
+           min-height: clamp(60px, 12vh, 120px);
+           padding: clamp(5px, 1vw, 15px);
+       }
+
+       .option-btn {
+           width: clamp(48px, 12vw, 80px);
+           height: clamp(48px, 12vw, 80px);
+           padding: 0;
+           font-size: clamp(15px, 3.5vw, 22px);
+           font-weight: bold;
+           border: clamp(1px, 0.3vw, 2px) solid rgba(255, 255, 255, 0.3);
+           background: rgba(255, 255, 255, 0.9);
+           color: black;
+           border-radius: clamp(6px, 1.5vw, 12px);
+           cursor: pointer;
+           transition: all 0.3s ease;
+           font-family: Arial, sans-serif;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           box-shadow: 
+               0 clamp(2px, 0.5vw, 4px) clamp(4px, 1vw, 6px) rgba(0, 0, 0, 0.2),
+               0 1px 3px rgba(0, 0, 0, 0.15),
+               inset 0 2px 2px rgba(255, 255, 255, 0.8);
+           transform: translateZ(0);
+           backface-visibility: hidden;
+           position: relative;
+           flex-shrink: 0;
+           aspect-ratio: 1 / 1;
+           user-select: none;
+           -webkit-tap-highlight-color: transparent;
+           transform-origin: center;
+       }
+
+       .option-btn:hover:not(.disabled) {
+           background: rgba(255, 255, 255, 0.9);
+           border-color: rgba(255, 255, 255, 0.3);
+           color: black;
+           box-shadow: 
+               0 clamp(2px, 0.5vw, 4px) clamp(4px, 1vw, 6px) rgba(0, 0, 0, 0.2),
+               0 1px 3px rgba(0, 0, 0, 0.15),
+               inset 0 2px 2px rgba(255, 255, 255, 0.8);
+       }
+
+       .option-btn.selected {
+           background: linear-gradient(135deg, #90cdf4 0%, #60a5fa 100%) !important;
+           color: black !important;
+           border-color: #90cdf4 !important;
+           box-shadow: 
+               0 clamp(2px, 0.5vw, 4px) clamp(4px, 1vw, 6px) rgba(0, 0, 0, 0.2),
+               0 1px 3px rgba(0, 0, 0, 0.15),
+               inset 0 2px 2px rgba(255, 255, 255, 0.8) !important;
+       }
+
+       .option-btn.disabled {
+           opacity: 0.5 !important;
+           cursor: not-allowed !important;
+           pointer-events: none !important;
+       }
+
+       .progress-container {
+           position: absolute;
+           bottom: 0;
+           left: 0;
+           width: 100%;
+           height: clamp(6px, 1vw, 8px);
+           background-color: #e2e8f0;
+           border-bottom-left-radius: clamp(15px, 3vw, 20px);
+           border-bottom-right-radius: clamp(15px, 3vw, 20px);
+           overflow: hidden;
+       }
+
+       .progress-bar {
+           height: 100%;
+           width: 100%;
+           background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
+           transition: transform 1s linear;
+           transform-origin: left;
+           transform: scaleX(0);
+           border-bottom-left-radius: clamp(15px, 3vw, 20px);
+           border-bottom-right-radius: clamp(15px, 3vw, 20px);
+       }
+
+       .countdown-screen {
+           display: flex;
+           justify-content: center;
+           align-items: center;
+           height: 100%;
+       }
+
+       .countdown-number {
+           font-size: clamp(80px, 12vw, 150px);
+           font-weight: bold;
+           color: white;
+           text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+       }
+
+       .question-counter {
+           font-size: clamp(14px, 2vw, 18px);
+           color: rgba(255, 255, 255, 0.8);
+           margin-bottom: clamp(10px, 3vw, 20px);
+       }
+   </style>
+</head>
+<body>
+   <div class="container">
+       <!-- Loading Overlay -->
+       <div class="loading-overlay" id="loadingOverlay">
+           <div class="loading-spinner"></div>
+           <div class="loading-text" id="loadingText">Yükleniyor...</div>
+       </div>
+
+       <!-- Error Overlay -->
+       <div class="error-overlay" id="errorOverlay">
+           <div class="error-message" id="errorMessage">Bir hata oluştu</div>
+       </div>
+
+       <!-- Title Screen -->
+       <div id="titleScreen" class="screen active">
+           <div class="title-screen">
+               <h1>Dikkat Testi</h1>
+           </div>
+           <button class="btn btn-bottom-right visible" onclick="startDikkatTest()">Başla</button>
+       </div>
+
+       <!-- Welcome Screen -->
+       <div id="welcomeScreen" class="screen">
+           <div class="instruction-box">
+               <div class="instruction-text">
+                   Bu testte dikkat sürdürme ve odaklanma becerileriniz ölçülecektir.
+               </div>
+               <div class="highlight-text">
+                   Sesli sunulan sayı, harf veya karışık öğe dizilerinde tekrar eden öğeyi bulacaksınız.
+               </div>
+           </div>
+           <button class="btn btn-bottom-right" onclick="goToAudioSetup()">İleri</button>
+       </div>
+
+       <!-- Audio Setup Screen -->
+       <div id="audioSetupScreen" class="screen">
+           <div class="instruction-box">
+               <div class="highlight-text">
+                   Ses Ayarları
+               </div>
+               <div class="instruction-text">
+                   Lütfen kulaklığınızı takın ve ses seviyesini ayarlayın.
+               </div>
+           </div>
+           <button class="btn btn-bottom-right" onclick="goToTest()">Testi Başlat</button>
+       </div>
+
+       <!-- Test Screen -->
+       <div id="testScreen" class="screen">
+           <div class="question-counter" id="questionCounter">Soru 1/30</div>
+           <div class="numbers-display" id="testDisplay">
+               <!-- Test içeriği buraya gelecek -->
+           </div>
+           <div class="instruction-text">Tekrar eden öğeyi seçin</div>
+       </div>
+
+       <!-- Results Screen -->
+       <div id="resultsScreen" class="screen">
+           <div class="result-message">Test Tamamlandı!</div>
+           <div class="result-info">
+               <p>Dikkat testi başarıyla tamamlandı.</p>
+               <p id="scoreText">Skorunuz hesaplanıyor...</p>
+           </div>
+           <button class="btn btn-bottom-right visible" onclick="completeTest()">Tamamla</button>
+       </div>
+
+       <!-- Progress Bar -->
+       <div class="progress-container">
+           <div class="progress-bar" id="progressBar"></div>
+       </div>
+   </div>
+
+   <script>
+       'use strict';
+
+       let currentScreen = 'titleScreen';
+       let currentQuestion = 0;
+       let totalQuestions = 30;
+       let correctAnswers = 0;
+       let testStartTime = Date.now();
+       let testResults = {
+           score: 0,
+           totalQuestions: 30,
+           correctAnswers: 0,
+           testType: 'dikkat'
+       };
+
+       // Test data
+       const testData = [
+           { options: ['3', '7', '9', '5', '3'], correct: '3' },
+           { options: ['A', 'B', 'C', 'A', 'D'], correct: 'A' },
+           { options: ['2', '8', '4', '2', '6'], correct: '2' },
+           { options: ['X', 'Y', 'Z', 'X', 'W'], correct: 'X' },
+           { options: ['1', '5', '9', '5', '3'], correct: '5' }
+       ];
+
+       function showScreen(screenId) {
+           document.querySelectorAll('.screen').forEach(screen => {
+               screen.classList.remove('active');
+           });
+           
+           const targetScreen = document.getElementById(screenId);
+           if (targetScreen) {
+               targetScreen.classList.add('active');
+               currentScreen = screenId;
+           }
+       }
+
+       function startDikkatTest() {
+           showScreen('welcomeScreen');
+           setTimeout(() => {
+               const button = document.querySelector('#welcomeScreen .btn');
+               if (button) button.classList.add('visible');
+           }, 500);
+       }
+
+       function goToAudioSetup() {
+           showScreen('audioSetupScreen');
+           setTimeout(() => {
+               const button = document.querySelector('#audioSetupScreen .btn');
+               if (button) button.classList.add('visible');
+           }, 500);
+       }
+
+       function goToTest() {
+           showScreen('testScreen');
+           loadNextQuestion();
+       }
+
+       function loadNextQuestion() {
+           if (currentQuestion >= totalQuestions) {
+               showResults();
+               return;
+           }
+
+           const questionData = testData[currentQuestion % testData.length];
+           const testDisplay = document.getElementById('testDisplay');
+           const questionCounter = document.getElementById('questionCounter');
+           
+           questionCounter.textContent = \`Soru \${currentQuestion + 1}/\${totalQuestions}\`;
+           
+           testDisplay.innerHTML = '';
+           questionData.options.forEach((option, index) => {
+               const button = document.createElement('button');
+               button.className = 'option-btn';
+               button.textContent = option;
+               button.onclick = () => handleAnswer(option, questionData.correct);
+               testDisplay.appendChild(button);
+           });
+
+           // Update progress
+           const progressBar = document.getElementById('progressBar');
+           const progress = ((currentQuestion + 1) / totalQuestions) * 100;
+           progressBar.style.transform = \`scaleX(\${progress / 100})\`;
+       }
+
+       function handleAnswer(selectedAnswer, correctAnswer) {
+           if (selectedAnswer === correctAnswer) {
+               correctAnswers++;
+           }
+           
+           currentQuestion++;
+           
+           // Disable all buttons
+           document.querySelectorAll('.option-btn').forEach(btn => {
+               btn.classList.add('disabled');
+           });
+
+           setTimeout(() => {
+               loadNextQuestion();
+           }, 1000);
+       }
+
+       function showResults() {
+           const score = Math.round((correctAnswers / totalQuestions) * 100);
+           testResults = {
+               score: score,
+               totalQuestions: totalQuestions,
+               correctAnswers: correctAnswers,
+               testType: 'dikkat'
+           };
+
+           document.getElementById('scoreText').textContent = \`Skorunuz: \${score}% (\${correctAnswers}/\${totalQuestions})\`;
+           showScreen('resultsScreen');
+       }
+
+       function completeTest() {
+           window.parent.postMessage({
+               type: 'dikkat-test-complete',
+               results: testResults
+           }, '*');
+       }
+
+       function showLoading(text = 'Yükleniyor...') {
+           const overlay = document.getElementById('loadingOverlay');
+           const loadingText = document.getElementById('loadingText');
+           
+           if (loadingText) loadingText.textContent = text;
+           if (overlay) overlay.classList.add('show');
+       }
+
+       function hideLoading() {
+           const overlay = document.getElementById('loadingOverlay');
+           if (overlay) overlay.classList.remove('show');
+       }
+
+       function showError(message) {
+           const overlay = document.getElementById('errorOverlay');
+           const errorMessage = document.getElementById('errorMessage');
+           
+           if (errorMessage) errorMessage.textContent = message;
+           if (overlay) overlay.classList.add('show');
+       }
+
+       // Initialize buttons with animation
+       document.addEventListener('DOMContentLoaded', function() {
+           setTimeout(() => {
+               const buttons = document.querySelectorAll('.btn.visible');
+               buttons.forEach(btn => {
+                   btn.style.opacity = '1';
+                   btn.style.transform = 'translateY(0)';
+               });
+           }, 100);
+       });
+
+       // Handle errors
+       window.addEventListener('error', function(e) {
+           console.error('Dikkat Test Error:', e.error);
+           showError('Test sırasında bir hata oluştu: ' + e.message);
+       });
+   </script>
+</body>
+</html>`;
+
+    iframe.srcdoc = htmlContent;
+    document.body.appendChild(iframe);
+
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data.type === 'dikkat-test-complete') {
+        document.body.removeChild(iframe);
+        window.removeEventListener('message', handleMessage);
+        onComplete(event.data.results);
       }
-      count--;
-    }, 1000);
-  };
+    };
 
-  const renderWelcomeScreen = () => (
-    <div className="min-h-screen bg-gradient-to-b from-blue-400 to-blue-600 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl bg-white/95 backdrop-blur-sm">
-        <CardContent className="p-8 text-center">
-          <div className="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Volume2 className="w-10 h-10 text-white" />
-          </div>
-          
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">
-            ForBrain Dikkat Testi
-          </h1>
-          
-          <p className="text-lg text-gray-600 mb-8">
-            Bu test dikkat sürdürme ve odaklanma becerilerinizi ölçmek için tasarlanmıştır.
-          </p>
-          
-          <div className="space-y-4 text-left max-w-md mx-auto mb-8">
-            <div className="flex items-start space-x-3">
-              <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="text-sm font-bold text-blue-600">1</span>
-              </div>
-              <p className="text-gray-700">Kulaklık takın ve ses seviyesini ayarlayın</p>
-            </div>
-            <div className="flex items-start space-x-3">
-              <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="text-sm font-bold text-blue-600">2</span>
-              </div>
-              <p className="text-gray-700">Sessiz bir ortamda olduğunuzdan emin olun</p>
-            </div>
-            <div className="flex items-start space-x-3">
-              <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="text-sm font-bold text-blue-600">3</span>
-              </div>
-              <p className="text-gray-700">Test süresince dikkatinizi dağıtacak şeylerden uzak durun</p>
-            </div>
-          </div>
+    window.addEventListener('message', handleMessage);
 
-          <Button 
-            onClick={() => setState(prev => ({ ...prev, currentScreen: 'audio-setup' }))}
-            size="lg"
-            className="px-8 py-3"
-          >
-            Devam Et
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
-  );
+    return () => {
+      if (document.body.contains(iframe)) {
+        document.body.removeChild(iframe);
+      }
+      window.removeEventListener('message', handleMessage);
+    };
+  }, [onComplete]);
 
-  const renderAudioSetup = () => (
-    <div className="min-h-screen bg-gradient-to-b from-blue-400 to-blue-600 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl bg-white/95 backdrop-blur-sm">
-        <CardContent className="p-8">
-          <h2 className="text-2xl font-bold text-center mb-6">Ses Ayarları</h2>
-          
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <span className="text-lg font-medium">Ses Durumu:</span>
-              <Button
-                variant={state.audioEnabled ? "default" : "outline"}
-                onClick={handleAudioToggle}
-                className="flex items-center space-x-2"
-              >
-                {state.audioEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-                <span>{state.audioEnabled ? "Açık" : "Kapalı"}</span>
-              </Button>
-            </div>
-
-            <div className="space-y-3">
-              <label className="text-lg font-medium">Ses Seviyesi:</label>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.1"
-                value={state.volume}
-                onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-              />
-              <div className="text-center text-gray-600">
-                {Math.round(state.volume * 100)}%
-              </div>
-            </div>
-
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="font-medium text-blue-900 mb-2">Test Sesi:</h3>
-              <p className="text-sm text-blue-800 mb-3">
-                Aşağıdaki butona tıklayarak ses seviyesini test edin:
-              </p>
-              <Button
-                variant="outline"
-                onClick={() => playAudio('/audio/dikkat/test-sound.mp3')}
-                className="flex items-center space-x-2"
-              >
-                <Play className="w-4 h-4" />
-                <span>Test Sesi Çal</span>
-              </Button>
-            </div>
-          </div>
-
-          <div className="text-center mt-8">
-            <Button 
-              onClick={() => setState(prev => ({ ...prev, currentScreen: 'info' }))}
-              size="lg"
-              className="px-8 py-3"
-            >
-              Ses Ayarı Tamam
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <audio ref={audioRef} />
-    </div>
-  );
-
-  const renderInfoScreen = () => (
-    <div className="min-h-screen bg-gradient-to-b from-blue-400 to-blue-600 flex items-center justify-center p-4">
-      <Card className="w-full max-w-3xl bg-white/95 backdrop-blur-sm">
-        <CardContent className="p-8">
-          <h2 className="text-2xl font-bold text-center mb-6">Test Hakkında</h2>
-          
-          <div className="space-y-6 text-gray-700">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-blue-900 mb-4">Test Nasıl Çalışır?</h3>
-              <ul className="space-y-3">
-                <li className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                  <span>Size bir dizi sayı, harf veya karışık öğe dinletilecek</span>
-                </li>
-                <li className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                  <span>Bu dizide tekrarlanan öğeyi bulmanız gerekecek</span>
-                </li>
-                <li className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                  <span>Doğru seçeneği işaretleyerek devam edeceksiniz</span>
-                </li>
-              </ul>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600 mb-2">3</div>
-                <div className="text-sm text-gray-600">Farklı Bölüm</div>
-              </div>
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600 mb-2">~5</div>
-                <div className="text-sm text-gray-600">Dakika Süre</div>
-              </div>
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <div className="text-2xl font-bold text-purple-600 mb-2">15</div>
-                <div className="text-sm text-gray-600">Toplam Soru</div>
-              </div>
-            </div>
-
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <h4 className="font-medium text-yellow-900 mb-2">⚠️ Önemli:</h4>
-              <p className="text-sm text-yellow-800">
-                Test başladıktan sonra geri dönemezsiniz. Her soruyu dikkatlice dinleyin ve 
-                en iyi cevabı vermeye çalışın.
-              </p>
-            </div>
-          </div>
-
-          <div className="text-center mt-8">
-            <Button 
-              onClick={() => setState(prev => ({ ...prev, currentScreen: 'instructions' }))}
-              size="lg"
-              className="px-8 py-3"
-            >
-              Talimatları Oku
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
-  const renderCurrentTest = () => {
-    if (state.currentSection >= TEST_DATA.sections.length) return null;
-    
-    const currentSection = TEST_DATA.sections[state.currentSection];
-    const currentQ = currentSection.questions[state.currentQuestion];
-    
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-400 to-blue-600 flex items-center justify-center p-4">
-        <Card className="w-full max-w-4xl bg-white/95 backdrop-blur-sm">
-          <CardContent className="p-8">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold mb-2">{currentSection.title}</h2>
-              <p className="text-gray-600">
-                Soru {state.currentQuestion + 1} / {currentSection.questions.length}
-              </p>
-            </div>
-
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
-              <p className="text-lg text-center text-blue-900 mb-4">
-                {currentQ.text}
-              </p>
-              
-              <div className="text-center">
-                <Button
-                  onClick={() => playAudio(currentQ.audio)}
-                  className="flex items-center space-x-2"
-                  size="lg"
-                >
-                  <Play className="w-5 h-5" />
-                  <span>Ses Dosyasını Dinle</span>
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {currentQ.options.map((option, index) => (
-                <Button
-                  key={index}
-                  onClick={() => handleAnswerSelect(option)}
-                  variant="outline"
-                  className="h-16 text-xl font-semibold hover:bg-blue-50 hover:border-blue-300"
-                >
-                  {option}
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-        
-        <audio ref={audioRef} />
-      </div>
-    );
-  };
-
-  // Render based on current screen
-  switch (state.currentScreen) {
-    case 'welcome':
-      return renderWelcomeScreen();
-    case 'audio-setup':
-      return renderAudioSetup();
-    case 'info':
-      return renderInfoScreen();
-    case 'test':
-      return renderCurrentTest();
-    case 'completed':
-      return (
-        <div className="min-h-screen bg-gradient-to-b from-green-400 to-green-600 flex items-center justify-center p-4">
-          <Card className="w-full max-w-md bg-white/95 backdrop-blur-sm">
-            <CardContent className="p-8 text-center">
-              <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Dikkat Testi Tamamlandı!
-              </h2>
-              <p className="text-gray-600">
-                Sonuçlarınız hesaplanıyor...
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      );
-    default:
-      // For instructions, demo, countdown screens - simplified for now
-      return (
-        <div className="min-h-screen bg-gradient-to-b from-blue-400 to-blue-600 flex items-center justify-center p-4">
-          <Card className="w-full max-w-2xl bg-white/95 backdrop-blur-sm">
-            <CardContent className="p-8 text-center">
-              <h2 className="text-2xl font-bold mb-6">Hazırlanıyor...</h2>
-              <Button 
-                onClick={() => setState(prev => ({ 
-                  ...prev, 
-                  currentScreen: 'test',
-                  startTime: Date.now()
-                }))}
-                size="lg"
-              >
-                Teste Başla
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      );
-  }
+  return null;
 }
