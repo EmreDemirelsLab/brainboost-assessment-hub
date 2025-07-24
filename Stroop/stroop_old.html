@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ForTest Stroop Testi</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        :root {
+            --primary: #60a5fa;
+            --primary-dark: #2563eb;
+            --secondary: #f43f5e;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --light: #f8fafc;
+            --dark: #0f172a;
+            --gray: #94a3b8;
+            --gray-light: #e2e8f0;
+            --border-radius: 8px;
+            --font-main: 'Segoe UI', Roboto, Arial, sans-serif;
+            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.15);
+            --transition: all 0.3s ease;
+            
+            /* Responsive değişkenler - dikkat ve hafıza testleri ile aynı */
+            --container-padding: clamp(15px, 4vw, 50px);
+            --font-size-base: clamp(14px, 2vw, 18px);
+            --font-size-large: clamp(18px, 3vw, 24px);
+            --font-size-xlarge: clamp(24px, 4vw, 48px);
+            --font-size-xxlarge: clamp(32px, 6vw, 64px);
+            --button-padding: clamp(12px, 2vw, 18px) clamp(20px, 4vw, 40px);
+            --gap-size: clamp(10px, 2vw, 20px);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-main);
+            line-height: 1.6;
+            color: var(--dark);
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #1d4ed8 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+            font-size: var(--font-size-base);
+            margin: 0;
+        }
+
+        /* Container 1200x800 aspect ratio - yukarı-aşağı tam dolu */
+        .container {
+            background: linear-gradient(145deg, #1e3a8a 0%, #1e40af 100%);
+            color: white;
+            border-radius: clamp(15px, 3vw, 20px);
+            box-shadow: 
+                0 25px 50px rgba(0, 0, 0, 0.4),
+                0 15px 30px rgba(0, 0, 0, 0.3),
+                inset 0 2px 5px rgba(255, 255, 255, 0.1);
+            padding: var(--container-padding);
+            /* Dynamic sizing: clamp width and keep 3:2 ratio */
+            width: clamp(320px, 90vw, 1200px);
+            aspect-ratio: 3 / 2;
+            height: auto;
+            text-align: center;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            margin: 0 auto;
+        }
+
+        /* Loading overlay - smooth transitions */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(30, 58, 138, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            flex-direction: column;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .loading-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        .loading-text {
+            color: white;
+            font-size: var(--font-size-large);
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Error message */
+        .error-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(239, 68, 68, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1001;
+            flex-direction: column;
+            text-align: center;
+            padding: 20px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .error-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .error-message {
+            color: white;
+            font-size: var(--font-size-large);
+            text-align: center;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .screen {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: var(--container-padding);
+        }
+
+        .screen.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Başlangıç ekranı */
+        .title-screen h1 {
+            font-size: var(--font-size-xxlarge);
+            color: white;
+            font-weight: 700;
+            margin-bottom: clamp(25px, 6vw, 50px);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            line-height: 1.2;
+        }
+
+        .instruction-box {
+            background: transparent;
+            border-radius: 0;
+            padding: clamp(10px, 3vw, 20px);
+            margin: clamp(15px, 4vw, 30px) auto;
+            max-width: min(90%, 800px);
+            box-shadow: none;
+            border: none;
+        }
+
+        .instruction-text {
+            font-size: var(--font-size-large);
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: clamp(10px, 3vw, 20px);
+            line-height: 1.8;
+        }
+
+        .highlight-text {
+            color: white;
+            font-weight: bold;
+            font-size: clamp(20px, 3.5vw, 28px);
+            margin: clamp(10px, 3vw, 20px) 0;
+            line-height: 1.8;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .btn {
+            display: inline-block;
+            font-weight: 500;
+            color: white;
+            text-align: center;
+            vertical-align: middle;
+            cursor: pointer;
+            background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+            padding: var(--button-padding);
+            font-size: clamp(16px, 2.5vw, 22px);
+            line-height: 1.5;
+            border-radius: var(--border-radius);
+            transition: opacity 0.5s ease, transform 0.5s ease, background 0.3s ease, box-shadow 0.3s ease;
+            border: none;
+            box-shadow: 
+                0 4px 6px rgba(30, 64, 175, 0.3),
+                0 0 15px rgba(255, 255, 255, 0.3),
+                0 0 25px rgba(255, 255, 255, 0.1);
+            text-decoration: none;
+            margin: clamp(5px, 1vw, 10px);
+            opacity: 0;
+            transform: translateY(20px);
+            min-width: clamp(100px, 20vw, 150px);
+            position: relative;
+            overflow: hidden;
+            min-height: clamp(44px, 8vw, 56px);
+        }
+
+        .btn.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .btn:hover:not(.disabled) {
+            background: linear-gradient(135deg, #1e3d9f 0%, #2454d6 100%);
+            box-shadow: 
+                0 6px 8px rgba(30, 58, 138, 0.4),
+                0 0 20px rgba(255, 255, 255, 0.4),
+                0 0 35px rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .btn-bottom-right {
+            position: absolute;
+            bottom: clamp(20px, 4vw, 40px);
+            right: clamp(20px, 4vw, 40px);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .btn-bottom-right.visible {
+            opacity: 1;
+        }
+
+        /* Word display area - Stroop kelimeler için */
+        .word-display {
+            font-size: clamp(48px, 10vw, 96px);
+            font-weight: bold;
+            margin: clamp(40px, 8vw, 80px) 0;
+            min-height: clamp(80px, 15vw, 120px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .countdown {
+            font-size: clamp(64px, 15vw, 128px);
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Renk tanımlamaları */
+        .color-red { color: #FF0000; }
+        .color-blue { color: #0000FF; }
+        .color-green { color: #008000; }
+        .color-yellow { color: #FFD700; }
+        .color-black { color: white; } /* Siyah yerine beyaz (mavi arka plan için) */
+
+        /* Sonuç ekranı */
+        .result-message {
+            font-size: clamp(28px, 5vw, 48px);
+            color: white;
+            font-weight: 600;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            margin-bottom: clamp(15px, 4vw, 30px);
+            line-height: 1.2;
+        }
+
+        .result-info {
+            font-size: var(--font-size-large);
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+        }
+
+        .results {
+            text-align: left;
+            margin-top: clamp(15px, 4vw, 30px);
+            max-width: min(95%, 800px);
+            width: 100%;
+        }
+
+        .result-item {
+            margin: clamp(8px, 2vw, 15px) 0;
+            padding: clamp(8px, 2vw, 15px);
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: var(--font-size-base);
+            line-height: 1.6;
+        }
+
+        .notification {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 20px 30px;
+            border-radius: var(--border-radius);
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            font-size: var(--font-size-base);
+        }
+
+        .notification.success {
+            background-color: var(--success);
+        }
+
+        .notification.error {
+            background-color: var(--danger);
+        }
+
+        .notification.show {
+            opacity: 1;
+        }
+
+        /* Form elements - user info için */
+        .form-group {
+            margin-bottom: clamp(15px, 4vw, 25px);
+            text-align: left;
+            max-width: min(95%, 400px);
+            width: 100%;
+        }
+
+        label {
+            display: block;
+            margin-bottom: clamp(5px, 1vw, 8px);
+            font-weight: bold;
+            color: white;
+            font-size: var(--font-size-base);
+        }
+
+        input {
+            width: 100%;
+            padding: clamp(8px, 2vw, 12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: var(--border-radius);
+            font-size: var(--font-size-base);
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--dark);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.3);
+        }
+
+        .enter-prompt {
+            margin-top: clamp(15px, 4vw, 25px);
+            color: rgba(255, 255, 255, 0.8);
+            font-style: italic;
+            font-size: var(--font-size-base);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Responsive Media Queries */
+        
+        /* Çok küçük telefon ekranları */
+        @media (max-width: 360px) {
+            .container {
+                padding: clamp(10px, 3vw, 15px);
+            }
+            .word-display {
+                font-size: clamp(32px, 8vw, 48px);
+                margin: clamp(20px, 6vw, 40px) 0;
+            }
+        }
+
+        /* Küçük telefon ekranları */
+        @media (max-width: 480px) {
+            .btn-bottom-right {
+                position: relative;
+                bottom: auto;
+                right: auto;
+                margin-top: 20px;
+            }
+        }
+
+        /* Tablet ve masaüstü */
+        @media (min-width: 481px) {
+            .container {
+                height: min(100vh - 30px, 800px);
+            }
+        }
+
+        /* Büyük ekranlar */
+        @media (min-width: 1400px) {
+            .container {
+                width: min(90%, 1400px);
+                height: min(100vh - 40px, 900px);
+            }
+        }
+
+        /* Landscape mode mobil */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .container {
+                height: 95vh;
+                padding: 15px;
+            }
+            .title-screen h1 {
+                margin-bottom: 20px;
+            }
+            .instruction-box {
+                padding: 20px;
+                margin: 15px auto;
+            }
+        }
+
+        /* High DPI ekranlar için font optimizasyonu */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+            .title-screen h1, .result-message, .word-display {
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+            }
+        }
+
+        /* Accessibility improvements */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+            .loading-overlay, .error-overlay {
+                transition: opacity 0.1s ease !important;
+            }
+        }
+
+        /* High contrast mode */
+        @media (prefers-contrast: high) {
+            .btn {
+                border: 2px solid white;
+            }
+            input {
+                border-width: 2px;
+                border-color: white;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="mainContainer">
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="loading-spinner"></div>
+            <div class="loading-text" id="loadingText">Yükleniyor...</div>
+        </div>
+
+        <!-- Error Overlay -->
+        <div class="error-overlay" id="errorOverlay">
+            <div class="error-message" id="errorMessage">Bir hata oluştu</div>
+        </div>
+
+        <!-- İçerik JavaScript tarafından doldurulacak -->
+    </div>
+
+    <script>
+        // ===================================
+        // STROOP TESTİ SİSTEMİ - v2.1 CLEAN
+        // Dikkat ve Hafıza Testi Yapısında
+        // ===================================
+
+        'use strict';
+
+        // Global hata yakalama
+        window.addEventListener('error', function(e) {
+            console.error('Global Error:', e.error);
+            handleError('Beklenmeyen bir hata oluştu: ' + e.message, true);
+        });
+
+        window.addEventListener('unhandledrejection', function(e) {
+            console.error('Unhandled Promise Rejection:', e.reason);
+            handleError('Promise hatası: ' + e.reason, true);
+        });
+
+        // Güvenli state yönetimi - Stroop testi için adapte edilmiş
+        class SafeStroopTestState {
+            constructor() {
+                this.reset();
+                this.locked = false;
+            }
+
+            reset() {
+                this.currentScreen = 'titleScreen';
+                this.currentAudio = null;
+                this.preloadedAudios = new Map();
+                this.timers = new Set();
+                this.intervals = new Set();
+                this.isTransitioning = false;
+                
+                // Stroop test durumları
+                this.currentStage = 0;
+                this.currentWordIndex = 0;
+                this.isInExample = false;
+                this.isTestActive = false;
+                this.testStartTime = null;
+                this.startTime = null;
+                this.responses = [];
+                this.userInfo = {};
+                this.wordTimeout = null;
+                
+                this.stageData = {
+                    stage1: { responses: [], correctCount: 0, totalWords: 12 },
+                    stage2: { responses: [], correctCount: 0, totalWords: 23, matchingWords: 11 },
+                    stage3: { responses: [], correctCount: 0, totalWords: 40, conflictingWords: 17 }
+                };
+            }
+
+            // Güvenli timer yönetimi
+            addTimer(timerId) {
+                this.timers.add(timerId);
+                return timerId;
+            }
+
+            clearTimer(timerId) {
+                if (timerId && this.timers.has(timerId)) {
+                    clearTimeout(timerId);
+                    this.timers.delete(timerId);
+                }
+            }
+
+            clearAllTimers() {
+                this.timers.forEach(timerId => {
+                    clearTimeout(timerId);
+                });
+                this.timers.clear();
+            }
+
+            // Güvenli ses yönetimi
+            setCurrentAudio(audio) {
+                if (this.currentAudio) {
+                    this.currentAudio.pause();
+                    this.currentAudio.currentTime = 0;
+                }
+                this.currentAudio = audio;
+            }
+
+            stopCurrentAudio() {
+                if (this.currentAudio) {
+                    this.currentAudio.pause();
+                    this.currentAudio.currentTime = 0;
+                    this.currentAudio = null;
+                }
+            }
+
+            cleanup() {
+                this.clearAllTimers();
+                this.stopCurrentAudio();
+                this.preloadedAudios.clear();
+                this.locked = false;
+            }
+        }
+
+        // Global state instance
+        const state = new SafeStroopTestState();
+
+        // Ana uygulama objesi
+        const StroopTest = {
+
+            // Test konfigürasyonu - DÜZELTİLDİ!
+            config: {
+                stages: {
+                    1: {
+                        title: "1. Aşama",
+                        instruction: "Ekranda renk ismi yazan kelimeleri görür görmez boşluk (space) tuşuna basınız.",
+                        exampleWords: ["KIRMIZI", "SARI", "YEŞİL", "SARI", "YEŞİL", "MAVİ", "KIRMIZI"],
+                        exampleTimings: [2000, 3500, 3000, 1500, 2000, 3000],
+                        exampleColors: ["black", "black", "black", "black", "black", "black", "black"],
+                        testWords: ["YEŞİL", "YEŞİL", "MAVİ", "MAVİ", "KIRMIZI", "SARI", "YEŞİL", "KIRMIZI", "KIRMIZI", "SARI", "MAVİ", "SARI"],
+                        testTimings: [3000, 2000, 3000, 1000, 2000, 2000, 2500, 1000, 1500, 2500, 1000],
+                        testColors: ["black", "black", "black", "black", "black", "black", "black", "black", "black", "black", "black", "black"],
+                        responseRequired: Array(12).fill(true) // Hepsine basılmalı
+                    },
+                    2: {
+                        title: "2. Aşama",
+                        instruction: "Ekranda sadece renk ile kelimenin ismi aynı ise boşluk (space) tuşuna basınız.",
+                        exampleWords: ["YEŞİL", "SARI", "MAVİ", "KIRMIZI", "SARI", "YEŞİL", "KIRMIZI", "MAVİ"],
+                        exampleTimings: [2000, 2500, 3000, 1500, 1000, 2000, 2000],
+                        exampleColors: ["green", "red", "blue", "red", "yellow", "blue", "red", "blue"],
+                        testWords: ["YEŞİL", "SARI", "KIRMIZI", "KIRMIZI", "SARI", "SARI", "YEŞİL", "MAVİ", "MAVİ", "KIRMIZI", "MAVİ", "YEŞİL", "YEŞİL", "YEŞİL", "SARI", "MAVİ", "SARI", "KIRMIZI", "YEŞİL", "MAVİ", "YEŞİL", "MAVİ", "KIRMIZI"],
+                        testTimings: [2000, 2000, 1000, 1000, 500, 2500, 1000, 1500, 2000, 1000, 2000, 1000, 1000, 500, 2500, 1000, 1500, 2000, 1000, 1500, 1000, 1000],
+                        testColors: ["green", "red", "green", "yellow", "blue", "yellow", "red", "blue", "green", "red", "red", "blue", "green", "green", "yellow", "blue", "yellow", "blue", "green", "yellow", "blue", "blue", "red"],
+                        responseRequired: [true, false, false, false, false, true, false, true, false, true, false, false, true, true, true, true, false, false, false, false, false, true, false] // 11 eşleşme
+                    },
+                    3: {
+                        title: "3. Aşama",
+                        instruction: "Ekranda sadece renk ile kelimenin ismi aynı değil ise boşluk (space) tuşuna basınız.",
+                        exampleWords: ["KIRMIZI", "MAVİ", "SARI", "YEŞİL", "KIRMIZI", "YEŞİL", "MAVİ", "MAVİ"],
+                        exampleTimings: [2000, 2000, 2000, 1500, 1000, 2000, 2000],
+                        exampleColors: ["blue", "red", "green", "red", "green", "blue", "red", "yellow"],
+                        testWords: ["YEŞİL", "YEŞİL", "SARI", "SARI", "MAVİ", "KIRMIZI", "MAVİ", "SARI", "MAVİ", "KIRMIZI", "YEŞİL", "KIRMIZI", "KIRMIZI", "YEŞİL", "MAVİ", "YEŞİL", "SARI", "YEŞİL", "SARI", "YEŞİL", "SARI", "MAVİ", "KIRMIZI", "SARI", "MAVİ", "KIRMIZI", "SARI", "KIRMIZI", "KIRMIZI", "MAVİ", "KIRMIZI", "SARI", "KIRMIZI", "KIRMIZI", "SARI", "KIRMIZI", "YEŞİL", "YEŞİL", "KIRMIZI", "MAVİ"],
+                        testTimings: [2000, 2000, 1000, 1000, 500, 2500, 1000, 1500, 2000, 1000, 2000, 1000, 1000, 500, 2500, 1000, 1500, 2000, 1000, 1500, 1000, 1000, 500, 2500, 1000, 2000, 2000, 1000, 1500, 1000, 1000, 500, 2000, 2000, 1000, 1000, 2000, 1000, 1000, 500],
+                        testColors: ["blue", "red", "blue", "yellow", "blue", "red", "yellow", "yellow", "blue", "green", "green", "red", "red", "red", "yellow", "green", "yellow", "green", "yellow", "green", "red", "blue", "blue", "red", "blue", "green", "yellow", "yellow", "red", "red", "yellow", "green", "red", "red", "yellow", "red", "yellow", "green", "blue", "blue"],
+                        // 17 çelişen pozisyonu işaretlendi, geri kalanlar (23 tanesi) eşleşiyor
+                        responseRequired: [true, true, true, false, false, false, true, false, false, true, false, false, false, true, true, false, false, false, false, false, true, false, true, true, false, true, false, true, false, true, true, true, false, false, false, false, true, false, true, false]
+                    }
+                }
+            },
+
+        // ==================== SES YÖNETİMİ ====================
+        function playAudio(filename, callback) {
+            if (state.currentAudio) {
+                state.currentAudio.pause();
+                state.currentAudio.currentTime = 0;
+            }
+            
+            const audio = new Audio(`./mp3/${filename}`);
+            state.currentAudio = audio;
+            
+            audio.addEventListener('ended', () => {
+                if (callback) callback();
+            });
+            
+            audio.play().catch(error => {
+                console.log('Ses çalma hatası:', error);
+                if (callback) callback();
+            });
+            
+            return audio;
+        }
+
+        function stopCurrentAudio() {
+            if (state.currentAudio) {
+                state.currentAudio.pause();
+                state.currentAudio.currentTime = 0;
+                state.currentAudio = null;
+            }
+        }
+
+        // Hata yönetimi
+        function handleError(message, isSystem = false) {
+            console.error('🚨 Sistem Hatası:', message);
+            
+            const errorOverlay = document.getElementById('errorOverlay');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            if (errorOverlay && errorMessage) {
+                errorMessage.textContent = message;
+                errorOverlay.classList.add('show');
+                
+                // 5 saniye sonra otomatik kapat
+                setTimeout(() => {
+                    errorOverlay.classList.remove('show');
+                }, 5000);
+            }
+            
+            if (isSystem) {
+                // Sistem hatası - state temizle
+                state.cleanup();
+            }
+        }
+
+        // Loading gösterimi
+        function showLoading(text = 'Yükleniyor...') {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const loadingText = document.getElementById('loadingText');
+            
+            if (loadingText) loadingText.textContent = text;
+            if (loadingOverlay) loadingOverlay.classList.add('show');
+        }
+
+        function hideLoading() {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            if (loadingOverlay) loadingOverlay.classList.remove('show');
+        }
+
+        // ==================== EKRAN YÖNETİMİ ====================
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            const screen = document.getElementById(screenId);
+            if (screen) {
+                screen.classList.add('active');
+                state.currentScreen = screenId;
+            }
+        }
+
+        function showButton(buttonId) {
+            setTimeout(() => {
+                const button = document.getElementById(buttonId);
+                if (button) {
+                    button.classList.add('visible');
+                }
+            }, 100);
+        }
+
+        // Debounced navigation fonksiyonu
+        function navigate(action, ...args) {
+            if (state.locked) {
+                console.log('🔒 Navigasyon kilitli, işlem iptal');
+                return;
+            }
+
+            state.locked = true;
+            
+            try {
+                if (typeof window[action] === 'function') {
+                    window[action](...args);
+                } else {
+                    console.error(`❌ Fonksiyon bulunamadı: ${action}`);
+                    handleError(`Navigasyon hatası: ${action}`);
+                }
+            } catch (error) {
+                console.error(`❌ Navigasyon hatası: ${action}`, error);
+                handleError(`Navigasyon hatası: ${error.message}`);
+            } finally {
+                // Kilit kaldır
+                setTimeout(() => {
+                    state.locked = false;
+                }, 300);
+            }
+        }
+
+        // ==================== STROOP TEST EKRANLARI ====================
+        
+        // 0. Başlangıç Title Ekranı
+        function showTitleScreen() {
+            const container = document.getElementById('mainContainer');
+            container.innerHTML = `
+                <!-- 0. Başlangıç Title Ekranı -->
+                <div id="titleScreen" class="screen active">
+                    <div class="title-screen">
+                        <h1>Stroop Testi</h1>
+                    </div>
+                    <button class="btn btn-bottom-right visible" onclick="goToWelcome()">İleri</button>
+                </div>
+            `;
+        }
+
+        // 1. Giriş Ekranı - Excel'den alınan metin
+        function goToWelcome() {
+            const container = document.getElementById('mainContainer');
+            container.innerHTML = `
+                <div id="welcomeScreen" class="screen active">
+                    <div class="instruction-box">
+                        <div class="highlight-text">
+                            Bu Bölüm Üç Aşamadan Oluşmaktadır.
+                        </div>
+                    </div>
+                    <button class="btn btn-bottom-right" id="welcomeNextBtn" onclick="goToStage1Intro()">İleri</button>
+                </div>
+            `;
+            
+            // Ses çal: "Bu bölüm üç aşamadan oluşmaktadır. Her aşamanın başında örnek uygulamayı tamamlayacaksınız."
+            playAudio('stroop_giris.mp3', () => {
+                showButton('welcomeNextBtn');
+            });
+        }
+
+        // 2. 1. Aşama Talimat Ekranı
+        function goToStage1Intro() {
+            const container = document.getElementById('mainContainer');
+            container.innerHTML = `
+                <div id="stage1IntroScreen" class="screen active">
+                    <div class="instruction-box">
+                        <div class="highlight-text">
+                            Kelimeleri Görür Görmez Boşluk (space) Tuşuna Basın!
+                        </div>
+                    </div>
+                    <button class="btn btn-bottom-right" id="stage1IntroNextBtn" onclick="goToStage1ExampleReady()">İleri</button>
+                </div>
+            `;
+            
+            // Ses çal: "1. aşamada ekranda renk ismi yazan kelimeleri görür görmez boşluk (space) tuşuna basmalısınız."
+            playAudio('stroop_asama1_talimat.mp3', () => {
+                showButton('stage1IntroNextBtn');
+            });
+        }
+
+        // 3. 1. Aşama Örnek Hazır Ekranı
+        function goToStage1ExampleReady() {
+            const container = document.getElementById('mainContainer');
+            container.innerHTML = `
+                <div id="stage1ExampleReadyScreen" class="screen active">
+                    <div class="instruction-box">
+                        <div class="highlight-text">
+                            Örnek Uygulamaya Hazırsanız "Başla" Butonuna Tıklayın!
+                        </div>
+                    </div>
+                    <button class="btn btn-bottom-right" id="stage1ExampleStartBtn" onclick="startStage1Example()">Başla</button>
+                </div>
+            `;
+            
+            // Ses çal: "Örnek uygulamaya hazırsanız "Başla"ya tıklayın."
+            playAudio('stroop_ornek_hazir.mp3', () => {
+                showButton('stage1ExampleStartBtn');
+            });
+                 }
+
+        // Ana uygulama objesi
+        const StroopTest = {
+            // UI fonksiyonları
+            ui: {
+                showStageIntro(stageNum) {
+                    const stage = StroopTest.config.stages[stageNum];
+                    const container = document.getElementById('mainContainer');
+                    container.innerHTML = `
+                        <h2>${stage.title}</h2>
+                        <div class="instruction">
+                            <p>${stage.instruction}</p>
+                        </div>
+                        <div class="enter-prompt">Örnek Uygulama için Enter tuşuna basınız</div>
+                    `;
+                },
+
+                showCountdown(callback) {
+                    const container = document.getElementById('mainContainer');
+                    let count = 3;
+                    
+                    const interval = setInterval(() => {
+                        container.innerHTML = `<div class="countdown">${count}</div>`;
+                        count--;
+                        
+                        if (count < 0) {
+                            clearInterval(interval);
+                            callback();
+                        }
+                    }, 1000);
+                },
+
+                showWord(word, color) {
+                    const container = document.getElementById('mainContainer');
+                    const colorClass = this.getColorClass(color);
+                    container.innerHTML = `<div class="word-display ${colorClass}">${word}</div>`;
+                },
+
+                showBlank() {
+                    const container = document.getElementById('mainContainer');
+                    container.innerHTML = `<div class="word-display"></div>`;
+                },
+
+                getColorClass(color) {
+                    const colorMap = {
+                        'red': 'color-red',
+                        'blue': 'color-blue',
+                        'green': 'color-green',
+                        'yellow': 'color-yellow',
+                        'black': 'color-black'
+                    };
+                    return colorMap[color] || 'color-black';
+                },
+
+                showResults() {
+                    const container = document.getElementById('mainContainer');
+                    const results = StroopTest.scorer.calculateScores();
+                    const totalTime = ((Date.now() - StroopTest.state.testStartTime) / 1000).toFixed(0);
+                    const minutes = Math.floor(totalTime / 60);
+                    const seconds = totalTime % 60;
+                    
+                    container.innerHTML = `
+                        <h2>Test Tamamlandı!</h2>
+                        <div class="results">
+                            <p><strong>Toplam Test Süresi:</strong> ${minutes}:${seconds.toString().padStart(2, '0')} (dk:sn)</p>
+                            <h3>Sonuçlar:</h3>
+                            <div class="result-item">
+                                <strong>1. Aşama - Basit Tepki Süresi (BTS):</strong><br>
+                                Ortalama Süre: ${results.A1_BTS.OrtalamaSure_ms} ms<br>
+                                Doğruluk: %${results.A1_BTS.Dogruluk}<br>
+                                Hata Sayısı: ${results.A1_BTS.HataSayisi}
+                            </div>
+                            <div class="result-item">
+                                <strong>2. Aşama - Karmaşık Tepki Süresi (KTS):</strong><br>
+                                Ortalama Süre: ${results.A2_KTS.OrtalamaSure_ms} ms<br>
+                                Doğruluk: %${results.A2_KTS.Dogruluk}<br>
+                                Hata Sayısı: ${results.A2_KTS.HataSayisi}
+                            </div>
+                            <div class="result-item">
+                                <strong>3. Aşama - Stroop Tepki Süresi (STS):</strong><br>
+                                Ortalama Süre: ${results.A3_STS.OrtalamaSure_ms} ms<br>
+                                Doğruluk: %${results.A3_STS.Dogruluk}<br>
+                                Hata Sayısı: ${results.A3_STS.HataSayisi}
+                            </div>
+                            <div class="result-item">
+                                <strong>İnterferans Etkisi:</strong><br>
+                                Fark: ${results.Interferans.Fark_ms} ms<br>
+                                Oran: %${results.Interferans.Oran}
+                            </div>
+                        </div>
+                        <button onclick="StroopTest.reporter.generatePDF()">PDF Rapor İndir</button>
+                        <button onclick="location.reload()">Yeni Test</button>
+                    `;
+                }
+            },
+
+            // Test yönetimi
+            async runTest(stageNum) {
+                const stage = StroopTest.config.stages[stageNum];
+                const stageKey = `stage${stageNum}`;
+                StroopTest.state.isTestActive = true;
+                StroopTest.state.currentWordIndex = 0;
+                StroopTest.state.stageData[stageKey].responses = [];
+
+                const showWordWithResponse = (index) => {
+                    return new Promise((resolve) => {
+                        StroopTest.state.currentWordIndex = index;
+                        
+                        const wordData = {
+                            word: stage.testWords[index],
+                            color: stage.testColors[index],
+                            responseRequired: stage.responseRequired[index],
+                            startTime: performance.now(),
+                            responded: false,
+                            responseTime: null
+                        };
+                        
+                        StroopTest.state.stageData[stageKey].responses.push(wordData);
+                        
+                        const spaceHandler = (e) => {
+                            if (e.key === ' ' && StroopTest.state.isTestActive) {
+                                e.preventDefault();
+                                
+                                if (!wordData.responded) {
+                                    wordData.responded = true;
+                                    wordData.responseTime = performance.now() - wordData.startTime;
+                                    
+                                    if (StroopTest.state.wordTimeout) {
+                                        clearTimeout(StroopTest.state.wordTimeout);
+                                    }
+                                    
+                                    document.removeEventListener('keydown', spaceHandler);
+                                    
+                                    StroopTest.ui.showBlank();
+                                    setTimeout(() => resolve(), 500);
+                                }
+                            }
+                        };
+                        
+                        document.addEventListener('keydown', spaceHandler);
+                        
+                        StroopTest.ui.showWord(stage.testWords[index], stage.testColors[index]);
+                        
+                        StroopTest.state.wordTimeout = setTimeout(() => {
+                            document.removeEventListener('keydown', spaceHandler);
+                            StroopTest.ui.showBlank();
+                            setTimeout(() => resolve(), 500);
+                        }, stage.testTimings[index]);
+                    });
+                };
+
+                for (let i = 0; i < stage.testWords.length; i++) {
+                    await showWordWithResponse(i);
+                }
+
+                StroopTest.state.isTestActive = false;
+                
+                if (stageNum < 3) {
+                    StroopTest.state.currentStage = stageNum + 1;
+                    StroopTest.ui.showStageIntro(StroopTest.state.currentStage);
+                } else {
+                    StroopTest.ui.showResults();
+                }
+            },
+
+            async runExample(stageNum) {
+                const stage = StroopTest.config.stages[stageNum];
+                StroopTest.state.isInExample = true;
+                StroopTest.state.currentWordIndex = 0;
+
+                const showExampleWord = (index) => {
+                    return new Promise((resolve) => {
+                        const spaceHandler = (e) => {
+                            if (e.key === ' ') {
+                                e.preventDefault();
+                                
+                                if (StroopTest.state.wordTimeout) {
+                                    clearTimeout(StroopTest.state.wordTimeout);
+                                }
+                                
+                                document.removeEventListener('keydown', spaceHandler);
+                                
+                                StroopTest.ui.showBlank();
+                                setTimeout(() => resolve(), 500);
+                            }
+                        };
+                        
+                        document.addEventListener('keydown', spaceHandler);
+                        
+                        StroopTest.ui.showWord(stage.exampleWords[index], stage.exampleColors[index]);
+                        
+                        StroopTest.state.wordTimeout = setTimeout(() => {
+                            document.removeEventListener('keydown', spaceHandler);
+                            StroopTest.ui.showBlank();
+                            setTimeout(() => resolve(), 500);
+                        }, stage.exampleTimings[index]);
+                    });
+                };
+
+                for (let i = 0; i < stage.exampleWords.length; i++) {
+                    await showExampleWord(i);
+                }
+
+                StroopTest.state.isInExample = false;
+                const container = document.getElementById('mainContainer');
+                container.innerHTML = `
+                    <h2>${stage.title}</h2>
+                    <div class="enter-prompt">Teste Başlamak İçin Enter Tuşuna basınız</div>
+                `;
+            },
+
+            timer: {
+                wait(ms) {
+                    return new Promise(resolve => setTimeout(resolve, ms));
+                }
+            },
+
+            // Puanlama sistemi - DÜZELTİLDİ!
+            scorer: {
+                calculateScores() {
+                    const results = {
+                        A1_BTS: this.calculateStage1(),
+                        A2_KTS: this.calculateStage2(),
+                        A3_STS: this.calculateStage3()
+                    };
+                    
+                    // İnterferans hesaplama
+                    if (results.A2_KTS.OrtalamaSure_ms > 0) {
+                        results.Interferans = {
+                            Fark_ms: results.A3_STS.OrtalamaSure_ms - results.A2_KTS.OrtalamaSure_ms,
+                            Oran: ((results.A3_STS.OrtalamaSure_ms - results.A2_KTS.OrtalamaSure_ms) / results.A2_KTS.OrtalamaSure_ms * 100).toFixed(1)
+                        };
+                    } else {
+                        results.Interferans = {
+                            Fark_ms: 0,
+                            Oran: "0.0"
+                        };
+                    }
+                    
+                    return results;
+                },
+
+                calculateStage1() {
+                    const responses = StroopTest.state.stageData.stage1.responses;
+                    const correctResponses = responses.filter(r => r.responded && r.responseRequired);
+                    const totalRequired = 12; // Hepsine basılmalı
+                    
+                    const avgTime = correctResponses.length > 0 
+                        ? Math.round(correctResponses.reduce((sum, r) => sum + r.responseTime, 0) / correctResponses.length)
+                        : 0;
+                    
+                    return {
+                        OrtalamaSure_ms: avgTime,
+                        Dogruluk: ((correctResponses.length / totalRequired) * 100).toFixed(1),
+                        HataSayisi: totalRequired - correctResponses.length
+                    };
+                },
+
+                calculateStage2() {
+                    const responses = StroopTest.state.stageData.stage2.responses;
+                    // Sadece eşleşmesi gerekenleri say
+                    const matchingPositions = responses.filter(r => r.responseRequired);
+                    const correctResponses = matchingPositions.filter(r => r.responded);
+                    const totalRequired = 11; // Eşleşmesi gereken sayı
+                    
+                    const avgTime = correctResponses.length > 0 
+                        ? Math.round(correctResponses.reduce((sum, r) => sum + r.responseTime, 0) / correctResponses.length)
+                        : 0;
+                    
+                    return {
+                        OrtalamaSure_ms: avgTime,
+                        Dogruluk: ((correctResponses.length / totalRequired) * 100).toFixed(1),
+                        HataSayisi: totalRequired - correctResponses.length
+                    };
+                },
+
+                calculateStage3() {
+                    const responses = StroopTest.state.stageData.stage3.responses;
+                    // Sadece çelişmesi gerekenleri say
+                    const conflictingPositions = responses.filter(r => r.responseRequired);
+                    const correctResponses = conflictingPositions.filter(r => r.responded);
+                    const totalRequired = 17; // Çelişmesi gereken sayı
+                    
+                    const avgTime = correctResponses.length > 0 
+                        ? Math.round(correctResponses.reduce((sum, r) => sum + r.responseTime, 0) / correctResponses.length)
+                        : 0;
+                    
+                    return {
+                        OrtalamaSure_ms: avgTime,
+                        Dogruluk: ((correctResponses.length / totalRequired) * 100).toFixed(1),
+                        HataSayisi: totalRequired - correctResponses.length
+                    };
+                }
+            },
+
+            // PDF Rapor oluşturma - YENİDEN YAZILDI!
+            reporter: {
+                generatePDF() {
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF();
+                    const results = StroopTest.scorer.calculateScores();
+                    
+                    // Türkçe karakter desteği için font ayarı
+                    doc.setLanguage("tr");
+                    
+                    // Başlık
+                    doc.setFontSize(18);
+                    doc.setFont(undefined, 'bold');
+                    doc.text('STROOP TESTİ RAPORU', 105, 20, { align: 'center' });
+                    
+                    // Tarih ve saat
+                    doc.setFontSize(10);
+                    doc.setFont(undefined, 'normal');
+                    const now = new Date();
+                    const date = now.toLocaleDateString('tr-TR');
+                    const time = now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    doc.text(`Test Tarihi: ${date} ${time}`, 20, 35);
+                    
+                    // Kullanıcı bilgileri tablosu
+                    const userInfo = [
+                        ['Kişi ID', StroopTest.state.userInfo.userId],
+                        ['Yaş', StroopTest.state.userInfo.age],
+                        ['Yönetici', StroopTest.state.userInfo.admin],
+                        ['Dil', 'Türkçe'],
+                        ['Toplam Test Süresi', `${Math.floor((Date.now() - StroopTest.state.testStartTime) / 60000)}:${((Date.now() - StroopTest.state.testStartTime) % 60000 / 1000).toFixed(0).padStart(2, '0')} (dk:sn)`]
+                    ];
+                    
+                    doc.autoTable({
+                        startY: 45,
+                        head: [['Bilgi', 'Değer']],
+                        body: userInfo,
+                        theme: 'grid',
+                        headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+                        styles: { font: 'helvetica', fontSize: 10 }
+                    });
+                    
+                    // Test sonuçları başlığı
+                    doc.setFontSize(14);
+                    doc.setFont(undefined, 'bold');
+                    doc.text('TEST SONUÇLARI', 20, doc.lastAutoTable.finalY + 15);
+                    
+                    // Test sonuçları tablosu
+                    const testResults = [
+                        ['Test Aşaması', 'Ortalama Süre (ms)', 'Doğruluk (%)', 'Hata Sayısı'],
+                        ['Basit Tepki Süresi (BTS)', results.A1_BTS.OrtalamaSure_ms, results.A1_BTS.Dogruluk, results.A1_BTS.HataSayisi],
+                        ['Karmaşık Tepki Süresi (KTS)', results.A2_KTS.OrtalamaSure_ms, results.A2_KTS.Dogruluk, results.A2_KTS.HataSayisi],
+                        ['Stroop Tepki Süresi (STS)', results.A3_STS.OrtalamaSure_ms, results.A3_STS.Dogruluk, results.A3_STS.HataSayisi]
+                    ];
+                    
+                    doc.autoTable({
+                        startY: doc.lastAutoTable.finalY + 25,
+                        head: [testResults[0]],
+                        body: testResults.slice(1),
+                        theme: 'grid',
+                        headStyles: { fillColor: [52, 73, 94], textColor: 255 },
+                        columnStyles: {
+                            0: { cellWidth: 60 },
+                            1: { halign: 'center' },
+                            2: { halign: 'center' },
+                            3: { halign: 'center' }
+                        }
+                    });
+                    
+                    // İnterferans etkisi
+                    doc.setFontSize(12);
+                    doc.setFont(undefined, 'bold');
+                    doc.text('İNTERFERANS ETKİSİ', 20, doc.lastAutoTable.finalY + 15);
+                    
+                    doc.setFont(undefined, 'normal');
+                    doc.setFontSize(10);
+                    doc.text(`Fark (STS - KTS): ${results.Interferans.Fark_ms} ms`, 20, doc.lastAutoTable.finalY + 25);
+                    doc.text(`Oran: %${results.Interferans.Oran}`, 20, doc.lastAutoTable.finalY + 32);
+                    
+                    // Açıklama
+                    doc.setFontSize(9);
+                    doc.setTextColor(100);
+                    const explanation = [
+                        'NOT: Bu rapor üç aşamalı Stroop Testi sonuçlarını içermektedir.',
+                        '1. Aşama: Tüm kelimelere tepki verilmesi gereken basit tepki süresi testi',
+                        '2. Aşama: Sadece renk-isim eşleşmelerine tepki verilmesi gereken karmaşık tepki testi',
+                        '3. Aşama: Sadece renk-isim çelişkilerine tepki verilmesi gereken Stroop testi',
+                        'İnterferans etkisi, dikkat ve inhibisyon fonksiyonlarını yansıtır.'
+                    ];
+                    
+                    let yPos = doc.lastAutoTable.finalY + 45;
+                    explanation.forEach(line => {
+                        doc.text(line, 20, yPos);
+                        yPos += 6;
+                    });
+                    
+                    // PDF'i indir
+                    const fileName = `stroop_test_${StroopTest.state.userInfo.userId}_${date.replace(/\//g, '-')}.pdf`;
+                    doc.save(fileName);
+                }
+            },
+
+            // Ana fonksiyonlar
+            startTest() {
+                const userId = document.getElementById('userId').value;
+                const age = document.getElementById('userAge').value;
+                const admin = document.getElementById('adminName').value;
+                
+                if (!userId || !age || !admin) {
+                    alert('Lütfen tüm bilgileri doldurun!');
+                    return;
+                }
+                
+                StroopTest.state.userInfo = { userId, age, admin };
+                StroopTest.state.currentStage = 1;
+                StroopTest.state.testStartTime = Date.now();
+                StroopTest.ui.showStageIntro(1);
+            },
+
+            init() {
+                this.ui.showStartScreen();
+                
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !StroopTest.state.isTestActive) {
+                        const container = document.getElementById('mainContainer');
+                        
+                        if (container.innerHTML.includes('Örnek Uygulama için')) {
+                            StroopTest.runExample(StroopTest.state.currentStage);
+                        } else if (container.innerHTML.includes('Teste Başlamak İçin')) {
+                            StroopTest.ui.showCountdown(() => {
+                                StroopTest.runTest(StroopTest.state.currentStage);
+                            });
+                        }
+                    }
+                });
+            }
+        };
+
+        // Uygulamayı başlat
+        document.addEventListener('DOMContentLoaded', () => {
+            StroopTest.init();
+        });
+    </script>
+</body>
+</html>

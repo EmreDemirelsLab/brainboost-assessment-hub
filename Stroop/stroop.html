@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ForTest Stroop Testi</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        :root {
+            --primary: #60a5fa;
+            --primary-dark: #2563eb;
+            --secondary: #f43f5e;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --light: #f8fafc;
+            --dark: #0f172a;
+            --gray: #94a3b8;
+            --gray-light: #e2e8f0;
+            --border-radius: 8px;
+            --font-main: 'Segoe UI', Roboto, Arial, sans-serif;
+            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.15);
+            --transition: all 0.3s ease;
+            
+            /* Responsive değişkenler - dikkat ve hafıza testleri ile aynı */
+            --container-padding: clamp(15px, 4vw, 50px);
+            --font-size-base: clamp(14px, 2vw, 18px);
+            --font-size-large: clamp(18px, 3vw, 24px);
+            --font-size-xlarge: clamp(24px, 4vw, 48px);
+            --font-size-xxlarge: clamp(32px, 6vw, 64px);
+            --button-padding: clamp(12px, 2vw, 18px) clamp(20px, 4vw, 40px);
+            --gap-size: clamp(10px, 2vw, 20px);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-main);
+            line-height: 1.6;
+            color: var(--dark);
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #1d4ed8 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+            font-size: var(--font-size-base);
+            margin: 0;
+        }
+
+        /* Container 1200x800 aspect ratio - yukarı-aşağı tam dolu */
+        .container {
+            background: linear-gradient(145deg, #1e3a8a 0%, #1e40af 100%);
+            color: white;
+            border-radius: clamp(15px, 3vw, 20px);
+            box-shadow: 
+                0 25px 50px rgba(0, 0, 0, 0.4),
+                0 15px 30px rgba(0, 0, 0, 0.3),
+                inset 0 2px 5px rgba(255, 255, 255, 0.1);
+            padding: var(--container-padding);
+            /* Dynamic sizing: clamp width and keep 3:2 ratio */
+            width: clamp(320px, 90vw, 1200px);
+            aspect-ratio: 3 / 2;
+            height: auto;
+            text-align: center;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            margin: 0 auto;
+        }
+
+        /* Loading overlay - smooth transitions */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(30, 58, 138, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            flex-direction: column;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .loading-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        .loading-text {
+            color: white;
+            font-size: var(--font-size-large);
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Error message */
+        .error-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(239, 68, 68, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1001;
+            flex-direction: column;
+            text-align: center;
+            padding: 20px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .error-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .error-message {
+            color: white;
+            font-size: var(--font-size-large);
+            text-align: center;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .screen {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: var(--container-padding);
+        }
+
+        .screen.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Başlangıç ekranı */
+        .title-screen h1 {
+            font-size: var(--font-size-xxlarge);
+            color: white;
+            font-weight: 700;
+            margin-bottom: clamp(25px, 6vw, 50px);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            line-height: 1.2;
+        }
+
+        .instruction-box {
+            background: transparent;
+            border-radius: 0;
+            padding: clamp(10px, 3vw, 20px);
+            margin: clamp(15px, 4vw, 30px) auto;
+            max-width: min(90%, 800px);
+            box-shadow: none;
+            border: none;
+        }
+
+        .instruction-text {
+            font-size: var(--font-size-large);
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: clamp(10px, 3vw, 20px);
+            line-height: 1.8;
+        }
+
+        .highlight-text {
+            color: white;
+            font-weight: bold;
+            font-size: clamp(20px, 3.5vw, 28px);
+            margin: clamp(10px, 3vw, 20px) 0;
+            line-height: 1.8;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .btn {
+            display: inline-block;
+            font-weight: 500;
+            color: white;
+            text-align: center;
+            vertical-align: middle;
+            cursor: pointer;
+            background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+            padding: var(--button-padding);
+            font-size: clamp(16px, 2.5vw, 22px);
+            line-height: 1.5;
+            border-radius: var(--border-radius);
+            transition: opacity 0.5s ease, transform 0.5s ease, background 0.3s ease, box-shadow 0.3s ease;
+            border: none;
+            box-shadow: 
+                0 4px 6px rgba(30, 64, 175, 0.3),
+                0 0 15px rgba(255, 255, 255, 0.3),
+                0 0 25px rgba(255, 255, 255, 0.1);
+            text-decoration: none;
+            margin: clamp(5px, 1vw, 10px);
+            opacity: 0;
+            transform: translateY(20px);
+            min-width: clamp(100px, 20vw, 150px);
+            position: relative;
+            overflow: hidden;
+            min-height: clamp(44px, 8vw, 56px);
+        }
+
+        .btn.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .btn:hover:not(.disabled) {
+            background: linear-gradient(135deg, #1e3d9f 0%, #2454d6 100%);
+            box-shadow: 
+                0 6px 8px rgba(30, 58, 138, 0.4),
+                0 0 20px rgba(255, 255, 255, 0.4),
+                0 0 35px rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .btn-bottom-right {
+            position: absolute;
+            bottom: clamp(20px, 4vw, 40px);
+            right: clamp(20px, 4vw, 40px);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .btn-bottom-right.visible {
+            opacity: 1;
+        }
+
+        /* Word display area - Stroop kelimeler için */
+        .word-display {
+            font-size: clamp(48px, 10vw, 96px);
+            font-weight: bold;
+            margin: clamp(40px, 8vw, 80px) auto;
+            min-height: 200px;
+            width: 500px;
+            max-width: 90%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: 
+                0 4px 6px rgba(0, 0, 0, 0.1),
+                inset 0 2px 4px rgba(0, 0, 0, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .countdown {
+            font-size: clamp(64px, 15vw, 128px);
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Renk tanımlamaları */
+        .color-red { color: #FF0000; }
+        .color-blue { color: #0000FF; }
+        .color-green { color: #008000; }
+        .color-yellow { color: #FFD700; }
+        .color-black { color: #000000; } /* Siyah renk (beyaz arka plan için) */
+
+        /* Sonuç ekranı */
+        .result-message {
+            font-size: clamp(28px, 5vw, 48px);
+            color: white;
+            font-weight: 600;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            margin-bottom: clamp(15px, 4vw, 30px);
+            line-height: 1.2;
+        }
+
+        .result-info {
+            font-size: var(--font-size-large);
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+        }
+
+        .results {
+            text-align: left;
+            margin-top: clamp(15px, 4vw, 30px);
+            max-width: min(95%, 800px);
+            width: 100%;
+        }
+
+        .result-item {
+            margin: clamp(8px, 2vw, 15px) 0;
+            padding: clamp(8px, 2vw, 15px);
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: var(--font-size-base);
+            line-height: 1.6;
+        }
+
+        .notification {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 20px 30px;
+            border-radius: var(--border-radius);
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            font-size: var(--font-size-base);
+        }
+
+        .notification.success {
+            background-color: var(--success);
+        }
+
+        .notification.error {
+            background-color: var(--danger);
+        }
+
+        .notification.show {
+            opacity: 1;
+        }
+
+        /* Responsive Media Queries */
+        
+        /* Çok küçük telefon ekranları */
+        @media (max-width: 360px) {
+            .container {
+                padding: clamp(10px, 3vw, 15px);
+            }
+            .word-display {
+                font-size: clamp(32px, 8vw, 48px);
+                margin: clamp(20px, 6vw, 40px) 0;
+            }
+        }
+
+        /* Küçük telefon ekranları */
+        @media (max-width: 480px) {
+            .btn-bottom-right {
+                position: relative;
+                bottom: auto;
+                right: auto;
+                margin-top: 20px;
+            }
+        }
+
+        /* Tablet ve masaüstü */
+        @media (min-width: 481px) {
+            .container {
+                height: min(100vh - 30px, 800px);
+            }
+        }
+
+        /* Büyük ekranlar */
+        @media (min-width: 1400px) {
+            .container {
+                width: min(90%, 1400px);
+                height: min(100vh - 40px, 900px);
+            }
+        }
+
+        /* Landscape mode mobil */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .container {
+                height: 95vh;
+                padding: 15px;
+            }
+            .title-screen h1 {
+                margin-bottom: 20px;
+            }
+            .instruction-box {
+                padding: 20px;
+                margin: 15px auto;
+            }
+        }
+
+        /* High DPI ekranlar için font optimizasyonu */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+            .title-screen h1, .result-message, .word-display {
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+            }
+        }
+
+        /* Accessibility improvements */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+            .loading-overlay, .error-overlay {
+                transition: opacity 0.1s ease !important;
+            }
+        }
+
+        /* High contrast mode */
+        @media (prefers-contrast: high) {
+            .btn {
+                border: 2px solid white;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="loading-spinner"></div>
+            <div class="loading-text" id="loadingText">Yükleniyor...</div>
+        </div>
+
+        <!-- Error Overlay -->
+        <div class="error-overlay" id="errorOverlay">
+            <div class="error-message" id="errorMessage">Bir hata oluştu</div>
+        </div>
+
+        <!-- 0. Başlangıç Title Ekranı -->
+        <div id="titleScreen" class="screen active">
+            <div class="title-screen">
+                <h1>Stroop Testi</h1>
+            </div>
+            <button class="btn btn-bottom-right visible" onclick="goToWelcome()">İleri</button>
+        </div>
+
+        <!-- 1. Giriş Ekranı -->
+        <div id="welcomeScreen" class="screen">
+            <div class="instruction-box">
+                <div class="highlight-text">
+                    Bu Bölüm Üç Aşamadan Oluşmaktadır.
+                </div>
+            </div>
+            <button class="btn btn-bottom-right" id="welcomeNextBtn" onclick="goToStage1Intro()">İleri</button>
+        </div>
+
+        <!-- Diğer ekranlar JavaScript ile dinamik olarak oluşturulacak -->
+    </div>
+
+    <script>
+        // ===================================
+        // STROOP TESTİ SİSTEMİ - v2.1 CLEAN
+        // Dikkat ve Hafıza Testi Yapısında
+        // ===================================
+
+        'use strict';
+
+        // Global hata yakalama
+        window.addEventListener('error', function(e) {
+            console.error('Global Error:', e.error);
+            handleError('Beklenmeyen bir hata oluştu: ' + e.message, true);
+        });
+
+        window.addEventListener('unhandledrejection', function(e) {
+            console.error('Unhandled Promise Rejection:', e.reason);
+            handleError('Promise hatası: ' + e.reason, true);
+        });
+
+        // Test konfigürasyonu
+        const CONFIG = {
+            DEBOUNCE_DELAY: 300,
+            ANIMATION_DELAY: 100
+        };
+
+        // Güvenli state yönetimi
+        class SafeStroopTestState {
+            constructor() {
+                this.reset();
+                this.locked = false;
+            }
+
+            reset() {
+                this.currentScreen = 'titleScreen';
+                this.currentAudio = null;
+                this.preloadedAudios = new Map();
+                this.timers = new Set();
+                this.intervals = new Set();
+                this.isTransitioning = false;
+                
+                // Stroop test durumları
+                this.currentStage = 1;
+                this.currentWordIndex = 0;
+                this.isInExample = false;
+                this.isTestActive = false;
+                this.testStartTime = null;
+                this.startTime = null;
+                this.responses = [];
+                this.userInfo = {};
+                this.wordTimeout = null;
+                
+                this.stageData = {
+                    stage1: { responses: [], correctCount: 0, totalWords: 12 },
+                    stage2: { responses: [], correctCount: 0, totalWords: 23, matchingWords: 11 },
+                    stage3: { responses: [], correctCount: 0, totalWords: 40, conflictingWords: 17 }
+                };
+            }
+
+            // Güvenli timer yönetimi
+            addTimer(timerId) {
+                this.timers.add(timerId);
+                return timerId;
+            }
+
+            clearTimer(timerId) {
+                if (timerId && this.timers.has(timerId)) {
+                    clearTimeout(timerId);
+                    this.timers.delete(timerId);
+                }
+            }
+
+            clearAllTimers() {
+                this.timers.forEach(timerId => {
+                    clearTimeout(timerId);
+                });
+                this.timers.clear();
+            }
+
+            // Güvenli ses yönetimi
+            setCurrentAudio(audio) {
+                if (this.currentAudio) {
+                    this.currentAudio.pause();
+                    this.currentAudio.currentTime = 0;
+                }
+                this.currentAudio = audio;
+            }
+
+            stopCurrentAudio() {
+                if (this.currentAudio) {
+                    this.currentAudio.pause();
+                    this.currentAudio.currentTime = 0;
+                    this.currentAudio = null;
+                }
+            }
+
+            cleanup() {
+                this.clearAllTimers();
+                this.stopCurrentAudio();
+                this.preloadedAudios.clear();
+                this.locked = false;
+            }
+        }
+
+        // Global state instance
+        const state = new SafeStroopTestState();
+
+        // Test verileri
+        const stroopTestData = {
+            stages: {
+                1: {
+                    title: "1. Aşama",
+                    instruction: "Kelimeleri Görür Görmez Boşluk (space) Tuşuna Basın!",
+                    audioInstruction: "stroop_asama1_talimat.mp3",
+                    exampleWords: ["KIRMIZI", "SARI", "YEŞİL", "SARI", "YEŞİL", "MAVİ", "KIRMIZI"],
+                    exampleTimings: [2000, 3500, 3000, 1500, 2000, 3000, 2500],
+                    exampleColors: ["black", "black", "black", "black", "black", "black", "black"],
+                    testWords: ["YEŞİL", "YEŞİL", "MAVİ", "MAVİ", "KIRMIZI", "SARI", "YEŞİL", "KIRMIZI", "KIRMIZI", "SARI", "MAVİ", "SARI"],
+                    testTimings: [3000, 2000, 3000, 1000, 2000, 2000, 2500, 1000, 1500, 2500, 1000],
+                    testColors: ["black", "black", "black", "black", "black", "black", "black", "black", "black", "black", "black", "black"],
+                    responseRequired: Array(12).fill(true)
+                },
+                2: {
+                    title: "2. Aşama",
+                    instruction: "Renk ile Kelimenin Adı Eşleşiyorsa Boşluk (space) Tuşuna Basın!",
+                    audioInstruction: "stroop_asama2_talimat.mp3",
+                    exampleWords: ["YEŞİL", "SARI", "MAVİ", "KIRMIZI", "SARI", "YEŞİL", "KIRMIZI", "MAVİ"],
+                    exampleTimings: [2000, 2500, 3000, 1500, 1000, 2000, 2000, 2500],
+                    exampleColors: ["red", "yellow", "blue", "yellow", "blue", "green", "red", "green"],
+                    testWords: ["YEŞİL", "SARI", "KIRMIZI", "KIRMIZI", "SARI", "SARI", "YEŞİL", "MAVİ", "MAVİ", "KIRMIZI", "MAVİ", "YEŞİL", "YEŞİL", "YEŞİL", "SARI", "MAVİ", "SARI", "KIRMIZI", "YEŞİL", "MAVİ", "YEŞİL", "MAVİ", "KIRMIZI"],
+                    testTimings: [2000, 2000, 1000, 1000, 500, 2500, 1000, 1500, 2000, 1000, 2000, 1000, 1000, 500, 2500, 1000, 1500, 2000, 1000, 1500, 1000, 1000],
+                    testColors: ["green", "red", "green", "yellow", "blue", "yellow", "red", "blue", "green", "red", "red", "blue", "yellow", "green", "yellow", "blue", "yellow", "blue", "green", "yellow", "blue", "blue", "red"],
+                    responseRequired: [true, false, false, false, false, true, false, true, false, true, false, false, true, true, true, true, true, false, true, false, false, true, true]
+                },
+                3: {
+                    title: "3. Aşama",
+                    instruction: "Renk ile Kelimenin Adı Eşleşmiyorsa Boşluk (space) Tuşuna Basın!",
+                    audioInstruction: "stroop_asama3_talimat.mp3",
+                    exampleWords: ["KIRMIZI", "MAVİ", "SARI", "YEŞİL", "KIRMIZI", "YEŞİL", "MAVİ", "MAVİ"],
+                    exampleTimings: [2000, 2000, 2000, 1500, 1000, 2000, 2000, 2500],
+                    exampleColors: ["yellow", "green", "yellow", "green", "red", "red", "blue", "yellow"],
+                    testWords: ["YEŞİL", "YEŞİL", "SARI", "SARI", "MAVİ", "KIRMIZI", "MAVİ", "SARI", "MAVİ", "KIRMIZI", "YEŞİL", "KIRMIZI", "KIRMIZI", "YEŞİL", "MAVİ", "YEŞİL", "SARI", "YEŞİL", "SARI", "YEŞİL", "SARI", "MAVİ", "KIRMIZI", "SARI", "MAVİ", "KIRMIZI", "SARI", "KIRMIZI", "KIRMIZI", "MAVİ", "KIRMIZI", "SARI", "KIRMIZI", "KIRMIZI", "SARI", "KIRMIZI", "YEŞİL", "YEŞİL", "KIRMIZI", "MAVİ"],
+                    testTimings: [2000, 2000, 1000, 1000, 500, 2500, 1000, 1500, 2000, 1000, 2000, 1000, 1000, 500, 2500, 1000, 1500, 2000, 1000, 1500, 1000, 1000, 500, 2500, 1000, 2000, 2000, 1000, 1500, 1000, 1000, 500, 2000, 2000, 1000, 1000, 2000, 1000, 1000, 500],
+                    testColors: ["blue", "red", "blue", "yellow", "blue", "red", "yellow", "yellow", "blue", "red", "green", "red", "red", "red", "yellow", "green", "yellow", "green", "yellow", "green", "red", "blue", "blue", "red", "blue", "green", "yellow", "yellow", "red", "red", "yellow", "green", "red", "red", "yellow", "red", "yellow", "green", "blue", "blue"],
+                    responseRequired: [true, true, true, false, false, false, true, false, false, false, true, false, false, true, true, true, false, true, false, true, true, false, true, true, false, true, false, false, false, false, true, true, false, false, false, false, true, true, true, false]
+                }
+            }
+        };
+
+        // ==================== SES YÖNETİMİ ====================
+        function playAudio(filename, callback) {
+            if (state.currentAudio) {
+                state.currentAudio.pause();
+                state.currentAudio.currentTime = 0;
+            }
+            
+            const audio = new Audio(`./mp3/${filename}`);
+            state.currentAudio = audio;
+            
+            audio.addEventListener('ended', () => {
+                if (callback) callback();
+            });
+            
+            audio.play().catch(error => {
+                console.log('Ses çalma hatası:', error);
+                if (callback) callback();
+            });
+            
+            return audio;
+        }
+
+        function stopCurrentAudio() {
+            if (state.currentAudio) {
+                state.currentAudio.pause();
+                state.currentAudio.currentTime = 0;
+                state.currentAudio = null;
+            }
+        }
+
+        // Hata yönetimi
+        function handleError(message, isSystem = false) {
+            console.error('🚨 Sistem Hatası:', message);
+            
+            const errorOverlay = document.getElementById('errorOverlay');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            if (errorOverlay && errorMessage) {
+                errorMessage.textContent = message;
+                errorOverlay.classList.add('show');
+                
+                setTimeout(() => {
+                    errorOverlay.classList.remove('show');
+                }, 5000);
+            }
+            
+            if (isSystem) {
+                state.cleanup();
+            }
+        }
+
+        // Loading gösterimi
+        function showLoading(text = 'Yükleniyor...') {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const loadingText = document.getElementById('loadingText');
+            
+            if (loadingText) loadingText.textContent = text;
+            if (loadingOverlay) loadingOverlay.classList.add('show');
+        }
+
+        function hideLoading() {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            if (loadingOverlay) loadingOverlay.classList.remove('show');
+        }
+
+        // ==================== EKRAN YÖNETİMİ ====================
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            const screen = document.getElementById(screenId);
+            if (screen) {
+                screen.classList.add('active');
+                state.currentScreen = screenId;
+            }
+        }
+
+        function showButton(buttonId) {
+            setTimeout(() => {
+                const button = document.getElementById(buttonId);
+                if (button) {
+                    button.classList.add('visible');
+                }
+            }, 100);
+        }
+
+        // ==================== STROOP TEST EKRANLARI ====================
+        
+        // 1. Giriş Ekranı
+        function goToWelcome() {
+            showScreen('welcomeScreen');
+            // Ses çal: "Bu bölüm üç aşamadan oluşmaktadır. Her aşamanın başında örnek uygulamayı tamamlayacaksınız."
+            playAudio('stroop_giris.mp3', () => {
+                showButton('welcomeNextBtn');
+            });
+        }
+
+        // 2. Aşama Talimat Ekranları
+        function goToStage1Intro() {
+            createStageIntroScreen(1);
+        }
+
+        function goToStage2Intro() {
+            createStageIntroScreen(2);
+        }
+
+        function goToStage3Intro() {
+            createStageIntroScreen(3);
+        }
+
+        function createStageIntroScreen(stageNum) {
+            const stage = stroopTestData.stages[stageNum];
+            const container = document.querySelector('.container');
+            
+            // Mevcut ekranları temizle
+            container.innerHTML = `
+                <!-- Loading Overlay -->
+                <div class="loading-overlay" id="loadingOverlay">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text" id="loadingText">Yükleniyor...</div>
+                </div>
+
+                <!-- Error Overlay -->
+                <div class="error-overlay" id="errorOverlay">
+                    <div class="error-message" id="errorMessage">Bir hata oluştu</div>
+                </div>
+
+                <div id="stage${stageNum}IntroScreen" class="screen active">
+                    <div class="instruction-box">
+                        <div class="highlight-text">
+                            ${stage.instruction}
+                        </div>
+                    </div>
+                    <button class="btn btn-bottom-right" id="stage${stageNum}IntroNextBtn" onclick="goToStage${stageNum}ExampleReady()">İleri</button>
+                </div>
+            `;
+            
+            playAudio(stage.audioInstruction, () => {
+                showButton(`stage${stageNum}IntroNextBtn`);
+            });
+        }
+
+        // 3. Örnek Hazır Ekranları
+        function goToStage1ExampleReady() {
+            createExampleReadyScreen(1);
+        }
+
+        function goToStage2ExampleReady() {
+            createExampleReadyScreen(2);
+        }
+
+        function goToStage3ExampleReady() {
+            createExampleReadyScreen(3);
+        }
+
+        function createExampleReadyScreen(stageNum) {
+            const container = document.querySelector('.container');
+            
+            container.innerHTML = `
+                <!-- Loading Overlay -->
+                <div class="loading-overlay" id="loadingOverlay">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text" id="loadingText">Yükleniyor...</div>
+                </div>
+
+                <!-- Error Overlay -->
+                <div class="error-overlay" id="errorOverlay">
+                    <div class="error-message" id="errorMessage">Bir hata oluştu</div>
+                </div>
+
+                <div id="stage${stageNum}ExampleReadyScreen" class="screen active">
+                    <div class="instruction-box">
+                        <div class="highlight-text">
+                            Örnek Uygulamaya Hazırsanız "Başla" Butonuna Tıklayın!
+                        </div>
+                    </div>
+                    <button class="btn btn-bottom-right" id="stage${stageNum}ExampleStartBtn" onclick="startStage${stageNum}Example()">Başla</button>
+                </div>
+            `;
+            
+            playAudio('stroop_asama1_ornek_hazir.mp3', () => {
+                showButton(`stage${stageNum}ExampleStartBtn`);
+            });
+        }
+
+        // 4. Örnek Test Başlatma
+        function startStage1Example() {
+            startExample(1);
+        }
+
+        function startStage2Example() {
+            startExample(2);
+        }
+
+        function startStage3Example() {
+            startExample(3);
+        }
+
+        async function startExample(stageNum) {
+            try {
+                const stage = stroopTestData.stages[stageNum];
+                state.currentStage = stageNum;
+                state.isInExample = true;
+                state.currentWordIndex = 0;
+
+                console.log(`🎯 Aşama ${stageNum} örnek testi başlatılıyor...`);
+
+                // Önce 3-2-1 countdown göster
+                await showCountdown();
+
+                // Geri sayım bittikten sonra test alanını oluştur
+                const container = document.querySelector('.container');
+                container.innerHTML = `
+                    <!-- Loading Overlay -->
+                    <div class="loading-overlay" id="loadingOverlay">
+                        <div class="loading-spinner"></div>
+                        <div class="loading-text" id="loadingText">Yükleniyor...</div>
+                    </div>
+
+                    <!-- Error Overlay -->
+                    <div class="error-overlay" id="errorOverlay">
+                        <div class="error-message" id="errorMessage">Bir hata oluştu</div>
+                    </div>
+
+                    <div id="exampleTestScreen" class="screen active">
+                        <div class="word-display" id="wordDisplay"></div>
+                    </div>
+                `;
+
+                // Kısa bir bekleme ekle
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                // Örnek kelimeleri göster
+                for (let i = 0; i < stage.exampleWords.length; i++) {
+                    console.log(`📝 Örnek kelime ${i + 1}/${stage.exampleWords.length}: ${stage.exampleWords[i]}`);
+                    await showExampleWord(stage.exampleWords[i], stage.exampleColors[i], stage.exampleTimings[i]);
+                }
+
+                console.log(`✅ Aşama ${stageNum} örnek testi tamamlandı`);
+
+                // Örnek tamamlandı ekranı
+                showExampleComplete(stageNum);
+            } catch (error) {
+                console.error(`❌ Örnek test hatası:`, error);
+                handleError(`Örnek test hatası: ${error.message}`);
+            }
+        }
+
+        function showCountdown() {
+            return new Promise((resolve) => {
+                const container = document.querySelector('.container');
+                
+                let count = 3;
+                
+                const interval = setInterval(() => {
+                    container.innerHTML = `
+                        <!-- Loading Overlay -->
+                        <div class="loading-overlay" id="loadingOverlay">
+                            <div class="loading-spinner"></div>
+                            <div class="loading-text" id="loadingText">Yükleniyor...</div>
+                        </div>
+
+                        <!-- Error Overlay -->
+                        <div class="error-overlay" id="errorOverlay">
+                            <div class="error-message" id="errorMessage">Bir hata oluştu</div>
+                        </div>
+
+                        <div class="screen active">
+                            <div class="countdown">${count}</div>
+                        </div>
+                    `;
+                    count--;
+                    
+                    if (count < 0) {
+                        clearInterval(interval);
+                        resolve();
+                    }
+                }, 1000);
+            });
+        }
+
+        function showExampleWord(word, color, timing) {
+            return new Promise((resolve) => {
+                const wordDisplay = document.getElementById('wordDisplay');
+                if (!wordDisplay) {
+                    console.error('wordDisplay elementi bulunamadı!');
+                    resolve();
+                    return;
+                }
+                
+                const colorClass = getColorClass(color);
+                wordDisplay.innerHTML = `<div class="${colorClass}">${word}</div>`;
+                
+                let hasResponded = false;
+                let timeoutId = null;
+                
+                const spaceHandler = (e) => {
+                    if (e.key === ' ' && state.isInExample && !hasResponded) {
+                        e.preventDefault();
+                        hasResponded = true;
+                        console.log(`Space tuşuna basıldı - Örnek: ${word}`);
+                        
+                        // Timer'ı temizle
+                        if (timeoutId) {
+                            clearTimeout(timeoutId);
+                            timeoutId = null;
+                        }
+                        
+                        // Event listener'ı kaldır
+                        document.removeEventListener('keydown', spaceHandler);
+                        
+                        // Kelimeyi temizle ve geçiş yap
+                        wordDisplay.innerHTML = '';
+                        setTimeout(() => resolve(), 500); // Biraz daha uzun bekleme
+                    }
+                };
+                
+                document.addEventListener('keydown', spaceHandler);
+                
+                // Otomatik zaman aşımı
+                timeoutId = setTimeout(() => {
+                    if (!hasResponded) {
+                        hasResponded = true;
+                        console.log(`Zaman aşımı - Örnek: ${word}`);
+                        
+                        document.removeEventListener('keydown', spaceHandler);
+                        wordDisplay.innerHTML = '';
+                        setTimeout(() => resolve(), 500); // Biraz daha uzun bekleme
+                    }
+                }, timing);
+            });
+        }
+
+        function getColorClass(color) {
+            const colorMap = {
+                'red': 'color-red',
+                'blue': 'color-blue',
+                'green': 'color-green',
+                'yellow': 'color-yellow',
+                'black': 'color-black'
+            };
+            return colorMap[color] || 'color-black';
+        }
+
+        // 5. Örnek Tamamlandı Ekranı
+        function showExampleComplete(stageNum) {
+            try {
+                console.log(`🎉 Aşama ${stageNum} örnek tamamlandı ekranı gösteriliyor`);
+                
+                // State'i güncelle
+                state.isInExample = false;
+                
+                const container = document.querySelector('.container');
+                
+                container.innerHTML = `
+                    <!-- Loading Overlay -->
+                    <div class="loading-overlay" id="loadingOverlay">
+                        <div class="loading-spinner"></div>
+                        <div class="loading-text" id="loadingText">Yükleniyor...</div>
+                    </div>
+
+                    <!-- Error Overlay -->
+                    <div class="error-overlay" id="errorOverlay">
+                        <div class="error-message" id="errorMessage">Bir hata oluştu</div>
+                    </div>
+
+                    <div id="exampleCompleteScreen" class="screen active">
+                        <div class="instruction-box">
+                            <div class="highlight-text">
+                                Örnek Uygulamayı Tamamladınız!
+                            </div>
+                        </div>
+                        <button class="btn btn-bottom-right" id="exampleCompleteBtn" onclick="goToStage${stageNum}TestReady()">İleri</button>
+                    </div>
+                `;
+                
+                playAudio('stroop_asama1_ornek_bitis.mp3', () => {
+                    showButton('exampleCompleteBtn');
+                });
+            } catch (error) {
+                console.error(`❌ Örnek tamamlandı ekranı hatası:`, error);
+                handleError(`Örnek tamamlandı ekranı hatası: ${error.message}`);
+            }
+        }
+
+        // 6. Ana Test Hazır Ekranları
+        function goToStage1TestReady() {
+            createTestReadyScreen(1);
+        }
+
+        function goToStage2TestReady() {
+            createTestReadyScreen(2);
+        }
+
+        function goToStage3TestReady() {
+            createTestReadyScreen(3);
+        }
+
+        function createTestReadyScreen(stageNum) {
+            const container = document.querySelector('.container');
+            
+            container.innerHTML = `
+                <!-- Loading Overlay -->
+                <div class="loading-overlay" id="loadingOverlay">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text" id="loadingText">Yükleniyor...</div>
+                </div>
+
+                <!-- Error Overlay -->
+                <div class="error-overlay" id="errorOverlay">
+                    <div class="error-message" id="errorMessage">Bir hata oluştu</div>
+                </div>
+
+                <div id="stage${stageNum}TestReadyScreen" class="screen active">
+                    <div class="instruction-box">
+                        <div class="highlight-text">
+                            Teste Hazırlanın!
+                        </div>
+                    </div>
+                    <button class="btn btn-bottom-right" id="stage${stageNum}TestStartBtn" onclick="startStage${stageNum}Test()">Başla</button>
+                </div>
+            `;
+            
+            playAudio('stroop_asama1_test_hazir.mp3', () => {
+                showButton(`stage${stageNum}TestStartBtn`);
+            });
+        }
+
+        // 7. Ana Test Başlatma
+        function startStage1Test() {
+            startMainTest(1);
+        }
+
+        function startStage2Test() {
+            startMainTest(2);
+        }
+
+        function startStage3Test() {
+            startMainTest(3);
+        }
+
+        async function startMainTest(stageNum) {
+            const stage = stroopTestData.stages[stageNum];
+            state.currentStage = stageNum;
+            state.isInExample = false;
+            state.isTestActive = true;
+            state.currentWordIndex = 0;
+            state.stageData[`stage${stageNum}`].responses = [];
+
+            if (stageNum === 1) {
+                state.testStartTime = Date.now();
+            }
+
+            // Önce 3-2-1 countdown göster
+            await showCountdown();
+
+            // Geri sayım bittikten sonra test alanını oluştur
+            const container = document.querySelector('.container');
+            container.innerHTML = `
+                <!-- Loading Overlay -->
+                <div class="loading-overlay" id="loadingOverlay">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text" id="loadingText">Yükleniyor...</div>
+                </div>
+
+                <!-- Error Overlay -->
+                <div class="error-overlay" id="errorOverlay">
+                    <div class="error-message" id="errorMessage">Bir hata oluştu</div>
+                </div>
+
+                <div id="mainTestScreen" class="screen active">
+                    <div class="word-display" id="wordDisplay"></div>
+                </div>
+            `;
+
+            // Ana test kelimelerini göster
+            for (let i = 0; i < stage.testWords.length; i++) {
+                await showTestWord(stage.testWords[i], stage.testColors[i], stage.testTimings[i], stage.responseRequired[i], stageNum, i);
+            }
+
+            state.isTestActive = false;
+
+            // Sonraki aşamaya geç veya testi bitir
+            if (stageNum < 3) {
+                // Sonraki aşamaya geç
+                if (stageNum === 1) {
+                    showStage1Complete();
+                } else if (stageNum === 2) {
+                    showStage2Complete();
+                }
+            } else {
+                // Test tamamlandı
+                showTestComplete();
+            }
+        }
+
+        function showTestWord(word, color, timing, responseRequired, stageNum, wordIndex) {
+            return new Promise((resolve) => {
+                const wordDisplay = document.getElementById('wordDisplay');
+                if (!wordDisplay) {
+                    console.error('wordDisplay elementi bulunamadı!');
+                    resolve();
+                    return;
+                }
+                
+                const colorClass = getColorClass(color);
+                
+                const wordData = {
+                    word: word,
+                    color: color,
+                    responseRequired: responseRequired,
+                    startTime: performance.now(),
+                    responded: false,
+                    responseTime: null,
+                    stageNum: stageNum,
+                    wordIndex: wordIndex
+                };
+                
+                state.stageData[`stage${stageNum}`].responses.push(wordData);
+                
+                wordDisplay.innerHTML = `<div class="${colorClass}">${word}</div>`;
+                
+                let hasResponded = false;
+                let timeoutId = null;
+                
+                const spaceHandler = (e) => {
+                    if (e.key === ' ' && state.isTestActive && !hasResponded) {
+                        e.preventDefault();
+                        hasResponded = true;
+                        
+                        wordData.responded = true;
+                        wordData.responseTime = performance.now() - wordData.startTime;
+                        
+                        console.log(`Space tuşuna basıldı - Aşama ${stageNum}, Kelime: ${word}, Süre: ${wordData.responseTime.toFixed(0)}ms`);
+                        
+                        // Timer'ı temizle
+                        if (timeoutId) {
+                            clearTimeout(timeoutId);
+                            timeoutId = null;
+                        }
+                        
+                        // Event listener'ı kaldır
+                        document.removeEventListener('keydown', spaceHandler);
+                        
+                        // Kelimeyi temizle ve geçiş yap
+                        wordDisplay.innerHTML = '';
+                        setTimeout(() => resolve(), 500);
+                    }
+                };
+                
+                document.addEventListener('keydown', spaceHandler);
+                
+                // Otomatik zaman aşımı
+                timeoutId = setTimeout(() => {
+                    if (!hasResponded) {
+                        hasResponded = true;
+                        console.log(`Zaman aşımı - Aşama ${stageNum}, Kelime: ${word}`);
+                        
+                        document.removeEventListener('keydown', spaceHandler);
+                        wordDisplay.innerHTML = '';
+                        setTimeout(() => resolve(), 500);
+                    }
+                }, timing);
+            });
+        }
+
+        // 8. 1. Aşama Tamamlandı Ekranı
+        function showStage1Complete() {
+            const container = document.querySelector('.container');
+            
+            container.innerHTML = `
+                <!-- Loading Overlay -->
+                <div class="loading-overlay" id="loadingOverlay">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text" id="loadingText">Yükleniyor...</div>
+                </div>
+
+                <!-- Error Overlay -->
+                <div class="error-overlay" id="errorOverlay">
+                    <div class="error-message" id="errorMessage">Bir hata oluştu</div>
+                </div>
+
+                <div id="stage1CompleteScreen" class="screen active">
+                    <div class="instruction-box">
+                        <div class="highlight-text">
+                            Testi Tamamladınız!<br>
+                            Sıradaki Bölüme Geçmek İçin Hazırlanın!
+                        </div>
+                    </div>
+                    <button class="btn btn-bottom-right" id="stage1CompleteBtn" onclick="goToStage2Intro()">İleri</button>
+                </div>
+            `;
+            
+            playAudio('stroop_1asama_bitis.mp3', () => {
+                showButton('stage1CompleteBtn');
+            });
+        }
+
+        // 9. 2. Aşama Tamamlandı Ekranı
+        function showStage2Complete() {
+            const container = document.querySelector('.container');
+            
+            container.innerHTML = `
+                <!-- Loading Overlay -->
+                <div class="loading-overlay" id="loadingOverlay">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text" id="loadingText">Yükleniyor...</div>
+                </div>
+
+                <!-- Error Overlay -->
+                <div class="error-overlay" id="errorOverlay">
+                    <div class="error-message" id="errorMessage">Bir hata oluştu</div>
+                </div>
+
+                <div id="stage2CompleteScreen" class="screen active">
+                    <div class="instruction-box">
+                        <div class="highlight-text">
+                            Testi Tamamladınız!<br>
+                            Sıradaki Bölüme Geçmek İçin Hazırlanın!
+                        </div>
+                    </div>
+                    <button class="btn btn-bottom-right" id="stage2CompleteBtn" onclick="goToStage3Intro()">İleri</button>
+                </div>
+            `;
+            
+            playAudio('stroop_1asama_bitis.mp3', () => {
+                showButton('stage2CompleteBtn');
+            });
+        }
+
+        // 10. Test Tamamlandı Ekranı
+        function showTestComplete() {
+            const container = document.querySelector('.container');
+            
+            container.innerHTML = `
+                <!-- Loading Overlay -->
+                <div class="loading-overlay" id="loadingOverlay">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text" id="loadingText">Yükleniyor...</div>
+                </div>
+
+                <!-- Error Overlay -->
+                <div class="error-overlay" id="errorOverlay">
+                    <div class="error-message" id="errorMessage">Bir hata oluştu</div>
+                </div>
+
+                <div id="resultsScreen" class="screen active">
+                    <div class="result-message">Testi Tamamladınız!</div>
+                    <div class="result-info">Sıradaki Bölüme Geçmek İçin Hazırlanın!</div>
+                    <button class="btn btn-bottom-right visible" onclick="completeTest()">İleri</button>
+                </div>
+            `;
+            
+            playAudio('stroop_test_bitis.mp3');
+            
+            // Test sonuçlarını kaydet
+            saveTestResults();
+        }
+
+        // ==================== VERİTABANI KAYIT ====================
+        async function saveTestResults() {
+            try {
+                const results = calculateScores();
+                const urlParams = new URLSearchParams(window.location.search);
+                
+                const payload = {
+                    testType: 'Stroop_Testi',
+                    learnworlds_user_id: urlParams.get('user_id'),
+                    learnworlds_user_email: urlParams.get('user_email'),
+                    learnworlds_user_name: urlParams.get('user_name'),
+                    course_id: urlParams.get('course_id'),
+                    lesson_id: urlParams.get('lesson_id'),
+                    
+                    test_start_time: state.testStartTime,
+                    test_end_time: Date.now(),
+                    test_elapsed_time_seconds: Math.round((Date.now() - state.testStartTime) / 1000),
+                    
+                    stage1_results: results.A1_BTS,
+                    stage2_results: results.A2_KTS,
+                    stage3_results: results.A3_STS,
+                    interference_effect: results.Interferans,
+                    
+                    detailed_responses: state.stageData
+                };
+                
+                const response = await fetch('/api/fortest-stroop-sonuclari', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    console.log('✅ Test sonuçları başarıyla kaydedildi:', result.submissionId);
+                    showNotification('Test sonuçlarınız başarıyla kaydedildi!', 'success');
+                } else {
+                    throw new Error(result.message);
+                }
+                
+            } catch (error) {
+                console.error('❌ Test sonuçları kaydedilemedi:', error);
+                showNotification('Test sonuçları kaydedilirken bir hata oluştu.', 'error');
+            }
+        }
+
+        // Puanlama sistemi
+        function calculateScores() {
+            const results = {
+                A1_BTS: calculateStageScore(1),
+                A2_KTS: calculateStageScore(2),
+                A3_STS: calculateStageScore(3)
+            };
+            
+            // İnterferans hesaplama
+            if (results.A2_KTS.OrtalamaSure_ms > 0) {
+                results.Interferans = {
+                    Fark_ms: results.A3_STS.OrtalamaSure_ms - results.A2_KTS.OrtalamaSure_ms,
+                    Oran: ((results.A3_STS.OrtalamaSure_ms - results.A2_KTS.OrtalamaSure_ms) / results.A2_KTS.OrtalamaSure_ms * 100).toFixed(1)
+                };
+            } else {
+                results.Interferans = {
+                    Fark_ms: 0,
+                    Oran: "0.0"
+                };
+            }
+            
+            return results;
+        }
+
+        function calculateStageScore(stageNum) {
+            const responses = state.stageData[`stage${stageNum}`].responses;
+            const correctResponses = responses.filter(r => {
+                if (r.responseRequired) {
+                    return r.responded; // Basması gereken yerde bastı
+                } else {
+                    return !r.responded; // Basmaması gereken yerde basmadı
+                }
+            });
+            
+            const totalRequired = responses.length;
+            
+            const avgTime = correctResponses.length > 0 
+                ? Math.round(correctResponses.reduce((sum, r) => sum + (r.responseTime || 0), 0) / correctResponses.length)
+                : 0;
+            
+            return {
+                OrtalamaSure_ms: avgTime,
+                Dogruluk: ((correctResponses.length / totalRequired) * 100).toFixed(1),
+                HataSayisi: totalRequired - correctResponses.length
+            };
+        }
+
+        function completeTest() {
+            console.log('Test tamamlandı, sıradaki bölüme geçiliyor...');
+        }
+
+        // ==================== YARDIMCI FONKSİYONLAR ====================
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 100);
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+
+        // ==================== CLEANUP & EVENT LISTENERS ====================
+        window.addEventListener('beforeunload', function(e) {
+            console.log('🧹 Sayfa kapatılıyor, cleanup başlatılıyor...');
+            state.cleanup();
+            
+            if (state.currentScreen !== 'titleScreen' && state.currentScreen !== 'resultsScreen') {
+                e.preventDefault();
+                e.returnValue = 'Test devam ediyor. Sayfayı kapatırsanız veriler kaybolabilir.';
+                return e.returnValue;
+            }
+        });
+
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                console.log('👁️ Sayfa gizlendi');
+                if (state.currentAudio) {
+                    state.currentAudio.pause();
+                }
+            } else {
+                console.log('👁️ Sayfa görünür oldu');
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const errorOverlay = document.getElementById('errorOverlay');
+                if (errorOverlay && errorOverlay.classList.contains('show')) {
+                    errorOverlay.classList.remove('show');
+                }
+            }
+            
+            // Ctrl+Space ile ses durdurma (normal space tuşu test için kullanılıyor)
+            if (e.key === ' ' && e.ctrlKey) {
+                e.preventDefault();
+                state.stopCurrentAudio();
+                console.log('🔇 Ses manuel olarak durduruldu');
+            }
+            
+            // Test dışında space tuşuna basılmasını engelle
+            if (e.key === ' ' && !state.isTestActive && !state.isInExample) {
+                e.preventDefault();
+                console.log('🚫 Test dışında space tuşu engellendi');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Stroop Testi başlatılıyor...');
+            console.log('📱 Cihaz:', navigator.userAgent);
+            console.log('🖥️ Ekran:', window.innerWidth + 'x' + window.innerHeight);
+        });
+    </script>
+</body>
+</html> 

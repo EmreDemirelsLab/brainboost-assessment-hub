@@ -1,0 +1,2246 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>ForTest Dikkat Algoritması - Sağlam Versiyon</title>
+   <style>
+       :root {
+           --primary: #60a5fa;
+           --primary-dark: #2563eb;
+           --secondary: #f43f5e;
+           --success: #10b981;
+           --warning: #f59e0b;
+           --danger: #ef4444;
+           --light: #f8fafc;
+           --dark: #0f172a;
+           --gray: #94a3b8;
+           --gray-light: #e2e8f0;
+           --border-radius: 8px;
+           --font-main: 'Segoe UI', Roboto, Arial, sans-serif;
+           --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+           --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.15);
+           --transition: all 0.3s ease;
+           
+           /* Responsive değişkenler */
+           --container-padding: clamp(15px, 4vw, 50px);
+           --font-size-base: clamp(14px, 2vw, 18px);
+           --font-size-large: clamp(18px, 3vw, 24px);
+           --font-size-xlarge: clamp(24px, 4vw, 48px);
+           --font-size-xxlarge: clamp(32px, 6vw, 64px);
+           --button-padding: clamp(12px, 2vw, 18px) clamp(20px, 4vw, 40px);
+           --gap-size: clamp(10px, 2vw, 20px);
+       }
+
+       * {
+           margin: 0;
+           padding: 0;
+           box-sizing: border-box;
+       }
+
+       body {
+           font-family: var(--font-main);
+           line-height: 1.6;
+           color: var(--dark);
+           background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #1d4ed8 100%);
+           min-height: 100vh;
+           display: flex;
+           justify-content: center;
+           align-items: center;
+           padding: clamp(10px, 3vw, 20px);
+           font-size: var(--font-size-base);
+       }
+
+       /* Container dinamik boyutta - koyu mavi tema */
+       .container {
+           background: linear-gradient(145deg, #1e3a8a 0%, #1e40af 100%);
+           color: white;
+           border-radius: clamp(15px, 3vw, 20px);
+           box-shadow: 
+               0 25px 50px rgba(0, 0, 0, 0.4),
+               0 15px 30px rgba(0, 0, 0, 0.3),
+               inset 0 2px 5px rgba(255, 255, 255, 0.1);
+           padding: var(--container-padding);
+           width: min(100%, 1200px);
+           height: min(100vh - clamp(20px, 6vw, 40px), 800px);
+           min-height: clamp(500px, 80vh, 600px);
+           text-align: center;
+           position: relative;
+           border: 1px solid rgba(255, 255, 255, 0.2);
+           overflow: hidden;
+           display: flex;
+           flex-direction: column;
+       }
+
+       /* Loading overlay - smooth transitions */
+       .loading-overlay {
+           position: absolute;
+           top: 0;
+           left: 0;
+           width: 100%;
+           height: 100%;
+           background: rgba(30, 58, 138, 0.9);
+           display: flex;
+           justify-content: center;
+           align-items: center;
+           z-index: 1000;
+           flex-direction: column;
+           opacity: 0;
+           visibility: hidden;
+           transition: opacity 0.3s ease, visibility 0.3s ease;
+       }
+
+       .loading-overlay.show {
+           opacity: 1;
+           visibility: visible;
+       }
+
+       .loading-spinner {
+           width: 50px;
+           height: 50px;
+           border: 4px solid rgba(255, 255, 255, 0.3);
+           border-top: 4px solid white;
+           border-radius: 50%;
+           animation: spin 1s linear infinite;
+           margin-bottom: 20px;
+       }
+
+       .loading-text {
+           color: white;
+           font-size: var(--font-size-large);
+       }
+
+       @keyframes spin {
+           0% { transform: rotate(0deg); }
+           100% { transform: rotate(360deg); }
+       }
+
+       /* Error message */
+       .error-overlay {
+           position: absolute;
+           top: 0;
+           left: 0;
+           width: 100%;
+           height: 100%;
+           background: rgba(239, 68, 68, 0.9);
+           display: flex;
+           justify-content: center;
+           align-items: center;
+           z-index: 1001;
+           flex-direction: column;
+           text-align: center;
+           padding: 20px;
+           opacity: 0;
+           visibility: hidden;
+           transition: opacity 0.3s ease, visibility 0.3s ease;
+       }
+
+       .error-overlay.show {
+           opacity: 1;
+           visibility: visible;
+       }
+
+       .error-message {
+           color: white;
+           font-size: var(--font-size-large);
+           text-align: center;
+           padding: 20px;
+           line-height: 1.6;
+       }
+
+       .header {
+           margin-bottom: clamp(15px, 4vw, 30px);
+       }
+
+       .header h1 {
+           color: white;
+           margin-bottom: clamp(5px, 2vw, 10px);
+           font-size: var(--font-size-xxlarge);
+           font-weight: 700;
+           letter-spacing: -0.5px;
+           text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+           line-height: 1.2;
+       }
+
+       .header p {
+           color: rgba(255, 255, 255, 0.8);
+           font-size: var(--font-size-large);
+           line-height: 1.8;
+       }
+
+       .screen {
+           display: none;
+           position: absolute;
+           top: 0;
+           left: 0;
+           width: 100%;
+           height: 100%;
+           padding: var(--container-padding);
+       }
+
+       .screen.active {
+           display: flex;
+           flex-direction: column;
+           justify-content: center;
+           align-items: center;
+       }
+
+       /* Başlangıç ekranı */
+       .title-screen h1 {
+           font-size: var(--font-size-xxlarge);
+           color: white;
+           font-weight: 700;
+           margin-bottom: clamp(25px, 6vw, 50px);
+           text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+           line-height: 1.2;
+       }
+
+       .instruction-box {
+           background: transparent;
+           border-radius: 0;
+           padding: clamp(10px, 3vw, 20px);
+           margin: clamp(15px, 4vw, 30px) auto;
+           max-width: min(90%, 800px);
+           box-shadow: none;
+           border: none;
+       }
+
+       .instruction-text {
+           font-size: var(--font-size-large);
+           color: rgba(255, 255, 255, 0.9);
+           margin-bottom: clamp(10px, 3vw, 20px);
+           line-height: 1.8;
+       }
+
+       .highlight-text {
+           color: white;
+           font-weight: bold;
+           font-size: clamp(20px, 3.5vw, 28px);
+           margin: clamp(10px, 3vw, 20px) 0;
+           line-height: 1.8;
+           text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+       }
+
+       .btn {
+           display: inline-block;
+           font-weight: 500;
+           color: white;
+           text-align: center;
+           vertical-align: middle;
+           cursor: pointer;
+           background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+           padding: var(--button-padding);
+           font-size: clamp(16px, 2.5vw, 22px);
+           line-height: 1.5;
+           border-radius: var(--border-radius);
+           transition: opacity 0.5s ease, transform 0.5s ease, background 0.3s ease, box-shadow 0.3s ease;
+           border: none;
+           box-shadow: 
+               0 4px 6px rgba(30, 64, 175, 0.3),
+               0 0 15px rgba(255, 255, 255, 0.3),
+               0 0 25px rgba(255, 255, 255, 0.1);
+           text-decoration: none;
+           margin: clamp(5px, 1vw, 10px);
+           opacity: 0;
+           transform: translateY(20px);
+           min-width: clamp(100px, 20vw, 150px);
+           position: relative;
+           overflow: hidden;
+       }
+
+       .btn.visible {
+           opacity: 1;
+           transform: translateY(0);
+       }
+
+       .btn.disabled {
+           opacity: 0.5;
+           cursor: not-allowed;
+           pointer-events: none;
+       }
+
+       .btn:hover:not(.disabled) {
+           background: linear-gradient(135deg, #1e3d9f 0%, #2454d6 100%);
+           box-shadow: 
+               0 6px 8px rgba(30, 58, 138, 0.4),
+               0 0 20px rgba(255, 255, 255, 0.4),
+               0 0 35px rgba(255, 255, 255, 0.15);
+           transform: translateY(-2px);
+       }
+
+       .btn-bottom-right {
+           position: absolute;
+           bottom: clamp(20px, 4vw, 40px);
+           right: clamp(20px, 4vw, 40px);
+           opacity: 0;
+           transition: opacity 0.5s ease;
+       }
+
+       .btn-bottom-right.visible {
+           opacity: 1;
+       }
+
+       /* Sonuç ekranı */
+       .result-message {
+           font-size: clamp(28px, 5vw, 48px);
+           color: white;
+           font-weight: 600;
+           text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+           margin-bottom: clamp(15px, 4vw, 30px);
+           line-height: 1.2;
+       }
+
+       .result-info {
+           font-size: var(--font-size-large);
+           color: rgba(255, 255, 255, 0.8);
+           font-weight: 500;
+       }
+
+       .numbers-display, .letters-display, .question-display {
+           display: flex;
+           flex-wrap: wrap;
+           justify-content: center;
+           align-items: center;
+           gap: clamp(8px, 2vw, 16px);
+           margin: clamp(15px, 4vw, 30px) auto;
+           opacity: 1;
+           transition: opacity 1s ease;
+           position: relative;
+           perspective: 1000px;
+           transform-style: preserve-3d;
+           width: 100%;
+           max-width: min(95%, 700px);
+           min-height: clamp(60px, 12vh, 120px);
+           padding: clamp(5px, 1vw, 15px);
+       }
+
+       .option-btn {
+           /* Dinamik boyutlandırma - viewport temelli */
+           width: clamp(50px, 12vw, 85px);
+           height: clamp(50px, 12vw, 85px);
+           padding: 0;
+           font-size: clamp(16px, 3.5vw, 24px);
+           font-weight: bold;
+           border: clamp(1px, 0.3vw, 2px) solid rgba(255, 255, 255, 0.3);
+           background: rgba(255, 255, 255, 0.9);
+           color: black;
+           border-radius: clamp(6px, 1.5vw, 12px);
+           cursor: pointer;
+           transition: all 0.3s ease;
+           font-family: Arial, sans-serif;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           box-shadow: 
+               0 clamp(2px, 0.5vw, 4px) clamp(4px, 1vw, 6px) rgba(0, 0, 0, 0.2),
+               0 1px 3px rgba(0, 0, 0, 0.15),
+               inset 0 2px 2px rgba(255, 255, 255, 0.8);
+           transform: translateZ(0);
+           backface-visibility: hidden;
+           position: relative;
+           flex-shrink: 0;
+           aspect-ratio: 1 / 1;
+           user-select: none;
+           -webkit-tap-highlight-color: transparent;
+       }
+
+       .option-btn.disabled {
+           opacity: 0.5;
+           cursor: not-allowed;
+           pointer-events: none;
+       }
+
+       .option-btn:hover:not(.disabled) {
+           background: rgba(255, 255, 255, 0.9);
+           border-color: rgba(255, 255, 255, 0.3);
+           color: black;
+           box-shadow: 
+               0 clamp(2px, 0.5vw, 4px) clamp(4px, 1vw, 6px) rgba(0, 0, 0, 0.2),
+               0 1px 3px rgba(0, 0, 0, 0.15),
+               inset 0 2px 2px rgba(255, 255, 255, 0.8);
+       }
+
+       .option-btn.selected {
+           background: linear-gradient(135deg, #90cdf4 0%, #60a5fa 100%) !important;
+           color: black !important;
+           border-color: #90cdf4 !important;
+           box-shadow: 
+               0 clamp(2px, 0.5vw, 4px) clamp(4px, 1vw, 6px) rgba(0, 0, 0, 0.2),
+               0 1px 3px rgba(0, 0, 0, 0.15),
+               inset 0 2px 2px rgba(255, 255, 255, 0.8) !important;
+       }
+
+       .option-btn.clicked {
+           background: linear-gradient(135deg, #90cdf4 0%, #60a5fa 100%) !important;
+           color: black !important;
+           border-color: #90cdf4 !important;
+           box-shadow: 
+               0 clamp(2px, 0.5vw, 4px) clamp(4px, 1vw, 6px) rgba(0, 0, 0, 0.2),
+               0 1px 3px rgba(0, 0, 0, 0.15),
+               inset 0 2px 2px rgba(255, 255, 255, 0.8);
+           transform: scale(0.95);
+       }
+
+       .fake-cursor {
+           position: absolute;
+           width: clamp(18px, 3vw, 22px);
+           height: clamp(18px, 3vw, 22px);
+           background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><path d="M0,0 L0,16 L4,12 L7,19 L10,18 L7,11 L12,11 Z" fill="black" stroke="white" stroke-width="1"/></svg>');
+           background-size: contain;
+           background-repeat: no-repeat;
+           pointer-events: none;
+           z-index: 1000;
+           opacity: 0;
+           transition: all 1.5s ease;
+           transform: scale(1);
+           transform-origin: top left;
+           filter: none;
+       }
+
+       .example-text {
+           font-size: clamp(16px, 2.5vw, 22px);
+           color: white;
+           font-weight: 500;
+           text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+           position: absolute;
+           bottom: clamp(20px, 4vw, 40px);
+           left: 50%;
+           transform: translateX(-50%);
+           z-index: 100;
+           text-align: center;
+           width: max-content;
+           max-width: 80%;
+           padding: clamp(12px, 2vw, 18px) clamp(20px, 4vw, 40px);
+           background: rgba(30, 64, 175, 0.8);
+           backdrop-filter: blur(8px);
+           border-radius: var(--border-radius);
+           line-height: 1.5;
+           margin: clamp(5px, 1vw, 10px);
+           border: 1px solid rgba(255, 255, 255, 0.2);
+           animation: fadeInUp 0.8s ease-out;
+       }
+
+       @keyframes fadeInUp {
+           from {
+               opacity: 0;
+               transform: translateX(-50%) translateY(20px);
+           }
+           to {
+               opacity: 1;
+               transform: translateX(-50%) translateY(0);
+           }
+       }
+
+       .timer {
+           position: fixed;
+           top: clamp(10px, 2vw, 20px);
+           right: clamp(10px, 2vw, 20px);
+           background-color: var(--primary);
+           color: white;
+           padding: clamp(8px, 1.5vw, 10px) clamp(12px, 2vw, 15px);
+           border-radius: var(--border-radius);
+           font-weight: bold;
+           box-shadow: var(--shadow-md);
+           z-index: 100;
+           font-size: clamp(14px, 2vw, 18px);
+       }
+
+       .progress-container {
+           position: absolute;
+           bottom: 0;
+           left: 0;
+           width: 100%;
+           height: clamp(6px, 1vw, 8px);
+           background-color: #e2e8f0;
+           border-bottom-left-radius: clamp(15px, 3vw, 20px);
+           border-bottom-right-radius: clamp(15px, 3vw, 20px);
+           overflow: hidden;
+       }
+
+       .progress-bar {
+           height: 100%;
+           width: 100%;
+           background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
+           transition: transform 1s linear;
+           transform-origin: left;
+           transform: scaleX(0);
+           border-bottom-left-radius: clamp(15px, 3vw, 20px);
+           border-bottom-right-radius: clamp(15px, 3vw, 20px);
+       }
+
+       .stats {
+           display: grid;
+           grid-template-columns: repeat(auto-fit, minmax(clamp(120px, 25vw, 150px), 1fr));
+           gap: clamp(10px, 3vw, 20px);
+           margin: clamp(15px, 4vw, 30px) 0;
+       }
+
+       .stat-box {
+           background: var(--light);
+           padding: clamp(10px, 3vw, 20px);
+           border-radius: var(--border-radius);
+           border: 2px solid var(--gray-light);
+       }
+
+       .stat-number {
+           font-size: clamp(24px, 4vw, 32px);
+           font-weight: bold;
+           color: var(--primary);
+       }
+
+       .stat-label {
+           font-size: var(--font-size-base);
+           color: var(--gray);
+           margin-top: 5px;
+       }
+
+       .question-counter {
+           font-size: clamp(14px, 2vw, 18px);
+           color: rgba(255, 255, 255, 0.8);
+           margin-bottom: clamp(10px, 3vw, 20px);
+       }
+
+       /* Geri sayım ekranı - çok sade */
+       .countdown-screen {
+           display: flex;
+           justify-content: center;
+           align-items: center;
+           height: 100%;
+       }
+
+       .countdown-number {
+           font-size: clamp(80px, 12vw, 150px);
+           font-weight: bold;
+           color: white;
+           text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+       }
+
+       /* Form stilleri */
+       .form-container {
+           max-width: min(90%, 600px);
+           margin: clamp(15px, 4vw, 30px) auto;
+           text-align: left;
+       }
+
+       .form-group {
+           margin-bottom: clamp(15px, 3vw, 20px);
+       }
+
+       .form-group label {
+           display: block;
+           margin-bottom: clamp(6px, 1.5vw, 8px);
+           color: white;
+           font-weight: 500;
+           font-size: clamp(14px, 2vw, 18px);
+       }
+
+       .form-control {
+           width: 100%;
+           padding: clamp(10px, 2vw, 12px) clamp(12px, 2.5vw, 15px);
+           border: 2px solid rgba(255, 255, 255, 0.3);
+           border-radius: clamp(6px, 1vw, 8px);
+           font-size: clamp(14px, 2vw, 18px);
+           transition: all 0.3s ease;
+           background: rgba(255, 255, 255, 0.9);
+           color: #1e40af;
+       }
+
+       .form-control:focus {
+           border-color: #90cdf4;
+           box-shadow: 0 0 0 3px rgba(144, 205, 244, 0.2);
+           outline: none;
+           background: white;
+       }
+
+       .form-row {
+           display: flex;
+           gap: clamp(10px, 3vw, 20px);
+           margin-bottom: clamp(15px, 3vw, 20px);
+           flex-wrap: wrap;
+       }
+
+       .form-row > div {
+           flex: 1;
+           min-width: clamp(200px, 40vw, 250px);
+       }
+
+       select.form-control {
+           appearance: none;
+           background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23666' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+           background-repeat: no-repeat;
+           background-position: right 15px center;
+           padding-right: clamp(30px, 6vw, 40px);
+       }
+
+       .error-message {
+           color: var(--danger);
+           font-size: clamp(12px, 1.8vw, 14px);
+           margin-top: 5px;
+           display: none;
+       }
+
+       /* Responsive breakpoints */
+       @media (max-width: 360px) {
+           .numbers-display, .letters-display, .question-display {
+               gap: clamp(4px, 1vw, 8px);
+               max-width: 100%;
+               padding: clamp(3px, 0.5vw, 10px);
+           }
+           
+           .option-btn {
+               width: clamp(45px, 14vw, 60px);
+               height: clamp(45px, 14vw, 60px);
+               font-size: clamp(14px, 4vw, 18px);
+               border-radius: clamp(4px, 1vw, 8px);
+           }
+           
+           .container {
+               padding: clamp(10px, 3vw, 15px);
+           }
+       }
+
+       @media (max-width: 480px) {
+           .form-row {
+               flex-direction: column;
+           }
+           
+           .form-row > div {
+               min-width: 100%;
+           }
+           
+           .numbers-display, .letters-display, .question-display {
+               gap: clamp(6px, 1.5vw, 12px);
+               justify-content: space-evenly;
+               max-width: 100%;
+           }
+           
+           .option-btn {
+               width: clamp(48px, 13vw, 70px);
+               height: clamp(48px, 13vw, 70px);
+               font-size: clamp(15px, 3.8vw, 20px);
+           }
+           
+           .btn-bottom-right {
+               position: relative;
+               bottom: auto;
+               right: auto;
+               margin-top: 20px;
+           }
+       }
+
+       @media (min-width: 481px) and (max-width: 768px) {
+           .numbers-display, .letters-display, .question-display {
+               gap: clamp(10px, 2vw, 15px);
+               max-width: min(90%, 650px);
+           }
+           
+           .option-btn {
+               width: clamp(60px, 11vw, 75px);
+               height: clamp(60px, 11vw, 75px);
+               font-size: clamp(18px, 3.2vw, 22px);
+           }
+           
+           .container {
+               height: min(100vh - 20px, 700px);
+           }
+       }
+
+       @media (min-width: 769px) and (max-width: 1024px) {
+           .numbers-display, .letters-display, .question-display {
+               gap: clamp(12px, 2.2vw, 18px);
+               max-width: min(85%, 700px);
+           }
+           
+           .option-btn {
+               width: clamp(65px, 10vw, 80px);
+               height: clamp(65px, 10vw, 80px);
+               font-size: clamp(19px, 3vw, 24px);
+           }
+           
+           .container {
+               height: min(100vh - 30px, 750px);
+           }
+       }
+
+       @media (min-width: 1400px) {
+           .container {
+               width: min(90%, 1400px);
+               height: min(100vh - 40px, 900px);
+           }
+       }
+
+       @media (min-width: 1800px) {
+           .container {
+               width: min(80%, 1600px);
+               height: min(100vh - 60px, 1000px);
+           }
+       }
+
+       @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+           .header h1, .title-screen h1, .result-message {
+               -webkit-font-smoothing: antialiased;
+               -moz-osx-font-smoothing: grayscale;
+           }
+       }
+
+       @media (max-height: 500px) and (orientation: landscape) {
+           .container {
+               height: 95vh;
+               padding: 15px;
+           }
+           
+           .title-screen h1 {
+               margin-bottom: 20px;
+           }
+           
+           .instruction-box {
+               padding: 20px;
+               margin: 15px auto;
+           }
+       }
+
+       @media (hover: none) and (pointer: coarse) {
+           .option-btn {
+               min-width: clamp(48px, 12vw, 80px);
+               min-height: clamp(48px, 12vw, 80px);
+               transform-origin: center;
+           }
+           
+           .option-btn:active {
+               transition: transform 0.1s ease;
+           }
+           
+           .btn {
+               min-height: clamp(44px, 8vw, 56px);
+               padding: clamp(12px, 3vw, 18px) clamp(24px, 5vw, 40px);
+           }
+           
+           .numbers-display, .letters-display, .question-display {
+               gap: clamp(10px, 3vw, 20px);
+           }
+       }
+
+       /* Accessibility improvements */
+       @media (prefers-reduced-motion: reduce) {
+           *, *::before, *::after {
+               animation-duration: 0.01ms !important;
+               animation-iteration-count: 1 !important;
+               transition-duration: 0.01ms !important;
+           }
+           
+           .fake-cursor {
+               transition: none !important;
+           }
+           
+           .loading-overlay, .error-overlay {
+               transition: opacity 0.1s ease !important;
+           }
+       }
+
+       /* High contrast mode */
+       @media (prefers-contrast: high) {
+           .option-btn {
+               border-width: 2px;
+               border-color: black;
+           }
+           
+           .btn {
+               border: 2px solid white;
+           }
+       }
+
+       /* Dark mode support */
+       @media (prefers-color-scheme: dark) {
+           /* Already dark themed, no changes needed */
+       }
+   </style>
+</head>
+<body>
+   <div class="container">
+       <!-- Loading Overlay -->
+       <div class="loading-overlay" id="loadingOverlay">
+           <div class="loading-spinner"></div>
+           <div class="loading-text" id="loadingText">Yükleniyor...</div>
+       </div>
+
+       <!-- Error Overlay -->
+       <div class="error-overlay" id="errorOverlay">
+           <div class="error-message" id="errorMessage">Bir hata oluştu</div>
+       </div>
+
+       <!-- 1. Hoş Geldiniz Ekranı -->
+       <div id="welcomeScreen" class="screen active">
+           <div class="title-screen">
+               <h1>ForTest Bilişsel Beceri Testi</h1>
+           </div>
+           <button class="btn btn-bottom-right visible" onclick="safeNavigate('goToSoundSetup')">İleri</button>
+       </div>
+
+       <!-- 2. Ses Ayarlama Ekranı -->
+       <div id="soundSetupScreen" class="screen">
+           <div class="instruction-box">
+               <div class="instruction-text">
+                   Ses düzeyini anlatıcının 5'e kadar saydığını rahat ve net bir şekilde duyabileceğiniz şekilde ayarlayın. 
+                   Böylece açıklamaları net bir şekilde anlayabilirsiniz.
+               </div>
+               <div class="highlight-text">
+                   Teste başlamaya hazır olduğunuzda "ileri" butonuna basınız.
+               </div>
+           </div>
+           <button class="btn btn-bottom-right" id="soundNextBtn" onclick="safeNavigate('goToInstructions')">İleri</button>
+       </div>
+
+       <!-- 3. Talimatlar Ekranı -->
+       <div id="instructionsScreen" class="screen">
+           <div class="instruction-box">
+               <div class="highlight-text">
+                   Verilen satırda birbirinin aynı olan rakam veya harfleri en hızlı şekilde işaretle.
+               </div>
+           </div>
+           <button class="btn btn-bottom-right" id="instructionsNextBtn" onclick="safeNavigate('goToIntroDemo')">İleri</button>
+       </div>
+
+       <!-- 4. Giriş Demonstrasyonu -->
+       <div id="introDemoScreen" class="screen">
+           <div id="introNumbers" class="numbers-display">
+               <div class="option-btn">6</div>
+               <div class="option-btn">3</div>
+               <div class="option-btn" id="target-9-1">9</div>
+               <div class="option-btn">5</div>
+               <div class="option-btn" id="target-9-2">9</div>
+               <div class="option-btn">2</div>
+               <div class="fake-cursor" id="introCursor"></div>
+           </div>
+           <div class="example-text">Örneği dikkatle izleyin.</div>
+           <button class="btn btn-bottom-right" id="introNextBtn" onclick="safeNavigate('goToLetterDemo')">İleri</button>
+       </div>
+
+       <!-- 5. Harf Demonstrasyonu -->
+       <div id="letterDemoScreen" class="screen">
+           <div id="letterDisplay" class="letters-display">
+               <div class="option-btn">a</div>
+               <div class="option-btn" id="target-c-1">c</div>
+               <div class="option-btn">v</div>
+               <div class="option-btn">d</div>
+               <div class="option-btn" id="target-c-2">c</div>
+               <div class="option-btn">z</div>
+               <div class="fake-cursor" id="letterCursor"></div>
+           </div>
+           <div class="example-text">Örneği dikkatle izleyin.</div>
+           <button class="btn btn-bottom-right" id="letterNextBtn" onclick="safeNavigate('goToExampleTransition')">İleri</button>
+       </div>
+
+       <!-- 6. Örnek Uygulama Geçiş -->
+       <div id="exampleTransitionScreen" class="screen">
+           <div class="instruction-box">
+               <div class="highlight-text">
+                   Örnek uygulamaya geçmek için "ileri" butonuna tıklayın!
+               </div>
+           </div>
+           <button class="btn btn-bottom-right" id="exampleTransitionBtn" onclick="safeNavigate('goToExampleStart')">İleri</button>
+       </div>
+
+       <!-- 7. Örnek Uygulama Başlangıç -->
+       <div id="exampleStartScreen" class="screen">
+           <div class="instruction-box">
+               <div class="highlight-text">
+                   Örnek uygulamaya hazırsanız "başla" butonuna tıklayın!
+               </div>
+           </div>
+           <button class="btn btn-bottom-right" id="exampleStartBtn" onclick="safeNavigate('showCountdown', 'practice')">Başla</button>
+       </div>
+
+       <!-- 7.5. Geri Sayım Ekranı -->
+       <div id="countdownScreen" class="screen">
+           <div class="countdown-screen">
+               <div id="countdownNumber" class="countdown-number">3</div>
+           </div>
+       </div>
+
+       <!-- 8. Örnek Uygulama -->
+       <div id="practiceTestScreen" class="screen">
+           <div id="practiceDisplay" class="question-display"></div>
+           <div class="progress-container">
+               <div id="practiceProgressBar" class="progress-bar"></div>
+           </div>
+       </div>
+
+       <!-- 9. Örnek Uygulama Tamamlandı -->
+       <div id="exampleCompleteScreen" class="screen">
+           <div class="instruction-box">
+               <div class="highlight-text">
+                   Örnek uygulamayı tamamladınız!
+               </div>
+           </div>
+           <button class="btn btn-bottom-right" id="exampleCompleteBtn" onclick="safeNavigate('goToMainTestIntro')">İleri</button>
+       </div>
+
+       <!-- 10. Ana Test Hazırlık -->
+       <div id="mainTestIntroScreen" class="screen">
+           <div class="instruction-box">
+               <div class="highlight-text">
+                   Teste hazırlanın! Testi tamamlamak için 3 dakikanız var.
+               </div>
+           </div>
+           <button class="btn btn-bottom-right" id="mainTestIntroBtn" onclick="safeNavigate('showCountdown', 'main')">Başla</button>
+       </div>
+
+       <!-- 11. Ana Test -->
+       <div id="mainTestScreen" class="screen">
+           <div id="mainDisplay" class="question-display"></div>
+           <div class="progress-container">
+               <div id="mainProgressBar" class="progress-bar"></div>
+           </div>
+       </div>
+
+       <!-- 12. Test Tamamlandı -->
+       <div id="resultsScreen" class="screen">
+           <div class="result-message">Testi tamamladınız!</div>
+           <div class="result-info">Sıradaki bölüme geçmek için ileri butonuna tıklayın!</div>
+           <button class="btn btn-bottom-right visible" onclick="safeNavigate('completeTest')">İleri</button>
+       </div>
+   </div>
+
+   <script>
+       // ===================================
+       // SAĞLAM TEST SİSTEMİ - v2.0
+       // 30 Yıllık Yazılım Uzmanı Yaklaşımı
+       // ===================================
+
+       'use strict'; // Strict mode etkinleştir
+
+       // Global hata yakalama
+       window.addEventListener('error', function(e) {
+           console.error('Global Error:', e.error);
+           handleError('Beklenmeyen bir hata oluştu: ' + e.message, true);
+       });
+
+       window.addEventListener('unhandledrejection', function(e) {
+           console.error('Unhandled Promise Rejection:', e.reason);
+           handleError('Promise hatası: ' + e.reason, true);
+       });
+
+       // Test verileri - temiz ve sağlam
+       const TEST_DATA = {
+           practiceQuestions: [
+               { question: ['o', 'k', 'o', 'm', 't', 'y'], target: 'o' },
+               { question: ['56', '79', '27', '60', '23', '56'], target: '56' },
+               { question: ['ke', 'me', 'em', 'ke', 'en', 'mn'], target: 'ke' },
+               { question: ['5', '8', '3', '9', '2', '5'], target: '5' },
+               { question: ['6k1', 'k61', 'k16', '61k', 'k16', '16k'], target: 'k16' }
+           ],
+           
+           mainQuestions: [
+               { question: ['5', '6', '2', '1', '5', '8'], target: '5' },
+               { question: ['m', 't', 'k', 'a', 't', 'h'], target: 't' },
+               { question: ['6', '1', '5', '2', '3', '3'], target: '3' },
+               { question: ['y', 'd', 'u', 'v', 'u', 'p'], target: 'u' },
+               { question: ['6', '1', '3', '1', '5', '8'], target: '1' },
+               { question: ['7', '4', '2', '1', '8', '4'], target: '4' },
+               { question: ['n', 'a', 'e', 'c', 'e', 'm'], target: 'e' },
+               { question: ['7', '4', '6', '2', '5', '6'], target: '6' },
+               { question: ['d', 'h', 'k', 'd', 'b', 'o'], target: 'd' },
+               { question: ['2', '7', '5', '9', '4', '9'], target: '9' },
+               { question: ['s', 'y', 'd', 'g', 's', 'p'], target: 's' },
+               { question: ['3', '8', '5', '2', '5', '6'], target: '5' },
+               { question: ['m', 'n', 'j', 'c', 'm', 'ç'], target: 'm' },
+               { question: ['84', '56', '86', '45', '57', '45'], target: '45' },
+               { question: ['ta', 'at', 'al', 'li', 'at', 'il'], target: 'at' },
+               { question: ['68', '48', '86', '68', '84', '54'], target: '68' },
+               { question: ['ık', 'na', 'ku', 'ok', 'ık', 'ka'], target: 'ık' },
+               { question: ['24', '42', '74', '45', '27', '74'], target: '74' },
+               { question: ['me', 'na', 'en', 'na', 'ma', 'ne'], target: 'na' },
+               { question: ['69', '92', '26', '96', '62', '62'], target: '62' },
+               { question: ['şı', 'ce', 'şe', 'ça', 'ca', 'ça'], target: 'ça' },
+               { question: ['72', '27', '52', '22', '25', '72'], target: '72' },
+               { question: ['hi', 'hı', 'ıh', 'ik', 'ik', 'ih'], target: 'ik' },
+               { question: ['43', '48', '84', '38', '83', '43'], target: '43' },
+               { question: ['ro', 'no', 'on', 'ru', 'ro', 'un'], target: 'ro' },
+               { question: ['13', '31', '24', '24', '12', '35'], target: '24' },
+               { question: ['bı', 'ıd', 'bi', 'ıd', 'ib', 'di'], target: 'ıd' },
+               { question: ['52', '25', '55', '55', '22', '24'], target: '55' },
+               { question: ['uç', 'aş', 'şi', 'uş', 'şe', 'uş'], target: 'uş' },
+               { question: ['36', '23', '63', '32', '33', '36'], target: '36' },
+               { question: ['yku', 'nkv', 'mac', 'yhg', 'ylg', 'yku'], target: 'yku' },
+               { question: ['375', '562', '656', '756', '356', '656'], target: '656' },
+               { question: ['cau', 'uau', 'cua', 'cuv', 'uca', 'cau'], target: 'cau' },
+               { question: ['424', '243', '424', '342', '234', '324'], target: '424' },
+               { question: ['lhm', 'hlm', 'hml', 'mlh', 'lmh', 'mlh'], target: 'mlh' },
+               { question: ['852', '258', '285', '258', '825', '582'], target: '258' },
+               { question: ['7ç1', 'ç71', 'ç17', '71ç', 'ç17', '17ç'], target: 'ç17' },
+               { question: ['289', '298', '982', '928', '829', '982'], target: '982' },
+               { question: ['sbv', 'nzı', 'sbm', 'sdg', 'sbm', 'sag'], target: 'sbm' },
+               { question: ['636', '361', '636', '163', '316', '136'], target: '636' },
+               { question: ['env', 'vzn', 'evn', 'evk', 'ven', 'evk'], target: 'evk' },
+               { question: ['525', '528', '285', '582', '528', '825'], target: '528' },
+               { question: ['ıvs', 'svs', 'ısv', 'ısh', 'sıv', 'ısh'], target: 'ısh' },
+               { question: ['969', '964', '649', '694', '964', '946'], target: '964' },
+               { question: ['mhm', 'hmm', 'hhm', 'hmh', 'mmh', 'mmh'], target: 'mmh' },
+               { question: ['817', '187', '781', '718', '871', '718'], target: '718' },
+               { question: ['2v5', 'v52', 'v25', '25v', 'v52', '52v'], target: 'v52' },
+               { question: ['652', '256', '562', '526', '625', '256'], target: '256' },
+               { question: ['4g4', '4gg', '44g', '4g4', 'g4g', 'g44'], target: '4g4' },
+               { question: ['797', '797', '369', '697', '973', '396'], target: '797' }
+           ]
+       };
+
+       // Konfigürasyon sabitleri
+       const CONFIG = {
+           PRACTICE_TIME_LIMIT: 30000, // 30 saniye
+           MAIN_TIME_LIMIT: 180000,    // 3 dakika
+           AUDIO_RETRY_ATTEMPTS: 3,
+           DEBOUNCE_DELAY: 300,        // Button debouncing
+           ANIMATION_DELAY: 100,
+           MIN_PRACTICE_SCORE: 3,      // Minimum pratik test skoru
+           AUDIO_PRELOAD_TIMEOUT: 5000 // 5 saniye audio yükleme timeout
+       };
+
+       // Güvenli state yönetimi
+       class SafeTestState {
+           constructor() {
+               this.reset();
+               this.locked = false; // Race condition önleme
+           }
+
+           reset() {
+               this.currentScreen = 'welcome';
+               this.currentAudio = null;
+               this.audioQueue = [];
+               this.preloadedAudios = new Map();
+               this.timers = new Set();
+               this.intervals = new Set();
+               this.eventListeners = new Map();
+               this.isTransitioning = false;
+               
+               // Demonstrasyon durumları
+               this.hasSeenIntro = false;
+               this.hasSeenLetter = false;
+               
+               // Pratik test
+               this.practiceIndex = 0;
+               this.practiceAnswers = [];
+               this.practiceStartTime = null;
+               this.practiceTimeLeft = 0;
+               
+               // Ana test
+               this.mainIndex = 0;
+               this.mainAnswers = [];
+               this.mainStartTime = null;
+               this.mainTimeLeft = 0;
+               this.questionStartTime = null;
+               this.reactionTimes = [];
+               
+               // Hata durumları
+               this.errorCount = 0;
+               this.lastError = null;
+           }
+
+           // Güvenli state değişimi
+           safeSet(key, value) {
+               if (this.locked) {
+                   console.warn('State locked, ignoring set operation:', key);
+                   return false;
+               }
+               this[key] = value;
+               return true;
+           }
+
+           // State kilitleme (kritik operasyonlar için)
+           lock() {
+               this.locked = true;
+           }
+
+           unlock() {
+               this.locked = false;
+           }
+
+           // Timer güvenli ekleme
+           addTimer(timerId) {
+               this.timers.add(timerId);
+               return timerId;
+           }
+
+           addInterval(intervalId) {
+               this.intervals.add(intervalId);
+               return intervalId;
+           }
+
+           // Tüm timer'ları temizle
+           clearAllTimers() {
+               this.timers.forEach(id => clearTimeout(id));
+               this.intervals.forEach(id => clearInterval(id));
+               this.timers.clear();
+               this.intervals.clear();
+           }
+
+           // Event listener takibi
+           addEventListener(element, event, handler, options) {
+               const key = `${element.id || 'anonymous'}-${event}`;
+               if (this.eventListeners.has(key)) {
+                   this.removeEventListener(key);
+               }
+               element.addEventListener(event, handler, options);
+               this.eventListeners.set(key, { element, event, handler, options });
+           }
+
+           removeEventListener(key) {
+               const listener = this.eventListeners.get(key);
+               if (listener) {
+                   listener.element.removeEventListener(listener.event, listener.handler);
+                   this.eventListeners.delete(key);
+               }
+           }
+
+           clearAllEventListeners() {
+               this.eventListeners.forEach((listener, key) => {
+                   this.removeEventListener(key);
+               });
+           }
+
+           // Tamamen temizlik
+           cleanup() {
+               this.clearAllTimers();
+               this.clearAllEventListeners();
+               this.stopAllAudio();
+               this.unlock();
+           }
+
+           // Ses temizliği
+           stopAllAudio() {
+               if (this.currentAudio) {
+                   try {
+                       this.currentAudio.pause();
+                       this.currentAudio.currentTime = 0;
+                       this.currentAudio.src = '';
+                       this.currentAudio = null;
+                   } catch (e) {
+                       console.warn('Audio cleanup error:', e);
+                   }
+               }
+               
+               // Preloaded audio'ları temizle
+               this.preloadedAudios.forEach(audio => {
+                   try {
+                       audio.pause();
+                       audio.src = '';
+                   } catch (e) {
+                       console.warn('Preloaded audio cleanup error:', e);
+                   }
+               });
+               this.preloadedAudios.clear();
+               this.audioQueue = [];
+           }
+       }
+
+       // Global state instance
+       const testState = new SafeTestState();
+
+       // Debouncing utility
+       const debounce = (func, wait) => {
+           let timeout;
+           return function executedFunction(...args) {
+               const later = () => {
+                   clearTimeout(timeout);
+                   func(...args);
+               };
+               clearTimeout(timeout);
+               timeout = setTimeout(later, wait);
+           };
+       };
+
+               // Hata yönetimi - simplified, no retry system
+        function handleError(message, critical = false) {
+            console.error('Test Error:', message);
+            testState.errorCount++;
+            testState.lastError = message;
+
+            // Hide loading first
+            hideLoading();
+
+            if (critical) {
+                // Kritik hatada error overlay göster - 6 saniye
+                showError(message, 6000);
+                testState.cleanup();
+            } else {
+                // Non-critical hatalar için sadece console warning
+                console.warn('Non-critical error handled:', message);
+            }
+        }
+
+       // Güvenli element erişimi
+       function safeGetElement(id) {
+           try {
+               const element = document.getElementById(id);
+               if (!element) {
+                   console.warn(`Element not found: ${id}`);
+                   return null;
+               }
+               return element;
+           } catch (e) {
+               console.error(`Error accessing element ${id}:`, e);
+               return null;
+           }
+       }
+
+               // Loading göstergesi - smooth transitions
+        let loadingTimeout = null;
+        
+        function showLoading(message = 'Yükleniyor...', minDisplayTime = 500) {
+            const overlay = safeGetElement('loadingOverlay');
+            const text = safeGetElement('loadingText');
+            
+            if (overlay) {
+                if (text) text.textContent = message;
+                
+                // Clear any pending hide
+                if (loadingTimeout) {
+                    clearTimeout(loadingTimeout);
+                    loadingTimeout = null;
+                }
+                
+                overlay.classList.add('show');
+            }
+        }
+
+        function hideLoading(delay = 0) {
+            const overlay = safeGetElement('loadingOverlay');
+            if (overlay) {
+                if (delay > 0) {
+                    loadingTimeout = setTimeout(() => {
+                        overlay.classList.remove('show');
+                        loadingTimeout = null;
+                    }, delay);
+                } else {
+                    overlay.classList.remove('show');
+                }
+            }
+        }
+
+        // Error overlay - auto-hide, no user interaction needed
+        let errorTimeout = null;
+
+        function showError(message, duration = 4000) {
+            const overlay = safeGetElement('errorOverlay');
+            const messageEl = safeGetElement('errorMessage');
+            
+            if (overlay) {
+                if (messageEl) messageEl.textContent = message;
+                overlay.classList.add('show');
+                
+                // Clear existing timeout
+                if (errorTimeout) {
+                    clearTimeout(errorTimeout);
+                }
+                
+                // Auto-hide after duration
+                errorTimeout = setTimeout(() => {
+                    hideError();
+                }, duration);
+            }
+        }
+
+        function hideError() {
+            const overlay = safeGetElement('errorOverlay');
+            if (overlay) {
+                overlay.classList.remove('show');
+                if (errorTimeout) {
+                    clearTimeout(errorTimeout);
+                    errorTimeout = null;
+                }
+            }
+        }
+
+       // Retry operation removed - no longer needed
+
+       // Güvenli navigasyon
+       function safeNavigate(functionName, ...args) {
+           if (testState.isTransitioning) {
+               console.warn('Navigation ignored - already transitioning');
+               return;
+           }
+
+           testState.isTransitioning = true;
+
+           try {
+               if (typeof window[functionName] === 'function') {
+                   window[functionName](...args);
+               } else {
+                   throw new Error(`Function ${functionName} not found`);
+               }
+           } catch (e) {
+               console.error('Navigation error:', e);
+               handleError(`Navigasyon hatası: ${e.message}`, false);
+           } finally {
+               // Kısa delay sonrasında kilidi aç
+               testState.addTimer(setTimeout(() => {
+                   testState.isTransitioning = false;
+               }, 500));
+           }
+       }
+
+               // Güvenli audio preloader - quiet operation
+        async function preloadAudio(filename) {
+            return new Promise((resolve, reject) => {
+                if (testState.preloadedAudios.has(filename)) {
+                    resolve(testState.preloadedAudios.get(filename));
+                    return;
+                }
+
+                const audio = new Audio();
+                const timeout = testState.addTimer(setTimeout(() => {
+                    // Quiet timeout - no console spam
+                    resolve(null);
+                }, CONFIG.AUDIO_PRELOAD_TIMEOUT));
+
+                audio.addEventListener('canplaythrough', () => {
+                    clearTimeout(timeout);
+                    testState.preloadedAudios.set(filename, audio);
+                    // Only log successful loads
+                    console.log(`🔊 Audio loaded: ${filename}`);
+                    resolve(audio);
+                }, { once: true });
+
+                audio.addEventListener('error', (e) => {
+                    clearTimeout(timeout);
+                    // Quiet error handling - no console spam
+                    resolve(null);
+                }, { once: true });
+
+                audio.preload = 'auto';
+                audio.src = `./mp3/${filename}`;
+                audio.load();
+            });
+        }
+
+               // Batch audio preloader - silent and informative
+        async function preloadAudios(filenames) {
+            let successCount = 0;
+            let failCount = 0;
+            
+            const promises = filenames.map(async (filename) => {
+                const audio = await preloadAudio(filename);
+                if (audio) {
+                    successCount++;
+                    return audio;
+                } else {
+                    failCount++;
+                    return null;
+                }
+            });
+
+            const results = await Promise.allSettled(promises);
+            
+            // Clean summary report
+            if (successCount > 0) {
+                console.log(`✅ Audio System: ${successCount}/${filenames.length} files loaded successfully`);
+            } else {
+                console.info(`🔇 Audio System: Running silently (no audio files loaded)`);
+                console.info(`💡 This is normal if:
+   • File is opened with file:// protocol (try http-server)
+   • Browser blocks audio loading due to security policies
+   • Audio files are missing or corrupted`);
+            }
+        }
+
+               // Güvenli ses çalma - completely silent operation
+        async function playAudio(filename, loop = false, volume = 1.0) {
+            try {
+                // Önceki sesi durdur
+                testState.stopAllAudio();
+
+                let audio = testState.preloadedAudios.get(filename);
+                
+                if (!audio) {
+                    // Try to load on demand - silently
+                    audio = await preloadAudio(filename);
+                    if (!audio) {
+                        // No audio available - continue silently
+                        return Promise.resolve();
+                    }
+                }
+
+                // Audio ayarları
+                audio.loop = loop;
+                audio.volume = Math.max(0, Math.min(1, volume));
+                audio.currentTime = 0;
+
+                testState.currentAudio = audio;
+
+                // Play promise handle
+                const playPromise = audio.play();
+                if (playPromise !== undefined) {
+                    return playPromise.catch(e => {
+                        // Silent error handling - don't spam console
+                        return Promise.resolve();
+                    });
+                }
+                
+                return Promise.resolve();
+            } catch (e) {
+                // Complete silence on errors
+                return Promise.resolve();
+            }
+        }
+
+               // Ekran değiştirme - instant, no effects
+        function showScreen(screenId) {
+            try {
+                // Mevcut ekranı temizle
+                document.querySelectorAll('.screen').forEach(screen => {
+                    screen.classList.remove('active');
+                });
+
+                const targetScreen = safeGetElement(screenId);
+                if (!targetScreen) {
+                    throw new Error(`Screen not found: ${screenId}`);
+                }
+
+                targetScreen.classList.add('active');
+                testState.safeSet('currentScreen', screenId);
+                
+                console.log(`Screen changed to: ${screenId}`);
+            } catch (e) {
+                handleError(`Ekran değiştirme hatası: ${e.message}`, false);
+                throw e;
+            }
+        }
+
+       // Demonstrasyon durumunu sıfırla - güvenli
+       function resetDemoStates() {
+           try {
+               testState.hasSeenIntro = false;
+               testState.hasSeenLetter = false;
+               
+               // UI'ları temizle - null check ile
+               const elements = [
+                   'instructionsNextBtn', 'introNumbers', 'introNextBtn',
+                   'letterDisplay', 'letterNextBtn', 'exampleTransitionBtn',
+                   'exampleStartBtn', 'exampleCompleteBtn'
+               ];
+
+               elements.forEach(id => {
+                   const element = safeGetElement(id);
+                   if (element) {
+                       element.classList.remove('visible');
+                   }
+               });
+           } catch (e) {
+               console.error('Reset demo states error:', e);
+               handleError(`Demo durumu sıfırlama hatası: ${e.message}`);
+           }
+       }
+
+       // Button'ları güvenli şekilde göster
+       function showButton(buttonId, delay = 0) {
+           const button = safeGetElement(buttonId);
+           if (!button) {
+               console.warn(`Button not found: ${buttonId}`);
+               return;
+           }
+
+           if (delay > 0) {
+               testState.addTimer(setTimeout(() => {
+                   button.classList.add('visible');
+                   button.classList.remove('disabled');
+               }, delay));
+           } else {
+               button.classList.add('visible');
+               button.classList.remove('disabled');
+           }
+       }
+
+       function hideButton(buttonId) {
+           const button = safeGetElement(buttonId);
+           if (button) {
+               button.classList.remove('visible');
+               button.classList.add('disabled');
+           }
+       }
+
+       // Audio ended event handler - memory leak önleme
+       function addAudioEndedListener(audio, callback) {
+           const handler = (e) => {
+               try {
+                   callback(e);
+               } catch (error) {
+                   console.error('Audio ended callback error:', error);
+               }
+           };
+
+           audio.addEventListener('ended', handler, { once: true });
+           return handler;
+       }
+
+       // === SCREEN NAVIGATION FUNCTIONS ===
+
+       // 1. Ses ayarlama ekranına geç
+       function goToSoundSetup() {
+           testState.cleanup(); // Önceki durumu temizle
+           showScreen('soundSetupScreen');
+           
+           // 12345.mp3'ü döngüde çal
+           let retryCount = 0;
+           const playCountingLoop = async () => {
+               try {
+                   await playAudio('12345.mp3');
+                   
+                   if (testState.currentAudio) {
+                       addAudioEndedListener(testState.currentAudio, () => {
+                           if (testState.currentScreen === 'soundSetupScreen') {
+                               testState.addTimer(setTimeout(playCountingLoop, 1000));
+                           }
+                       });
+                   }
+               } catch (e) {
+                   retryCount++;
+                   if (retryCount < CONFIG.AUDIO_RETRY_ATTEMPTS) {
+                       console.warn(`Audio retry ${retryCount}:`, e);
+                       testState.addTimer(setTimeout(playCountingLoop, 1000));
+                   } else {
+                       console.error('Audio failed after retries:', e);
+                       // Ses olmadan devam etmek için buton'u göster
+                       showButton('soundNextBtn', 100);
+                   }
+               }
+           };
+           
+           playCountingLoop();
+           showButton('soundNextBtn', 2000);
+       }
+
+       // 2. Talimatlar ekranına geç
+       async function goToInstructions() {
+           testState.cleanup();
+           showScreen('instructionsScreen');
+           
+           try {
+               await playAudio('giriş.mp3');
+               if (testState.currentAudio) {
+                   addAudioEndedListener(testState.currentAudio, () => {
+                       showButton('instructionsNextBtn');
+                   });
+               }
+           } catch (e) {
+               console.error('Instructions audio error:', e);
+               showButton('instructionsNextBtn', 1000); // Fallback
+           }
+       }
+
+       // 3. Giriş demonstrasyonuna geç
+       async function goToIntroDemo() {
+           testState.cleanup();
+           showScreen('introDemoScreen');
+           
+           const numbersDisplay = safeGetElement('introNumbers');
+           if (numbersDisplay) {
+               numbersDisplay.classList.add('visible');
+           }
+           
+           // Daha önce görülmüş mü kontrol et
+           if (testState.hasSeenIntro) {
+               showButton('introNextBtn');
+               startIntroAnimation();
+               return;
+           }
+           
+           testState.hasSeenIntro = true;
+           
+           try {
+               await playAudio('örnek1.mp3');
+               startIntroAnimation();
+               
+               if (testState.currentAudio) {
+                   addAudioEndedListener(testState.currentAudio, () => {
+                       showButton('introNextBtn');
+                   });
+               }
+           } catch (e) {
+               console.error('Intro demo audio error:', e);
+               startIntroAnimation();
+               showButton('introNextBtn', 1000);
+           }
+       }
+
+       // Giriş animasyonu - memory leak önleme
+       function startIntroAnimation() {
+           const cursor = safeGetElement('introCursor');
+           const targets = ['target-9-1', 'target-9-2'];
+           
+           if (!cursor) {
+               console.warn('Intro cursor not found');
+               return;
+           }
+
+           let currentTarget = 0;
+           let isFirstAnimation = true;
+           
+           const animateToTarget = () => {
+               const targetElement = safeGetElement(targets[currentTarget]);
+               if (!targetElement) return;
+
+               const delay = isFirstAnimation ? CONFIG.ANIMATION_DELAY : 0;
+               
+               if (isFirstAnimation) {
+                   cursor.style.opacity = '1';
+                   cursor.style.left = '50px';
+                   cursor.style.top = '50px';
+                   cursor.style.transition = 'none';
+                   isFirstAnimation = false;
+               }
+               
+               // Safe positioning calculation
+               try {
+                   const targetRect = targetElement.getBoundingClientRect();
+                   const parentRect = targetElement.parentElement.getBoundingClientRect();
+                   
+                   const targetX = targetRect.left - parentRect.left + (targetElement.offsetWidth / 2) - 10;
+                   const targetY = targetRect.top - parentRect.top + (targetElement.offsetHeight / 2) - 10;
+                   
+                   testState.addTimer(setTimeout(() => {
+                       cursor.style.transition = 'left 1s ease-in-out, top 1s ease-in-out';
+                       cursor.style.left = targetX + 'px';
+                       cursor.style.top = targetY + 'px';
+                   }, delay));
+                   
+                   testState.addTimer(setTimeout(() => {
+                       targetElement.classList.add('clicked');
+                       
+                       testState.addTimer(setTimeout(() => {
+                           targetElement.classList.remove('clicked');
+                           currentTarget = (currentTarget + 1) % targets.length;
+                       }, 1400));
+                   }, 1500));
+               } catch (e) {
+                   console.error('Animation positioning error:', e);
+               }
+           };
+           
+           animateToTarget();
+           const intervalId = setInterval(animateToTarget, 3000);
+           testState.addInterval(intervalId);
+       }
+
+       // 4. Harf demonstrasyonuna geç
+       async function goToLetterDemo() {
+           testState.cleanup();
+           showScreen('letterDemoScreen');
+           
+           const letterDisplay = safeGetElement('letterDisplay');
+           if (letterDisplay) {
+               letterDisplay.classList.add('visible');
+           }
+           
+           if (testState.hasSeenLetter) {
+               showButton('letterNextBtn');
+               startLetterAnimation();
+               return;
+           }
+           
+           testState.hasSeenLetter = true;
+           
+           try {
+               await playAudio('örnek2.mp3');
+               startLetterAnimation();
+               
+               if (testState.currentAudio) {
+                   addAudioEndedListener(testState.currentAudio, () => {
+                       showButton('letterNextBtn');
+                   });
+               }
+           } catch (e) {
+               console.error('Letter demo audio error:', e);
+               startLetterAnimation();
+               showButton('letterNextBtn', 1000);
+           }
+       }
+
+       // Harf animasyonu - memory safe
+       function startLetterAnimation() {
+           const cursor = safeGetElement('letterCursor');
+           const targets = ['target-c-1', 'target-c-2'];
+           
+           if (!cursor) {
+               console.warn('Letter cursor not found');
+               return;
+           }
+
+           let currentTarget = 0;
+           let isFirstAnimation = true;
+           
+           const animateToTarget = () => {
+               const targetElement = safeGetElement(targets[currentTarget]);
+               if (!targetElement) return;
+
+               const delay = isFirstAnimation ? CONFIG.ANIMATION_DELAY : 0;
+               
+               if (isFirstAnimation) {
+                   cursor.style.opacity = '1';
+                   cursor.style.left = '50px';
+                   cursor.style.top = '50px';
+                   cursor.style.transition = 'none';
+                   isFirstAnimation = false;
+               }
+               
+               try {
+                   const targetRect = targetElement.getBoundingClientRect();
+                   const parentRect = targetElement.parentElement.getBoundingClientRect();
+                   
+                   const targetX = targetRect.left - parentRect.left + (targetElement.offsetWidth / 2) - 10;
+                   const targetY = targetRect.top - parentRect.top + (targetElement.offsetHeight / 2) - 10;
+                   
+                   testState.addTimer(setTimeout(() => {
+                       cursor.style.transition = 'left 1s ease-in-out, top 1s ease-in-out';
+                       cursor.style.left = targetX + 'px';
+                       cursor.style.top = targetY + 'px';
+                   }, delay));
+                   
+                   testState.addTimer(setTimeout(() => {
+                       targetElement.classList.add('clicked');
+                       
+                       testState.addTimer(setTimeout(() => {
+                           targetElement.classList.remove('clicked');
+                           currentTarget = (currentTarget + 1) % targets.length;
+                       }, 1400));
+                   }, 1500));
+               } catch (e) {
+                   console.error('Letter animation error:', e);
+               }
+           };
+           
+           animateToTarget();
+           const intervalId = setInterval(animateToTarget, 3000);
+           testState.addInterval(intervalId);
+       }
+
+       // 5. Örnek uygulama geçiş
+       async function goToExampleTransition() {
+           testState.cleanup();
+           showScreen('exampleTransitionScreen');
+           
+           try {
+               await playAudio('örnekgecis.mp3');
+               if (testState.currentAudio) {
+                   addAudioEndedListener(testState.currentAudio, () => {
+                       showButton('exampleTransitionBtn');
+                   });
+               }
+           } catch (e) {
+               console.error('Example transition audio error:', e);
+               showButton('exampleTransitionBtn', 1000);
+           }
+       }
+
+       // 6. Örnek uygulama başlangıç
+       async function goToExampleStart() {
+           testState.cleanup();
+           showScreen('exampleStartScreen');
+           
+           try {
+               await playAudio('örnekbaşla.mp3');
+               if (testState.currentAudio) {
+                   addAudioEndedListener(testState.currentAudio, () => {
+                       showButton('exampleStartBtn');
+                   });
+               }
+           } catch (e) {
+               console.error('Example start audio error:', e);
+               showButton('exampleStartBtn', 1000);
+           }
+       }
+
+       // Geri sayım göster - çok sade
+       function showCountdown(testType) {
+           testState.cleanup();
+           showScreen('countdownScreen');
+           
+           const numberEl = safeGetElement('countdownNumber');
+           if (!numberEl) {
+               // Hata durumunda direkt teste geç
+               if (testType === 'practice') {
+                   startPracticeTest();
+               } else {
+                   startMainTest();
+               }
+               return;
+           }
+           
+           let count = 3;
+           numberEl.textContent = count;
+           
+           const countdownInterval = setInterval(() => {
+               count--;
+               
+               if (count > 0) {
+                   numberEl.textContent = count;
+               } else {
+                   clearInterval(countdownInterval);
+                   
+                   // Teste geç
+                   if (testType === 'practice') {
+                       startPracticeTest();
+                   } else {
+                       startMainTest();
+                   }
+               }
+           }, 1000);
+           
+           testState.addInterval(countdownInterval);
+       }
+
+       // 7. Pratik testi başlat
+       function startPracticeTest() {
+           try {
+               testState.cleanup();
+               showScreen('practiceTestScreen');
+               
+               // State sıfırla
+               testState.practiceIndex = 0;
+               testState.practiceAnswers = [];
+               testState.practiceTimeLeft = CONFIG.PRACTICE_TIME_LIMIT;
+               testState.practiceStartTime = Date.now();
+               
+               startPracticeTimer();
+               showPracticeQuestion();
+           } catch (e) {
+               handleError(`Pratik test başlatma hatası: ${e.message}`, false);
+           }
+       }
+
+       // Pratik test timer - memory safe
+       function startPracticeTimer() {
+           const totalTime = CONFIG.PRACTICE_TIME_LIMIT;
+           const progressBar = safeGetElement('practiceProgressBar');
+           
+           if (!progressBar) {
+               console.error('Practice progress bar not found');
+               return;
+           }
+
+           const intervalId = setInterval(() => {
+               testState.practiceTimeLeft -= 1000;
+               
+               const progress = 1 - (testState.practiceTimeLeft / totalTime);
+               progressBar.style.transform = `scaleX(${Math.max(0, Math.min(1, progress))})`;
+               
+               if (testState.practiceTimeLeft <= 0) {
+                   clearInterval(intervalId);
+                   endPracticeTest();
+               }
+           }, 1000);
+           
+           testState.addInterval(intervalId);
+       }
+
+       // Pratik soru göster - güvenli
+       function showPracticeQuestion() {
+           if (testState.practiceIndex >= TEST_DATA.practiceQuestions.length) {
+               endPracticeTest();
+               return;
+           }
+
+           try {
+               const question = TEST_DATA.practiceQuestions[testState.practiceIndex];
+               const display = safeGetElement('practiceDisplay');
+               
+               if (!display) {
+                   throw new Error('Practice display not found');
+               }
+
+               display.innerHTML = '';
+               display.classList.remove('visible');
+               
+               question.question.forEach((option, index) => {
+                   const btn = document.createElement('div');
+                   btn.className = 'option-btn';
+                   btn.textContent = option;
+                   btn.setAttribute('data-option', option);
+                   btn.setAttribute('data-target', question.target);
+                   
+                   // Debounced click handler
+                   const debouncedHandler = debounce((e) => {
+                       selectPracticeAnswer(e, option, question.target);
+                   }, CONFIG.DEBOUNCE_DELAY);
+                   
+                   btn.onclick = debouncedHandler;
+                   display.appendChild(btn);
+               });
+               
+               testState.addTimer(setTimeout(() => {
+                   display.classList.add('visible');
+               }, 300));
+           } catch (e) {
+               console.error('Show practice question error:', e);
+               handleError(`Soru gösterme hatası: ${e.message}`, false);
+           }
+       }
+
+       // Pratik cevap seç - race condition korumalı
+       function selectPracticeAnswer(event, selected, correct) {
+           if (testState.locked) {
+               console.warn('Practice answer selection ignored - state locked');
+               return;
+           }
+
+           testState.lock();
+
+           try {
+               // UI güncelleme
+               const buttons = document.querySelectorAll('#practiceDisplay .option-btn');
+               buttons.forEach(btn => {
+                   btn.onclick = null;
+                   btn.classList.add('disabled');
+                   btn.classList.remove('selected');
+               });
+
+               if (event && event.target) {
+                   event.target.classList.add('selected');
+               }
+               
+               // Cevabı kaydet
+               testState.practiceAnswers.push({
+                   question: testState.practiceIndex,
+                   selected: selected,
+                   correct: correct,
+                   isCorrect: selected === correct,
+                   timestamp: Date.now()
+               });
+               
+               testState.practiceIndex++;
+               
+               testState.addTimer(setTimeout(() => {
+                   testState.unlock();
+                   showPracticeQuestion();
+               }, 500));
+           } catch (e) {
+               testState.unlock();
+               console.error('Select practice answer error:', e);
+               handleError(`Cevap seçimi hatası: ${e.message}`, false);
+           }
+       }
+
+               // Pratik test bitir - no cancel option
+        function endPracticeTest() {
+            testState.clearAllTimers();
+            
+            const correctCount = testState.practiceAnswers.filter(answer => answer.isCorrect).length;
+            
+            if (correctCount >= CONFIG.MIN_PRACTICE_SCORE) {
+                goToExampleComplete();
+            } else {
+                // Başarısız - otomatik restart, cancel seçeneği yok
+                alert(`Örnek uygulamada başarısız oldunuz. ${correctCount}/${TEST_DATA.practiceQuestions.length} doğru cevap verdiniz. En az ${CONFIG.MIN_PRACTICE_SCORE} doğru cevap gerekli.\n\nDemonstrasyonlar tekrar gösterilecek.`);
+                
+                resetDemoStates();
+                goToIntroDemo();
+            }
+        }
+
+       // 8. Örnek uygulama tamamlandı
+       async function goToExampleComplete() {
+           testState.cleanup();
+           showScreen('exampleCompleteScreen');
+           
+           try {
+               await playAudio('örnekok.mp3');
+               if (testState.currentAudio) {
+                   addAudioEndedListener(testState.currentAudio, () => {
+                       showButton('exampleCompleteBtn');
+                   });
+               }
+           } catch (e) {
+               console.error('Example complete audio error:', e);
+               showButton('exampleCompleteBtn', 1000);
+           }
+       }
+
+       // 9. Ana test hazırlık
+       async function goToMainTestIntro() {
+           testState.cleanup();
+           showScreen('mainTestIntroScreen');
+           
+           try {
+               await playAudio('testbasla.mp3');
+               if (testState.currentAudio) {
+                   addAudioEndedListener(testState.currentAudio, () => {
+                       showButton('mainTestIntroBtn');
+                   });
+               }
+           } catch (e) {
+               console.error('Main test intro audio error:', e);
+               showButton('mainTestIntroBtn', 1000);
+           }
+       }
+
+       // 10. Ana testi başlat
+       function startMainTest() {
+           try {
+               testState.cleanup();
+               showScreen('mainTestScreen');
+               
+               // State sıfırla
+               testState.mainIndex = 0;
+               testState.mainAnswers = [];
+               testState.mainTimeLeft = CONFIG.MAIN_TIME_LIMIT;
+               testState.mainStartTime = Date.now();
+               testState.reactionTimes = [];
+               
+               startMainTimer();
+               showMainQuestion();
+           } catch (e) {
+               handleError(`Ana test başlatma hatası: ${e.message}`, false);
+           }
+       }
+
+       // Ana test timer
+       function startMainTimer() {
+           const totalTime = CONFIG.MAIN_TIME_LIMIT;
+           const progressBar = safeGetElement('mainProgressBar');
+           
+           if (!progressBar) {
+               console.error('Main progress bar not found');
+               return;
+           }
+
+           const intervalId = setInterval(() => {
+               testState.mainTimeLeft -= 1000;
+               
+               const progress = 1 - (testState.mainTimeLeft / totalTime);
+               progressBar.style.transform = `scaleX(${Math.max(0, Math.min(1, progress))})`;
+               
+               if (testState.mainTimeLeft <= 0) {
+                   clearInterval(intervalId);
+                   endMainTest();
+               }
+           }, 1000);
+           
+           testState.addInterval(intervalId);
+       }
+
+       // Ana test soru göster
+       function showMainQuestion() {
+           if (testState.mainIndex >= TEST_DATA.mainQuestions.length) {
+               endMainTest();
+               return;
+           }
+
+           try {
+               const question = TEST_DATA.mainQuestions[testState.mainIndex];
+               const display = safeGetElement('mainDisplay');
+               
+               if (!display) {
+                   throw new Error('Main display not found');
+               }
+
+               display.innerHTML = '';
+               display.classList.remove('visible');
+               
+               question.question.forEach((option, index) => {
+                   const btn = document.createElement('div');
+                   btn.className = 'option-btn';
+                   btn.textContent = option;
+                   btn.setAttribute('data-option', option);
+                   btn.setAttribute('data-target', question.target);
+                   
+                   // Debounced click handler
+                   const debouncedHandler = debounce((e) => {
+                       selectMainAnswer(e, option, question.target);
+                   }, CONFIG.DEBOUNCE_DELAY);
+                   
+                   btn.onclick = debouncedHandler;
+                   display.appendChild(btn);
+               });
+               
+               testState.questionStartTime = Date.now();
+               
+               testState.addTimer(setTimeout(() => {
+                   display.classList.add('visible');
+               }, 300));
+           } catch (e) {
+               console.error('Show main question error:', e);
+               handleError(`Ana test soru hatası: ${e.message}`, false);
+           }
+       }
+
+       // Ana test cevap seç
+       function selectMainAnswer(event, selected, correct) {
+           if (testState.locked) {
+               console.warn('Main answer selection ignored - state locked');
+               return;
+           }
+
+           testState.lock();
+
+           try {
+               const reactionTime = Date.now() - testState.questionStartTime;
+               testState.reactionTimes.push(reactionTime);
+               
+               // UI güncelleme
+               const buttons = document.querySelectorAll('#mainDisplay .option-btn');
+               buttons.forEach(btn => {
+                   btn.onclick = null;
+                   btn.classList.add('disabled');
+                   btn.classList.remove('selected');
+               });
+
+               if (event && event.target) {
+                   event.target.classList.add('selected');
+               }
+               
+               // Cevabı kaydet
+               testState.mainAnswers.push({
+                   question: testState.mainIndex,
+                   selected: selected,
+                   correct: correct,
+                   isCorrect: selected === correct,
+                   reactionTime: reactionTime,
+                   timestamp: Date.now()
+               });
+               
+               testState.mainIndex++;
+               
+               testState.addTimer(setTimeout(() => {
+                   testState.unlock();
+                   showMainQuestion();
+               }, 500));
+           } catch (e) {
+               testState.unlock();
+               console.error('Select main answer error:', e);
+               handleError(`Ana test cevap hatası: ${e.message}`, false);
+           }
+       }
+
+       // Ana test bitir
+       async function endMainTest() {
+           testState.clearAllTimers();
+           showScreen('resultsScreen');
+           
+           try {
+               await playAudio('testok.mp3');
+               // Sonuçları hesapla ve kaydet
+               calculateResults();
+           } catch (e) {
+               console.error('End main test audio error:', e);
+               calculateResults(); // Ses olmasa da sonuçları hesapla
+           }
+       }
+
+       // Sonuç hesaplama
+       function calculateResults() {
+           try {
+               const results = {
+                   practiceScore: testState.practiceAnswers.filter(a => a.isCorrect).length,
+                   practiceTotal: testState.practiceAnswers.length,
+                   mainScore: testState.mainAnswers.filter(a => a.isCorrect).length,
+                   mainTotal: testState.mainAnswers.length,
+                   averageReactionTime: testState.reactionTimes.length > 0 ? 
+                       testState.reactionTimes.reduce((a, b) => a + b, 0) / testState.reactionTimes.length : 0,
+                   testDuration: Date.now() - testState.mainStartTime,
+                   completedAt: new Date().toISOString()
+               };
+
+               // Sonuçları localStorage'a kaydet
+               localStorage.setItem('attentionTestResults', JSON.stringify(results));
+               console.log('Test results:', results);
+           } catch (e) {
+               console.error('Calculate results error:', e);
+               handleError(`Sonuç hesaplama hatası: ${e.message}`);
+           }
+       }
+
+       // Test tamamlama
+       function completeTest() {
+           console.log('Test completed, navigating to next section...');
+           // Sıradaki bölüme yönlendirme yapılabilir
+           testState.cleanup();
+       }
+
+       // Sayfa yüklenme olayı
+       window.addEventListener('load', async function() {
+           try {
+               console.log('ForTest Dikkat Algoritması - Sağlam Versiyon v2.0 Yüklendi');
+               
+               // Audio dosyalarını preload et
+               const audioFiles = [
+                   '12345.mp3', 'giriş.mp3', 'örnek1.mp3', 'örnek2.mp3',
+                   'örnekgecis.mp3', 'örnekbaşla.mp3', 'örnekok.mp3',
+                   'testbasla.mp3', 'testok.mp3'
+               ];
+
+               // Background'da preload et - hata durumunda da devam et
+               preloadAudios(audioFiles).catch(e => {
+                   console.warn('Audio preloading warning:', e);
+               });
+               
+               // Browser özelliklerini kontrol et
+               if (!window.Audio) {
+                   console.warn('Audio API not supported');
+               }
+               
+               if (!window.localStorage) {
+                   console.warn('LocalStorage not supported');
+               }
+
+           } catch (e) {
+               console.error('Initialization error:', e);
+               handleError(`Başlatma hatası: ${e.message}`, false);
+           }
+       });
+
+       // Sayfa kapanma olayı - cleanup
+       window.addEventListener('beforeunload', function(e) {
+           try {
+               testState.cleanup();
+               console.log('Cleanup completed');
+           } catch (e) {
+               console.error('Cleanup error:', e);
+           }
+       });
+
+       // Visibility change - pause/resume
+       document.addEventListener('visibilitychange', function() {
+           if (document.hidden) {
+               // Sayfa gizlendi - timer'ları duraklat
+               if (testState.currentAudio) {
+                   testState.currentAudio.pause();
+               }
+           } else {
+               // Sayfa göründü - devam et
+               if (testState.currentAudio && testState.currentAudio.paused) {
+                   testState.currentAudio.play().catch(e => {
+                       console.warn('Resume audio failed:', e);
+                   });
+               }
+           }
+       });
+
+       // Memory usage monitoring (development)
+       if (window.performance && window.performance.memory) {
+           setInterval(() => {
+               const memory = window.performance.memory;
+               if (memory.usedJSHeapSize > 50 * 1024 * 1024) { // 50MB
+                   console.warn('High memory usage detected:', {
+                       used: Math.round(memory.usedJSHeapSize / 1024 / 1024) + 'MB',
+                       total: Math.round(memory.totalJSHeapSize / 1024 / 1024) + 'MB'
+                   });
+               }
+           }, 10000);
+       }
+
+       // Export functions to global scope for onclick handlers
+       window.safeNavigate = safeNavigate;
+       window.goToSoundSetup = goToSoundSetup;
+       window.goToInstructions = goToInstructions;
+       window.goToIntroDemo = goToIntroDemo;
+       window.goToLetterDemo = goToLetterDemo;
+       window.goToExampleTransition = goToExampleTransition;
+       window.goToExampleStart = goToExampleStart;
+       window.showCountdown = showCountdown;
+       window.startPracticeTest = startPracticeTest;
+       window.goToExampleComplete = goToExampleComplete;
+       window.goToMainTestIntro = goToMainTestIntro;
+       window.startMainTest = startMainTest;
+       window.completeTest = completeTest;
+
+   </script>
+</body>
+</html> 
