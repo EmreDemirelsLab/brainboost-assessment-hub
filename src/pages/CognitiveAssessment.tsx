@@ -2,6 +2,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
+import { CognitiveAssessmentTest } from "@/components/cognitive-assessment/CognitiveAssessmentTest";
 
 export default function CognitiveAssessment() {
   const { user, switchRole, logout } = useAuth();
@@ -36,14 +37,8 @@ export default function CognitiveAssessment() {
           </h1>
         </div>
 
-        {/* Content */}
-        <div className="flex items-center justify-center h-96">
-          <div className="text-center">
-            <p className="text-lg text-gray-600">
-              Bu bölüm şu anda geliştirme aşamasındadır.
-            </p>
-          </div>
-        </div>
+        {/* Cognitive Assessment Test */}
+        <CognitiveAssessmentTest />
       </div>
     </DashboardLayout>
   );
