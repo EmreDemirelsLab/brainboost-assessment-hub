@@ -117,7 +117,67 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    scrollbar-gutter: stable;
+    overflow-x: hidden;
+  }
+
   body {
     @apply bg-background text-foreground;
+    overflow-x: hidden !important;
+    position: relative;
+  }
+
+  /* Radix UI dropdown scroll lock override */
+  body[data-scroll-locked] {
+    overflow: auto !important;
+    padding-right: 0 !important;
+    margin-right: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Remove all forced positioning rules for dropdown */
+  /* Let Radix UI handle positioning naturally */
+  /* Prevent layout shift completely */
+  [data-radix-popper-content-wrapper] {
+    transform: none !important;
+    position: fixed !important;
+  }
+
+  /* Force dropdown to position correctly relative to trigger */
+  [data-radix-dropdown-menu-content] {
+    position: fixed !important;
+    transform-origin: top right !important;
+    right: 1.5rem !important;
+    top: 4rem !important;
+  }
+
+  /* Ensure proper positioning context */
+  [data-radix-popper-content-wrapper] {
+    position: fixed !important;
+    transform: none !important;
+    right: 1.5rem !important;
+    top: 4rem !important;
+  }
+
+  [data-radix-popper-content-wrapper] {
+    position: fixed !important;
+    top: 4rem !important;
+    right: 1.5rem !important;
+    left: auto !important;
+    transform: none !important;
+  }
+
+  /* Ensure dropdown appears above everything */
+  [data-radix-dropdown-menu-content] {
+    z-index: 9999 !important;
+  }
+}
+
+@layer base {
+  /* Prevent body width changes */
+  html, body {
+    width: 100vw !important;
+    max-width: 100vw !important;
   }
 }

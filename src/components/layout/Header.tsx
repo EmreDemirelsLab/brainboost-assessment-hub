@@ -1,5 +1,6 @@
 import { Bell, User, LogOut, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,31 +30,37 @@ const roleLabels: Record<UserRole, string> = {
 };
 
 const roleColors: Record<UserRole, string> = {
-  admin: "bg-destructive text-destructive-foreground",
-  trainer: "bg-primary text-primary-foreground",
-  representative: "bg-warning text-warning-foreground",
-  user: "bg-success text-success-foreground"
+  admin: "bg-slate-100 text-slate-700 border-slate-200",
+  trainer: "bg-blue-50 text-blue-700 border-blue-200",
+  representative: "bg-green-50 text-green-700 border-green-200",
+  user: "bg-gray-50 text-gray-700 border-gray-200"
 };
 
 export function Header({ user, onRoleSwitch, onLogout }: HeaderProps) {
   return (
-    <header className="h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+    <header className="h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 fixed top-0 left-0 right-0 z-50">
       <div className="flex h-16 items-center justify-between px-6">
         {/* Logo */}
         <div className="flex items-center space-x-4">
-          <img 
-            src="/lovable-uploads/eb89ac73-e0e3-47d9-847f-9fbd6a9b70bb.png" 
-            alt="ForTest Logo" 
-            className="h-8"
-          />
+          <Link to="/" className="block">
+            <img 
+              src="/lovable-uploads/eb89ac73-e0e3-47d9-847f-9fbd6a9b70bb.png" 
+              alt="ForTest Logo" 
+              className="h-8 hover:scale-105 transition-transform cursor-pointer"
+            />
+          </Link>
         </div>
 
         {/* Right side - User menu */}
         <div className="flex items-center space-x-4">
           {/* Notifications */}
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-xs text-destructive-foreground flex items-center justify-center">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="relative hover:bg-accent/50 transition-colors duration-200"
+          >
+            <Bell className="h-5 w-5 hover:scale-110 transition-transform" />
+            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground flex items-center justify-center animate-pulse">
               3
             </span>
           </Button>
@@ -62,49 +69,98 @@ export function Header({ user, onRoleSwitch, onLogout }: HeaderProps) {
           {user && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center space-x-2">
-                  <div className="flex items-center space-x-2">
-                    <User className="h-5 w-5" />
-                    <div className="text-left">
-                      <div className="text-sm font-medium">{user.name}</div>
-                      <Badge variant="secondary" className={`text-xs ${roleColors[user.currentRole]}`}>
+                <Button 
+                  variant="ghost" 
+                  className="group relative flex items-center gap-3 px-4 py-2.5 transition-colors duration-200 rounded-lg h-auto min-w-[220px] border border-border/40 shadow-sm backdrop-blur-sm bg-card/50 hover:bg-card/80 hover:border-border/60"
+                >
+                  {/* User icon container */}
+                  <div className="relative bg-primary/10 p-2 rounded-lg border border-primary/20">
+                    <User className="h-4 w-4 text-primary" />
+                  </div>
+                  
+                  {/* User info */}
+                  <div className="flex flex-col items-start min-w-0 flex-1">
+                    <div className="text-sm font-medium text-foreground truncate w-full max-w-[160px] text-left flex justify-start">
+                      {user.name}
+                    </div>
+                    <div className="flex items-center justify-start gap-2 mt-0.5 w-full max-w-[160px]">
+                      <div className={`w-2 h-2 rounded-full ${
+                        user.currentRole === 'admin' ? 'bg-red-500' :
+                        user.currentRole === 'trainer' ? 'bg-blue-500' :
+                        user.currentRole === 'representative' ? 'bg-green-500' :
+                        'bg-gray-500'
+                      }`}></div>
+                      <span className="text-xs text-muted-foreground font-medium truncate">
                         {roleLabels[user.currentRole]}
-                      </Badge>
+                      </span>
                     </div>
                   </div>
-                  <ChevronDown className="h-4 w-4" />
+                  
+                  {/* Chevron icon */}
+                  <ChevronDown className="h-4 w-4 text-muted-foreground ml-auto" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <div className="px-2 py-1.5">
-                  <p className="text-sm font-medium">{user.name}</p>
-                  <p className="text-xs text-muted-foreground">{user.email}</p>
+              <DropdownMenuContent 
+                align="end" 
+                side="bottom"
+                sideOffset={8}
+                avoidCollisions={true}
+                collisionPadding={10}
+                className="w-72 bg-card/95 backdrop-blur-sm border border-border/50 shadow-lg animate-in fade-in-0 zoom-in-95 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
+              >
+                <div className="px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-primary/10 p-2 rounded-lg border border-primary/20">
+                      <User className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">{user.name}</p>
+                      <p className="text-xs text-muted-foreground truncate break-all">{user.email}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className={`w-2 h-2 rounded-full ${
+                          user.currentRole === 'admin' ? 'bg-red-500' :
+                          user.currentRole === 'trainer' ? 'bg-blue-500' :
+                          user.currentRole === 'representative' ? 'bg-green-500' :
+                          'bg-gray-500'
+                        }`}></div>
+                        <span className="text-xs text-muted-foreground">{roleLabels[user.currentRole]}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <DropdownMenuSeparator />
                 
                 {/* Role Switching */}
                 {user.roles.length > 1 && (
                   <>
-                    <div className="px-2 py-1.5">
-                      <p className="text-xs font-medium text-muted-foreground mb-1">Rol Değiştir</p>
-                      {user.roles.map((role) => (
-                        <DropdownMenuItem
-                          key={role}
-                          onClick={() => onRoleSwitch(role)}
-                          className={`text-sm ${role === user.currentRole ? 'bg-accent' : ''}`}
-                        >
-                          <Badge variant="outline" className={`mr-2 ${roleColors[role]}`}>
-                            {roleLabels[role]}
-                          </Badge>
-                          {role === user.currentRole && <span className="ml-auto">✓</span>}
-                        </DropdownMenuItem>
-                      ))}
+                    <div className="px-3 py-2">
+                      <p className="text-xs font-medium text-muted-foreground mb-2">Rol Değiştir</p>
+                      <div className="space-y-1">
+                        {user.roles.map((role) => (
+                          <DropdownMenuItem
+                            key={role}
+                            onClick={() => onRoleSwitch(role)}
+                            className={`text-sm rounded-lg cursor-pointer flex items-center justify-between ${role === user.currentRole ? 'bg-accent' : ''}`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <div className={`w-2 h-2 rounded-full ${
+                                role === 'admin' ? 'bg-red-400' :
+                                role === 'trainer' ? 'bg-blue-400' :
+                                role === 'representative' ? 'bg-green-400' :
+                                'bg-gray-400'
+                              }`}></div>
+                              <span className="text-xs">{roleLabels[role]}</span>
+                            </div>
+                            {role === user.currentRole && <span className="text-primary font-medium text-xs">✓</span>}
+                          </DropdownMenuItem>
+                        ))}
+                      </div>
                     </div>
                     <DropdownMenuSeparator />
                   </>
                 )}
 
-                <DropdownMenuItem onClick={onLogout} className="text-destructive">
+                <DropdownMenuItem onClick={onLogout} className="text-destructive mx-2 mb-2 rounded-lg">
                   <LogOut className="mr-2 h-4 w-4" />
                   Çıkış Yap
                 </DropdownMenuItem>
