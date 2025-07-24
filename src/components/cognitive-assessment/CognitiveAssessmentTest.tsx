@@ -9,7 +9,7 @@ export function CognitiveAssessmentTest() {
     
     const testWindow = window.open('/cognitive-tests/dikkat/dikkat.html', '_blank', 
       `width=${screenWidth},height=${screenHeight},left=0,top=0,toolbar=no,menubar=no,scrollbars=yes,resizable=yes,status=no,fullscreen=yes`);
-    
+
     if (!testWindow) {
       alert('Test penceresi açılamadı. Lütfen popup engelleyiciyi kapatın.');
     } else {
@@ -17,8 +17,8 @@ export function CognitiveAssessmentTest() {
       testWindow.addEventListener('load', () => {
         try {
           // Pencere başlığını değiştir
-          testWindow.document.title = 'ForBrain Bilişsel Beceriler Testi';
-          
+          testWindow.document.title = 'Fortest Bilişsel Beceriler Testi';
+
           // Tam ekran moduna geçmeye çalış
           if (testWindow.document.documentElement && testWindow.document.documentElement.requestFullscreen) {
             testWindow.document.documentElement.requestFullscreen().catch(err => {
@@ -44,7 +44,7 @@ export function CognitiveAssessmentTest() {
         
         {/* Başlık */}
         <h1 className="text-4xl font-bold text-slate-800 mb-6">
-          Bilişsel Beceriler Testi
+          Fortest Bilişsel Beceriler Testi
         </h1>
         
         {/* Açıklama */}
@@ -61,13 +61,13 @@ export function CognitiveAssessmentTest() {
       </div>
       
       {/* Testi Başlat Butonu */}
-      <Button 
+        <Button 
         onClick={handleStartTest}
         size="lg"
         className="text-lg px-8 py-4 bg-blue-600 hover:bg-blue-700"
       >
         Testi Başlat
-      </Button>
+        </Button>
     </div>
   );
 }
