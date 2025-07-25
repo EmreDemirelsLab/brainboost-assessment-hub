@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTestSession } from '@/hooks/useTestSession';
-import { TestService } from '@/services/testService';
+import { testService } from '@/services/testService';
 import { ScoreService } from '@/services/scoreService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,7 @@ export function CognitiveTestRunner() {
   const [completedTests, setCompletedTests] = useState<string[]>([]);
   const [testWindow, setTestWindow] = useState<Window | null>(null);
   const [isTestRunning, setIsTestRunning] = useState(false);
-  const testService = useRef(new TestService());
+  const testServiceRef = useRef(testService);
   const scoreService = useRef(new ScoreService());
 
   // Global fonksiyonları window'a ekle
@@ -31,13 +31,13 @@ export function CognitiveTestRunner() {
     (window as any).getCurrentUser = () => user;
     (window as any).getCurrentSession = () => session;
     (window as any).saveTestResult = async (testType: string, data: any) => {
-      return await testService.current.saveTestResult(data);
+      return await testServiceRef.current.saveTestResult(data);
     };
     (window as any).saveTestDetails = async (testType: string, testResultId: string, details: any) => {
-      return await testService.current.saveTestDetails(testType as any, testResultId, details);
+      return await testServiceRef.current.saveTestDetails(testType as any, testResultId, details);
     };
     (window as any).saveQuestionResponses = async (responses: any[]) => {
-      return await testService.current.saveQuestionResponses(responses);
+      return await testServiceRef.current.saveQuestionResponses(responses);
     };
   }, [user, session]);
 

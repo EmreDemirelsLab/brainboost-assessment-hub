@@ -63,7 +63,7 @@ export default function BurdonReportDetail() {
         ...resultData,
         student_name: studentName,
         conducted_by_name: conductorName
-      });
+      } as BurdonTestResult);
     } catch (error) {
       console.error('Error fetching result:', error);
     } finally {

@@ -154,7 +154,7 @@ export default function Reports() {
           ...result,
           student_name: studentName,
           conducted_by_name: conductorName
-        });
+        } as BurdonTestResult);
       }
 
       setBurdonResults(formattedResults);
