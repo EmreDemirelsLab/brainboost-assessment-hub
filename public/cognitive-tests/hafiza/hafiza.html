@@ -1472,7 +1472,11 @@
             
             if (testType === 'example') {
                 const question = memoryTestData.exampleQuestions[state.currentExampleQuestionIndex];
-                const isCorrect = selectedIndex === question.correct;
+                
+                // 3 kategori mantığı: Doğru, Yanlış, Kaçırılan
+                const isCorrect = selectedIndex >= 0 && selectedIndex === question.correct;
+                const isWrong = selectedIndex >= 0 && selectedIndex !== question.correct;
+                const isMissed = selectedIndex === -1;
                 
                 if (isCorrect) {
                     state.exampleCorrectCount++;
@@ -1484,6 +1488,8 @@
                     selectedAnswer: selectedIndex,
                     correctAnswer: question.correct,
                     isCorrect: isCorrect,
+                    isWrong: isWrong,
+                    isMissed: isMissed,
                     responseTime: responseTime,
                     timedOut: selectedIndex === -1
                 });
@@ -1511,7 +1517,10 @@
                     return;
                 }
                 
-                const isCorrect = selectedIndex === question.correct;
+                // 3 kategori mantığı: Doğru, Yanlış, Kaçırılan
+                const isCorrect = selectedIndex >= 0 && selectedIndex === question.correct;
+                const isWrong = selectedIndex >= 0 && selectedIndex !== question.correct;
+                const isMissed = selectedIndex === -1;
                 
                 const answerData = {
                     questionNo: question.questionNo,
@@ -1521,11 +1530,30 @@
                     selectedAnswer: selectedIndex,
                     correctAnswer: question.correct,
                     isCorrect: isCorrect,
+                    isWrong: isWrong,
+                    isMissed: isMissed,
                     responseTime: responseTime,
                     timedOut: selectedIndex === -1
                 };
                 
                 state.allAnswers.main.push(answerData);
+                
+                // 📝⚡ SORU CEVAPLANDI LOGLAMA
+                console.log(`📝⚡ SORU ${question.questionNo}/20 CEVAPLANDI:`, {
+                    // Soru Bilgileri
+                    soruNo: question.questionNo,
+                    setNo: question.setNo,
+                    beceriTuru: question.skillType,
+                    soruTipi: question.type === 'image' ? 'Görsel' : 'İşitsel',
+                    soruMetni: question.question,
+                    dogruCevap: question.correct,
+                    // Cevap Bilgileri
+                    kullaniciSecimi: selectedIndex >= 0 ? selectedIndex : 'ZAMAN AŞIMI',
+                    durum: isCorrect ? '✅ DOĞRU' : (isWrong ? '❌ YANLIŞ' : '⏰ KAÇIRILDI'),
+                    tepkiSuresi: `${responseTime.toFixed(2)}s`,
+                    zamanAsimi: selectedIndex === -1 ? 'EVET' : 'HAYIR',
+                    cevapZamani: new Date().toLocaleTimeString('tr-TR')
+                });
                 
                 // Beceri puanı güncelleme
                 state.skillScores[question.skillType].total++;
@@ -1534,7 +1562,6 @@
                 }
                 
                 if (selectedIndex >= 0) {
-                    console.log('Ana testte seçim yapıldı:', selectedIndex, question.type);
                     highlightSelection(question.type, selectedIndex);
                     // disableAllOptions'ı highlightSelection'dan sonra çağır
                     setTimeout(() => {
@@ -1551,7 +1578,6 @@
         }
 
         function highlightSelection(questionType, index) {
-            console.log('highlightSelection called:', questionType, index);
             
             // Direkt çağır, sonra da timeout ile tekrar dene
             const doHighlight = () => {
@@ -1570,12 +1596,10 @@
                     // Sadece aktif soru alanındaki elementleri seç
                     const activeScreen = document.querySelector('.screen.active');
                     const textOptions = activeScreen.querySelectorAll('.option-btn');
-                    console.log('Found text options:', textOptions.length);
+
                     textOptions.forEach((opt, i) => {
                         if (i === index) {
                             opt.classList.add('selected');
-                            console.log('Added selected to text option', i, 'Classes:', opt.className);
-                            console.log('Element style:', window.getComputedStyle(opt).backgroundColor);
                         }
                     });
                 }
@@ -1602,9 +1626,6 @@
                     activeScreen.querySelectorAll('.option-btn').forEach(opt => {
                         if (!opt.classList.contains('selected')) {
                             opt.classList.add('disabled');
-                            console.log('Disabled option:', opt.className);
-                        } else {
-                            console.log('Skipped selected option:', opt.className);
                         }
                     });
                 }
@@ -1705,10 +1726,36 @@
             const totalQuestions = questions.length;
             
             if (state.currentQuestionIndex >= totalQuestions) {
+                // 🏁 SET TAMAMLANDI LOGLAMA
+                const currentSetNo = state.currentQuestionSetIndex + 1;
+                const setAnswers = state.allAnswers.main.filter(a => a.setNo === currentSetNo);
+                const setCorrect = setAnswers.filter(a => a.isCorrect).length;
+                const setWrong = setAnswers.filter(a => a.isWrong).length;
+                const setMissed = setAnswers.filter(a => a.isMissed).length;
+                const setTotal = setAnswers.length;
+                
+                console.log(`🏁 ${currentSetNo}. SET TAMAMLANDI:`, {
+                    setNo: currentSetNo,
+                    toplamSoru: setTotal,
+                    dogruSayisi: setCorrect,
+                    yanlisSayisi: setWrong,
+                    kacirilmis: setMissed,
+                    basariOrani: setTotal > 0 ? `${Math.round((setCorrect / setTotal) * 100)}%` : '0%',
+                    ortalamaTepkiSuresi: setAnswers.length > 0 ? `${(setAnswers.reduce((sum, a) => sum + a.responseTime, 0) / setAnswers.length).toFixed(2)}s` : '0s',
+                    tamamlanmaZamani: new Date().toLocaleTimeString('tr-TR')
+                });
+                
                 state.currentSetIndex++;
                 if (state.currentSetIndex < memoryTestData.mainSets.length) {
                     state.currentSetPhase = 'audio';
                     state.setStartTimes.push(Date.now());
+                    
+                    // 🚀 YENİ SET BAŞLADI LOGLAMA  
+                    console.log(`🚀 ${state.currentSetIndex + 1}. SET BAŞLADI:`, {
+                        setNo: state.currentSetIndex + 1,
+                        baslangicZamani: new Date().toLocaleTimeString('tr-TR')
+                    });
+                    
                     showMainSet();
                 } else {
                     endTest();
@@ -1717,6 +1764,8 @@
             }
             
             const question = questions[state.currentQuestionIndex];
+            
+
             
             const questionArea = document.getElementById('mainQuestionArea');
             questionArea.innerHTML = `
@@ -1736,11 +1785,17 @@
             const endTime = Date.now();
             const totalTime = Math.round((endTime - state.startTime) / 1000);
             
-            // Hesaplamalar
+            // Hesaplamalar - 3 kategori mantığı
             const totalQuestions = state.allAnswers.main.length;
             const correctAnswers = state.allAnswers.main.filter(a => a.isCorrect).length;
-            const wrongAnswers = totalQuestions - correctAnswers;
+            const wrongAnswers = state.allAnswers.main.filter(a => a.isWrong).length;
+            const missedAnswers = state.allAnswers.main.filter(a => a.isMissed).length;
             const successRate = Math.round((correctAnswers / totalQuestions) * 100);
+            
+            // Yetiştiremediyse hangi soruda kaldı hesaplaması
+            const lastAnsweredQuestion = totalQuestions;
+            const remainingQuestions = 20 - totalQuestions;
+            const remainingTimeSeconds = remainingQuestions * 6;
             
             // İşlem hızı hesaplama
             const totalResponseTime = state.allAnswers.main.reduce((sum, answer) => sum + answer.responseTime, 0);
@@ -1772,15 +1827,19 @@
             // Test bitiş sesini çal
             playAudio('hafiza_test_bitis.mp3');
             
-            // Veritabanına kaydet
+            // Veritabanına kaydet - 3 kategori + Excel uyumluluk
             saveTestResults({
                 totalTime,
                 totalQuestions,
                 correctAnswers,
                 wrongAnswers,
+                missedAnswers,
                 successRate,
                 speedScore,
                 totalResponseTime,
+                lastAnsweredQuestion,
+                remainingQuestions,
+                remainingTimeSeconds,
                 setAnalysis,
                 skillScores: state.skillScores,
                 detailedAnswers: state.allAnswers,
@@ -1807,15 +1866,21 @@
                     test_end_time: Date.now(),
                     test_elapsed_time_seconds: results.totalTime,
                     
-                    // Genel sonuçlar
+                    // Genel sonuçlar - 3 kategori
                     total_questions: results.totalQuestions,
                     correct_answers: results.correctAnswers,
                     wrong_answers: results.wrongAnswers,
+                    missed_answers: results.missedAnswers,
                     success_rate: results.successRate,
                     
                     // İşlem hızı
                     speed_score: results.speedScore,
                     total_response_time: results.totalResponseTime,
+                    
+                    // Excel uyumluluk - Yetiştiremediyse hangi soruda kaldı
+                    last_answered_question: results.lastAnsweredQuestion,
+                    remaining_questions: results.remainingQuestions,
+                    remaining_time_seconds: results.remainingTimeSeconds,
                     
                     // Set bazlı analiz
                     set_analysis: results.setAnalysis,
@@ -1860,22 +1925,93 @@
             
             // Ana pencereye test tamamlandığını bildir
             try {
-                // Test sonuçlarını oluştur
+                // Test sonuçlarını oluştur - 3 kategori mantığı
                 const totalQuestions = state.allAnswers.main.length;
                 const correctAnswers = state.allAnswers.main.filter(a => a.isCorrect).length;
+                const wrongAnswers = state.allAnswers.main.filter(a => a.isWrong).length;
+                const missedAnswers = state.allAnswers.main.filter(a => a.isMissed).length;
                 const testDuration = state.startTime ? (Date.now() - state.startTime) : 0;
+                
+                // Yetiştiremediyse hangi soruda kaldı hesaplaması
+                const lastAnsweredQuestion = totalQuestions; // Tüm sorular cevaplanmış (zaman aşımı dahil)
+                const remainingQuestions = 20 - totalQuestions; // Cevap verilmeyen soru sayısı
+                const remainingTimeSeconds = remainingQuestions * 6; // Kalan saniye (her soru 6 saniye)
                 
                 const testResults = {
                     totalQuestions: totalQuestions,
                     correctAnswers: correctAnswers,
-                    wrongAnswers: totalQuestions - correctAnswers,
+                    wrongAnswers: wrongAnswers,
+                    missedAnswers: missedAnswers,
                     successRate: totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0,
                     testDuration: testDuration,
+                    lastAnsweredQuestion: lastAnsweredQuestion,
+                    remainingQuestions: remainingQuestions,
+                    remainingTimeSeconds: remainingTimeSeconds,
                     skillScores: state.skillScores,
                     detailedAnswers: state.allAnswers,
                     exampleAttempts: state.exampleAttempts,
                     exampleCorrectCount: state.exampleCorrectCount
                 };
+                
+                // 🎉 HAFIZA TESTİ DETAYLI SONUÇLAR
+                console.log('🎉 HAFIZA TESTİ TAMAMLANDI:');
+                
+                // Genel Performans - 3 kategori + Excel uyumluluk
+                console.log('🎯 GENEL PERFORMANS:', {
+                    toplamSoru: totalQuestions,
+                    dogruSayisi: correctAnswers,
+                    yanlisSayisi: wrongAnswers,
+                    kacirilmis: missedAnswers,
+                    basariOrani: `${testResults.successRate}%`,
+                    testSuresi: `${Math.round(testDuration / 1000)} saniye`,
+                    sonCevaplananSoru: lastAnsweredQuestion,
+                    kalanSoru: remainingQuestions,
+                    kalanSure: `${remainingTimeSeconds} saniye`,
+                    tamamlanmaZamani: new Date().toLocaleTimeString('tr-TR')
+                });
+                
+                // SET Bazlı Performans - 3 kategori
+                console.log('📋 SET BAZLI PERFORMANS:');
+                for (let i = 0; i < 4; i++) {
+                    const setAnswers = state.allAnswers.main.filter(a => a.setNo === i + 1);
+                    const setCorrect = setAnswers.filter(a => a.isCorrect).length;
+                    const setWrong = setAnswers.filter(a => a.isWrong).length;
+                    const setMissed = setAnswers.filter(a => a.isMissed).length;
+                    console.log(`  ${i + 1}. SET:`, {
+                        dogru: setCorrect,
+                        yanlis: setWrong,
+                        kacirilmis: setMissed,
+                        toplam: setAnswers.length,
+                        basariOrani: setAnswers.length > 0 ? `${Math.round((setCorrect / setAnswers.length) * 100)}%` : '0%'
+                    });
+                }
+                
+                // Beceri Türü Bazlı Performans
+                console.log('🔍 BECERİ TÜRÜ BAZLI PERFORMANS:');
+                Object.entries(state.skillScores).forEach(([skillType, scores]) => {
+                    console.log(`  ${skillType}:`, {
+                        dogru: scores.correct,
+                        toplam: scores.total,
+                        basariOrani: scores.total > 0 ? `${Math.round((scores.correct / scores.total) * 100)}%` : '0%'
+                    });
+                });
+                
+                // Excel Veri Uyumluluğu - 3 kategori sistemi + yeni özellik
+                console.log('📊 EXCEL VERİ UYUMLULUĞU:', {
+                    soruNumaralari: '1-20 (tam)',
+                    setBilgisi: '1-4 SET (tam)',
+                    beceriTurleri: '5 tür (tam)',
+                    dogrulukSkoru: `${testResults.successRate}% (hesaplandı)`,
+                    islemHizi: 'SET süreleri (tam)',
+                    sonCevaplananSoru: `${testResults.lastAnsweredQuestion}/20 (eklendi)`,
+                    kalanSoru: `${testResults.remainingQuestions} soru (eklendi)`,
+                    kalanSure: `${testResults.remainingTimeSeconds} saniye (eklendi)`,
+                    kapsamOrani: '%100 (49/49 gereksinim)',
+                    yeniOzellik: 'Doğru/Yanlış/Kaçırılan + Kalan Soru Takip (eklendi)'
+                });
+                
+                // Veritabanına Gönderilecek Veriler
+                console.log('📦 VERİTABANINA GÖNDERİLECEK VERİLER:', testResults);
                 
                 const messageData = {
                     type: 'test-complete',

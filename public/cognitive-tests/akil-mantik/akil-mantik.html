@@ -1337,11 +1337,51 @@
             timerInterval: null,
             answers: [],
             sectionResults: {
-                1: { correct: 0, total: 8, time: 0 },
-                2: { correct: 0, total: 6, time: 0 },
-                3: { correct: 0, total: 3, time: 0 },
-                4: { correct: 0, total: 3, time: 0 },
-                5: { correct: 0, total: 3, time: 0 }
+                1: { 
+                    name: "Dörtlü Yatay Format",
+                    correct: 0, 
+                    total: 8, 
+                    time: 0,
+                    accuracy_percentage: 0,
+                    avg_response_time_per_question: 0,
+                    responses: []
+                },
+                2: { 
+                    name: "Dörtlü Kare Format",
+                    correct: 0, 
+                    total: 6, 
+                    time: 0,
+                    accuracy_percentage: 0,
+                    avg_response_time_per_question: 0,
+                    responses: []
+                },
+                3: { 
+                    name: "Altılı Kare Format",
+                    correct: 0, 
+                    total: 3, 
+                    time: 0,
+                    accuracy_percentage: 0,
+                    avg_response_time_per_question: 0,
+                    responses: []
+                },
+                4: { 
+                    name: "L Format",
+                    correct: 0, 
+                    total: 3, 
+                    time: 0,
+                    accuracy_percentage: 0,
+                    avg_response_time_per_question: 0,
+                    responses: []
+                },
+                5: { 
+                    name: "Dokuzlu Format",
+                    correct: 0, 
+                    total: 3, 
+                    time: 0,
+                    accuracy_percentage: 0,
+                    avg_response_time_per_question: 0,
+                    responses: []
+                }
             },
             locked: false,
             isTransitioning: false
@@ -1769,6 +1809,21 @@
                         testState.sectionResults[question.section].correct++;
                     }
                     
+                    // Bölüm tepki sürelerini kaydet
+                    testState.sectionResults[question.section].responses.push(responseTime);
+                    
+                    // Soru detayını logla
+                    const sectionName = testState.sectionResults[question.section].name;
+                    logQuestionDetails(
+                        testState.currentQuestionIndex + 1,
+                        question.section,
+                        sectionName,
+                        responseTime,
+                        isCorrect,
+                        selectedIndex,
+                        question.correctAnswer
+                    );
+                    
                     // Tüm seçenekleri disable et
                     const options = document.querySelectorAll('#mainOptions .option');
                     options.forEach((option, index) => {
@@ -1798,6 +1853,13 @@
         }
 
         function evaluateExampleResults() {
+            // Örnek test sonucu logu
+            console.log(`\n📝 ================= ÖRNEK TEST SONUCU =================`);
+            console.log(`🎯 Doğru: ${testState.exampleCorrectCount}/3`);
+            console.log(`📊 Durum: ${testState.exampleCorrectCount >= 2 ? '✅ BAŞARILI' : '❌ BAŞARISIZ'}`);
+            console.log(`🔄 Deneme: ${testState.exampleAttempts + 1}`);
+            console.log(`➡️ Sonuç: ${testState.exampleCorrectCount >= 2 ? '🚀 Ana teste geçiliyor' : '🔄 Örnek test tekrarlanacak'}`);
+            
             if (testState.exampleCorrectCount >= 2) { // 3 sorudan 2 doğru
                 stopCurrentAudio(); // Önceki sesi durdur
                 showScreen('exampleCompleteScreen');
@@ -1825,6 +1887,18 @@
             testState.testStartTime = Date.now();
             testState.sectionStartTimes[1] = Date.now();
             testState.answers = [];
+            
+            // Test başlangıç logu
+            console.log(`\n🚀 ================= AKIL MANTIK TESTİ BAŞLADI =================`);
+            console.log(`📅 Başlangıç: ${new Date(testState.testStartTime).toLocaleString('tr-TR')}`);
+            console.log(`📊 Toplam Soru: ${testData.mainQuestions.length}`);
+            console.log(`⏰ Süre Limiti: 5 dakika (300 saniye)`);
+            console.log(`📋 Bölüm Yapısı:`);
+            console.log(`   1️⃣ Dörtlü Yatay Format: 8 soru`);
+            console.log(`   2️⃣ Dörtlü Kare Format: 6 soru`);
+            console.log(`   3️⃣ Altılı Kare Format: 3 soru`);
+            console.log(`   4️⃣ L Format: 3 soru`);
+            console.log(`   5️⃣ Dokuzlu Format: 3 soru`);
             
             // Progress bar'ı sıfırla ve timer'ı başlat
             const progressBar = document.getElementById('timeProgressFill');
@@ -1858,6 +1932,12 @@
                 // Önceki bölümün süresini kaydet
                 testState.sectionResults[prevQuestion.section].time = 
                     (Date.now() - testState.sectionStartTimes[prevQuestion.section]) / 1000;
+                
+                // Bölüm geçiş logu
+                console.log(`\n🔄 ================= BÖLÜM GEÇİŞİ =================`);
+                console.log(`✅ Tamamlanan: Bölüm ${prevQuestion.section} - ${testState.sectionResults[prevQuestion.section].name}`);
+                console.log(`⏱️ Süre: ${testState.sectionResults[prevQuestion.section].time.toFixed(2)} saniye`);
+                console.log(`➡️ Yeni Bölüm: Bölüm ${currentSection} - ${testState.sectionResults[currentSection].name}`);
                 
                 // Yeni bölümün başlangıç zamanını kaydet
                 testState.sectionStartTimes[currentSection] = Date.now();
@@ -1935,6 +2015,176 @@
             }, 300000); // 5 dakika = 300000 ms
         }
 
+        // ==================== LOGLAMA SİSTEMİ (PUZZLE STİLİ) ====================
+        function logQuestionDetails(questionNo, section, sectionName, responseTime, isCorrect, selectedAnswer, correctAnswer) {
+            const speedCategory = responseTime < 1 ? 'ÇOK HIZLI' : responseTime < 2 ? 'HIZLI' : responseTime < 5 ? 'NORMAL' : 'YAVAŞ';
+            const statusEmoji = isCorrect ? '✅' : '❌';
+            
+            console.log(`\n🧠 ================= SORU ${questionNo} CEVAPLANDI =================`);
+            console.log(`📝 Bölüm: ${section} - ${sectionName}`);
+            console.log(`${statusEmoji} Sonuç: ${isCorrect ? 'DOĞRU' : 'YANLIŞ'}`);
+            console.log(`⏱️ Tepki Süresi: ${responseTime.toFixed(3)} saniye (${speedCategory})`);
+            console.log(`🎯 Seçilen: ${selectedAnswer} | Doğru: ${correctAnswer}`);
+        }
+
+        function logSectionSummary(sectionId, sectionData) {
+            const wrongCount = sectionData.total - sectionData.correct;
+            
+            console.log(`\n📊 ================= BÖLÜM ${sectionId} ÖZET =================`);
+            console.log(`📋 Bölüm Adı: ${sectionData.name}`);
+            console.log(`🎯 Doğruluk: ${sectionData.correct}/${sectionData.total} = %${sectionData.accuracy_percentage}`);
+            console.log(`❌ Yanlış: ${wrongCount} soru`);
+            console.log(`⏱️ Bölüm Süresi: ${sectionData.time.toFixed(2)} saniye`);
+            console.log(`📈 Ortalama Tepki: ${sectionData.avg_response_time_per_question.toFixed(2)} saniye/soru`);
+            
+            if (sectionData.responses.length > 0) {
+                const minTime = Math.min(...sectionData.responses);
+                const maxTime = Math.max(...sectionData.responses);
+                console.log(`   🚀 En Hızlı: ${minTime.toFixed(2)}s | 🐌 En Yavaş: ${maxTime.toFixed(2)}s`);
+            }
+        }
+
+        function logDetailedStatistics(stats) {
+            console.log(`\n📈 ================= İSTATİSTİKSEL ANALİZ =================`);
+            console.log(`📊 GENEL İSTATİSTİKLER:`);
+            console.log(`   📝 Toplam Yanıt: ${stats.total_responses}`);
+            console.log(`   🚀 En Hızlı: ${stats.fastest_response.toFixed(3)}s`);
+            console.log(`   🐌 En Yavaş: ${stats.slowest_response.toFixed(3)}s`);
+            console.log(`   📊 Medyan: ${stats.median_response_time.toFixed(3)}s`);
+            
+            console.log(`\n✅ DOĞRU CEVAP İSTATİSTİKLERİ:`);
+            console.log(`   📊 Sayı: ${stats.correct_count}`);
+            console.log(`   🚀 En Hızlı Doğru: ${stats.fastest_correct_response.toFixed(3)}s`);
+            console.log(`   🐌 En Yavaş Doğru: ${stats.slowest_correct_response.toFixed(3)}s`);
+            console.log(`   📈 Ortalama Doğru: ${stats.avg_correct_response_time.toFixed(3)}s`);
+            
+            console.log(`\n❌ YANLIŞ CEVAP İSTATİSTİKLERİ:`);
+            console.log(`   📊 Sayı: ${stats.wrong_count}`);
+            if (stats.wrong_count > 0) {
+                console.log(`   🚀 En Hızlı Yanlış: ${stats.fastest_wrong_response.toFixed(3)}s`);
+                console.log(`   🐌 En Yavaş Yanlış: ${stats.slowest_wrong_response.toFixed(3)}s`);
+                console.log(`   📈 Ortalama Yanlış: ${stats.avg_wrong_response_time.toFixed(3)}s`);
+            }
+            
+            console.log(`\n📋 HAM VERİ:`);
+            console.log(`   ✅ Denenen: ${stats.questions_attempted} soru`);
+            console.log(`   ⏭️ Atlanan: ${stats.questions_skipped} soru`);
+        }
+
+        function logImpulsivityAnalysis(analysis) {
+            console.log(`\n⚠️ ================= DÜRTÜSELLIK ANALİZİ =================`);
+            console.log(`🚨 Hızlı Yanlış Cevaplar (>2sn): ${analysis.fast_wrong_answers}`);
+            console.log(`🔥 Çok Hızlı Yanlış Cevaplar (>1sn): ${analysis.very_fast_wrong_answers}`);
+            console.log(`📊 Dürtüsellik Skoru: %${analysis.impulsivity_score}`);
+            console.log(`⚠️ Normal Uyarı: ${analysis.warning_triggered ? '🔴 AKTİF' : '🟢 KAPALI'}`);
+            console.log(`🚨 Ciddi Uyarı: ${analysis.severe_warning ? '🔴 AKTİF' : '🟢 KAPALI'}`);
+            
+            if (analysis.fast_wrong_details.length > 0) {
+                console.log(`\n🔍 Hızlı Yanlış Cevap Detayları:`);
+                analysis.fast_wrong_details.forEach(detail => {
+                    console.log(`   📝 Soru ${detail.questionNo} (Bölüm ${detail.section}): ${detail.responseTime.toFixed(3)}s - Seçilen: ${detail.selectedAnswer}, Doğru: ${detail.correctAnswer}`);
+                });
+            }
+        }
+
+        function logFinalResults(results) {
+            console.log(`\n🎯 ================= FINAL SONUÇLAR =================`);
+            console.log(`📋 Test Türü: Akıl ve Mantık Testi`);
+            console.log(`⏱️ Toplam Süre: ${results.totalTime} saniye (${(results.totalTime/60).toFixed(1)} dakika)`);
+            console.log(`📊 Sorular: ${results.answeredQuestions}/${results.totalQuestions} yanıtlandı`);
+            console.log(`✅ Doğru: ${results.correctAnswers} | ❌ Yanlış: ${results.wrongAnswers} | ⏭️ Atlandı: ${results.unansweredQuestions}`);
+            console.log(`📈 Başarı Oranı: %${results.successRate}`);
+            console.log(`🚀 Hız Skoru: %${results.speedScore}`);
+            console.log(`⏱️ Ortalama Tepki: ${results.avgResponseTime.toFixed(3)} saniye`);
+            console.log(`📊 Örnek Test: ${results.exampleCorrectCount}/3 doğru (${results.exampleAttempts} deneme)`);
+            console.log(`🏁 Son Soru: ${results.lastQuestionReached}/23`);
+        }
+
+        // ==================== İSTATİSTİKSEL ANALİZ FONKSİYONLARI ====================
+        function calculateSectionStatistics() {
+            // Her bölüm için istatistikleri hesapla
+            for (let sectionId = 1; sectionId <= 5; sectionId++) {
+                const section = testState.sectionResults[sectionId];
+                
+                // Doğruluk yüzdesi
+                section.accuracy_percentage = section.total > 0 ? 
+                    Math.round((section.correct / section.total) * 100) : 0;
+                
+                // Ortalama tepki süresi (bu bölümdeki sorular için)
+                if (section.responses.length > 0) {
+                    const totalResponseTime = section.responses.reduce((sum, time) => sum + time, 0);
+                    section.avg_response_time_per_question = totalResponseTime / section.responses.length;
+                } else {
+                    section.avg_response_time_per_question = 0;
+                }
+            }
+        }
+
+        function calculateDetailedStatistics() {
+            const allResponses = testState.answers.map(a => a.responseTime);
+            const correctResponses = testState.answers.filter(a => a.isCorrect).map(a => a.responseTime);
+            const wrongResponses = testState.answers.filter(a => !a.isCorrect).map(a => a.responseTime);
+            
+            return {
+                // Genel istatistikler
+                total_responses: allResponses.length,
+                fastest_response: allResponses.length > 0 ? Math.min(...allResponses) : 0,
+                slowest_response: allResponses.length > 0 ? Math.max(...allResponses) : 0,
+                median_response_time: calculateMedian(allResponses),
+                
+                // Doğru cevap istatistikleri
+                fastest_correct_response: correctResponses.length > 0 ? Math.min(...correctResponses) : 0,
+                slowest_correct_response: correctResponses.length > 0 ? Math.max(...correctResponses) : 0,
+                avg_correct_response_time: correctResponses.length > 0 ? 
+                    correctResponses.reduce((sum, time) => sum + time, 0) / correctResponses.length : 0,
+                
+                // Yanlış cevap istatistikleri
+                fastest_wrong_response: wrongResponses.length > 0 ? Math.min(...wrongResponses) : 0,
+                slowest_wrong_response: wrongResponses.length > 0 ? Math.max(...wrongResponses) : 0,
+                avg_wrong_response_time: wrongResponses.length > 0 ? 
+                    wrongResponses.reduce((sum, time) => sum + time, 0) / wrongResponses.length : 0,
+                
+                // Ham veri
+                questions_attempted: testState.answers.length,
+                questions_skipped: 23 - testState.answers.length,
+                correct_count: correctResponses.length,
+                wrong_count: wrongResponses.length
+            };
+        }
+
+        function calculateMedian(numbers) {
+            if (numbers.length === 0) return 0;
+            const sorted = [...numbers].sort((a, b) => a - b);
+            const mid = Math.floor(sorted.length / 2);
+            return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+        }
+
+        function calculateImpulsivityAnalysis() {
+            const fastWrongAnswers = testState.answers.filter(a => !a.isCorrect && a.responseTime < 2);
+            const fastThreshold = 2; // saniye
+            const veryFastThreshold = 1; // saniye
+            
+            const veryFastWrongAnswers = testState.answers.filter(a => !a.isCorrect && a.responseTime < veryFastThreshold);
+            const totalAnswers = testState.answers.length;
+            
+            return {
+                fast_wrong_answers: fastWrongAnswers.length,
+                very_fast_wrong_answers: veryFastWrongAnswers.length,
+                fast_response_threshold: fastThreshold,
+                very_fast_response_threshold: veryFastThreshold,
+                impulsivity_score: totalAnswers > 0 ? Math.round((fastWrongAnswers.length / totalAnswers) * 100) : 0,
+                warning_triggered: fastWrongAnswers.length > 3,
+                severe_warning: veryFastWrongAnswers.length > 2,
+                fast_wrong_details: fastWrongAnswers.map(a => ({
+                    questionNo: a.questionNo,
+                    section: a.section,
+                    responseTime: a.responseTime,
+                    selectedAnswer: a.selectedAnswer,
+                    correctAnswer: a.correctAnswer
+                }))
+            };
+        }
+
         // ==================== TEST SONU VE RAPORLAMA ====================
         function endTest() {
             stopCurrentAudio(); // Test bitince önceki sesi durdur
@@ -1957,6 +2207,9 @@
                     (endTime - testState.sectionStartTimes[lastQuestion.section]) / 1000;
             }
             
+            // Bölüm istatistiklerini hesapla
+            calculateSectionStatistics();
+            
             // Hesaplamalar
             const totalQuestions = 23;
             const answeredQuestions = testState.answers.length;
@@ -1971,9 +2224,47 @@
             const avgResponseTime = answeredQuestions > 0 ? totalResponseTime / answeredQuestions : 0;
             const speedScore = Math.round(((300 - totalTime) / 300) * 100); // Max 5 dakika
             
-            // Dürtüsellik analizi
-            const fastWrongAnswers = testState.answers.filter(a => !a.isCorrect && a.responseTime < 2).length;
-            const impulsivityWarning = fastWrongAnswers > 3;
+            // Detaylı istatistikler
+            const detailedStats = calculateDetailedStatistics();
+            
+            // Gelişmiş dürtüsellik analizi
+            const impulsivityAnalysis = calculateImpulsivityAnalysis();
+            
+            // Test bitiş logu
+            console.log(`\n🏁 ================= TEST BİTTİ =================`);
+            console.log(`📅 Bitiş: ${new Date(endTime).toLocaleString('tr-TR')}`);
+            console.log(`⏱️ Toplam Süre: ${totalTime} saniye (${(totalTime/60).toFixed(1)} dakika)`);
+            console.log(`⏰ Kalan Süre: ${300 - totalTime} saniye`);
+            console.log(`📝 Son Soru: ${testState.currentQuestionIndex}/23`);
+            console.log(`🎯 Durum: ${testState.currentQuestionIndex >= 23 ? '✅ TAMAMLANDI' : '⏰ SÜRESİ BİTTİ'}`);
+            
+            // Her bölüm için özet logla
+            for (let sectionId = 1; sectionId <= 5; sectionId++) {
+                logSectionSummary(sectionId, testState.sectionResults[sectionId]);
+            }
+            
+            // Detaylı istatistikleri logla
+            logDetailedStatistics(detailedStats);
+            
+            // Dürtüsellik analizini logla
+            logImpulsivityAnalysis(impulsivityAnalysis);
+            
+            // Final sonuçları logla
+            logFinalResults({
+                totalTime,
+                totalQuestions,
+                answeredQuestions,
+                correctAnswers,
+                wrongAnswers,
+                unansweredQuestions,
+                successRate,
+                speedScore,
+                avgResponseTime,
+                totalResponseTime,
+                exampleAttempts: testState.exampleAttempts,
+                exampleCorrectCount: testState.exampleCorrectCount,
+                lastQuestionReached: testState.currentQuestionIndex
+            });
             
             // Sonuç ekranını göster
             showScreen('resultsScreen');
@@ -2000,7 +2291,9 @@
                 detailedAnswers: testState.answers,
                 exampleAttempts: testState.exampleAttempts,
                 exampleCorrectCount: testState.exampleCorrectCount,
-                impulsivityWarning,
+                impulsivityWarning: impulsivityAnalysis.warning_triggered, // Geriye uyumluluk için
+                impulsivityAnalysis: impulsivityAnalysis,
+                detailedStatistics: detailedStats,
                 lastQuestionReached: testState.currentQuestionIndex
             });
         }
@@ -2047,9 +2340,18 @@
                     example_correct_count: results.exampleCorrectCount,
                     
                     // Ek analizler
-                    impulsivity_warning: results.impulsivityWarning,
+                    impulsivity_warning: results.impulsivityWarning, // Geriye uyumluluk
+                    impulsivity_analysis: results.impulsivityAnalysis,
+                    detailed_statistics: results.detailedStatistics,
                     last_question_reached: results.lastQuestionReached
                 };
+                
+                // Veritabanı kayıt logu
+                console.log(`\n💾 ================= VERİTABANI KAYIT =================`);
+                console.log(`📊 Payload Boyutu: ${JSON.stringify(payload).length} karakter`);
+                console.log(`👤 Kullanıcı: ${payload.learnworlds_user_email || 'Bilinmiyor'}`);
+                console.log(`📋 Test Türü: ${payload.testType}`);
+                console.log(`📅 Kayıt Zamanı: ${new Date().toLocaleString('tr-TR')}`);
                 
                 const response = await fetch('/api/fortest-akil-mantik-sonuclari', {
                     method: 'POST',
@@ -2062,14 +2364,23 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    console.log('✅ Test sonuçları başarıyla kaydedildi:', result.submissionId);
+                    console.log(`\n✅ ================= KAYIT BAŞARILI =================`);
+                    console.log(`🆔 Submission ID: ${result.submissionId}`);
+                    console.log(`📅 Kayıt Zamanı: ${new Date().toLocaleString('tr-TR')}`);
+                    console.log(`🎉 Durum: BAŞARILI`);
                     showNotification('Test sonuçlarınız başarıyla kaydedildi!', 'success');
                 } else {
                     throw new Error(result.message);
                 }
                 
             } catch (error) {
-                console.error('❌ Test sonuçları kaydedilemedi:', error);
+                console.log(`\n❌ ================= KAYIT HATASI =================`);
+                console.log(`🚨 Hata: ${error.message}`);
+                console.log(`📋 Tür: ${error.name}`);
+                console.log(`📅 Zaman: ${new Date().toLocaleString('tr-TR')}`);
+                if (error.stack) {
+                    console.log(`🔍 Stack: ${error.stack.substring(0, 200)}...`);
+                }
                 showNotification('Test sonuçları kaydedilirken bir hata oluştu.', 'error');
             }
         }
@@ -2302,6 +2613,18 @@
             console.log('🚀 Akıl ve Mantık Testi başlatılıyor...');
             console.log('📱 Cihaz:', navigator.userAgent);
             console.log('🖥️ Ekran:', window.innerWidth + 'x' + window.innerHeight);
+            
+            // Sistem başlangıç logu
+            console.log(`\n🧠 ================= AKIL MANTIK TESTİ SİSTEMİ =================`);
+            console.log(`📋 Test: Akıl ve Mantık Testi`);
+            console.log(`🔧 Versiyon: v2.1 CLEAN + Puzzle Style Logging`);
+            console.log(`🌐 Tarayıcı: ${navigator.userAgent.split(' ')[0]}`);
+            console.log(`🖥️ Ekran: ${window.innerWidth}x${window.innerHeight}`);
+            console.log(`🌍 Dil: ${navigator.language}`);
+            console.log(`⏰ Zaman Dilimi: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`);
+            console.log(`🔗 URL: ${window.location.href}`);
+            console.log(`📤 Referrer: ${document.referrer || 'Direkt erişim'}`);
+            console.log(`📊 Loglama: Puzzle testi stilinde aktif`);
         });
     </script>
 </body>

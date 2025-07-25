@@ -21,15 +21,6 @@
             --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
             --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.15);
             --transition: all 0.3s ease;
-            
-            /* Responsive değişkenler - hafıza ve dikkat testleri ile aynı */
-            --container-padding: clamp(15px, 4vw, 50px);
-            --font-size-base: clamp(14px, 2vw, 18px);
-            --font-size-large: clamp(18px, 3vw, 24px);
-            --font-size-xlarge: clamp(24px, 4vw, 48px);
-            --font-size-xxlarge: clamp(32px, 6vw, 64px);
-            --button-padding: clamp(12px, 2vw, 18px) clamp(20px, 4vw, 40px);
-            --gap-size: clamp(10px, 2vw, 20px);
         }
 
         * {
@@ -47,32 +38,23 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 0;
-            font-size: var(--font-size-base);
-            margin: 0;
+            padding: 20px;
         }
 
-        /* Container 1200x800 aspect ratio - yukarı-aşağı tam dolu */
         .container {
-            background: linear-gradient(145deg, #1e3a8a 0%, #1e40af 100%);
-            color: white;
-            border-radius: clamp(15px, 3vw, 20px);
+            background: #ffffff;
+            border-radius: 20px;
             box-shadow: 
-                0 25px 50px rgba(0, 0, 0, 0.4),
-                0 15px 30px rgba(0, 0, 0, 0.3),
-                inset 0 2px 5px rgba(255, 255, 255, 0.1);
-            padding: var(--container-padding);
-            /* Dynamic sizing: clamp width and maintain 3:2 aspect ratio */
-            width: clamp(320px, 90vw, 1200px);
-            aspect-ratio: 3 / 2;
-            height: auto;
-            text-align: center;
+                0 25px 50px rgba(0, 0, 0, 0.2),
+                0 15px 30px rgba(0, 0, 0, 0.15),
+                inset 0 2px 5px rgba(255, 255, 255, 0.5);
+            padding: 50px;
+            width: 1200px;
+            max-width: 95%;
+            min-height: 800px;
             position: relative;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            margin: 0 auto;
         }
         
         .puzzle-section {
@@ -82,9 +64,11 @@
             left: 0;
             width: 100%;
             height: 100%;
-            padding: var(--container-padding);
+            padding: 50px;
         }
 
+
+        
         .puzzle-section.active {
             display: flex;
             flex-direction: column;
@@ -92,7 +76,6 @@
             align-items: center;
         }
         
-        /* SVG container */
         svg {
             max-width: 100%;
             height: auto;
@@ -162,13 +145,6 @@
             stroke: #ff6b6b !important;
         }
         
-        /* Demo SVG aşamalı gösterim */
-        .demo-section svg image {
-            opacity: 1;
-            mask: url(#demo-mask);
-            -webkit-mask: url(#demo-mask);
-        }
-        
         .demo-section .pr-piece {
             opacity: 0;
             animation: fadeIn 1s ease-in-out forwards;
@@ -207,14 +183,14 @@
         .demo-section .fake-cursor {
             display: block;
             animation: moveCursor 4s ease-in-out forwards;
-            animation-delay: 13.2s;
+            animation-delay: 13s;
         }
         
         @keyframes moveCursor {
-            0% { opacity: 0; left: var(--cursor-start-x, 50%); top: var(--cursor-start-y, 50%); }
-            10% { opacity: 1; left: var(--cursor-start-x, 50%); top: var(--cursor-start-y, 50%); }
-            90% { opacity: 1; left: var(--cursor-target-x, 31.28%); top: var(--cursor-target-y, 24.35%); }
-            100% { opacity: 1; left: var(--cursor-target-x, 31.28%); top: var(--cursor-target-y, 24.35%); }
+            0% { opacity: 0; left: 50%; top: 50%; }
+            10% { opacity: 1; left: 50%; top: 50%; }
+            90% { opacity: 1; left: 360px; top: 215px; }
+            100% { opacity: 1; left: 360px; top: 215px; }
         }
         
         .info {
@@ -244,98 +220,6 @@
             transition: width 0.5s ease;
             border-radius: 15px;
             box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
-        }
-
-        /* Puzzle Test Progress Bars - Akıl-Mantık Testi Smooth Animasyon */
-        .question-progress-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: clamp(6px, 1vw, 8px);
-            background: rgba(255, 255, 255, 0.2);
-            overflow: hidden;
-            border-top-left-radius: clamp(15px, 3vw, 20px);
-            border-top-right-radius: clamp(15px, 3vw, 20px);
-            z-index: 10;
-        }
-
-        .question-progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
-            width: 100%;
-            position: relative;
-            border-top-left-radius: clamp(15px, 3vw, 20px);
-            border-top-right-radius: clamp(15px, 3vw, 20px);
-        }
-
-        .question-progress-bar.animating {
-            animation: questionProgress 15s linear forwards;
-        }
-
-        .question-progress-bar::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            width: 60px;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-            animation: shimmer 2s infinite;
-        }
-
-        .global-total-progress-container {
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: min(90vw, 1200px);
-            height: clamp(6px, 1vw, 8px);
-            background: rgba(255, 255, 255, 0.2);
-            overflow: hidden;
-            border-radius: 10px;
-            z-index: 1000;
-            display: none; /* Başlangıçta gizli */
-        }
-
-        .total-progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
-            width: 0%;
-            position: relative;
-            border-bottom-left-radius: clamp(15px, 3vw, 20px);
-            border-bottom-right-radius: clamp(15px, 3vw, 20px);
-        }
-
-        .total-progress-bar.animating {
-            animation: totalProgress 300s linear forwards;
-        }
-
-        .total-progress-bar::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            width: 60px;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-            animation: shimmer 2s infinite;
-        }
-
-        /* Progress Bar Animasyonları - Akıl-Mantık Testindeki Gibi */
-        @keyframes questionProgress {
-            from { width: 100%; }
-            to { width: 0%; }
-        }
-
-        @keyframes totalProgress {
-            from { width: 0%; }
-            to { width: 100%; }
-        }
-
-        @keyframes shimmer {
-            0% { transform: translateX(-50px); }
-            100% { transform: translateX(50px); }
         }
         
         .section-title {
@@ -397,12 +281,11 @@
             border-radius: 50%;
             opacity: 0;
             animation: clickRipple 1s ease-out forwards;
-            animation-delay: 17.2s;
+            animation-delay: 17s;
             pointer-events: none;
-            left: var(--cursor-target-x, 31.28%);
-            top: var(--cursor-target-y, 24.35%);
+            left: 360px;
+            top: 215px;
             z-index: 1001;
-            transform: translate(-15px, -15px); /* Center the circle */
         }
         
         @keyframes clickRipple {
@@ -418,12 +301,11 @@
 
         /* Başlangıç ekranı */
         .title-screen h1 {
-            font-size: var(--font-size-xxlarge);
-            color: white;
+            font-size: 4em;
+            color: var(--primary-dark);
             font-weight: 700;
-            margin-bottom: clamp(25px, 6vw, 50px);
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-            line-height: 1.2;
+            margin-bottom: 50px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .btn {
@@ -433,25 +315,18 @@
             text-align: center;
             vertical-align: middle;
             cursor: pointer;
-            background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
-            padding: var(--button-padding);
-            font-size: clamp(16px, 2.5vw, 22px);
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            padding: 18px 40px;
+            font-size: 1.3em;
             line-height: 1.5;
             border-radius: var(--border-radius);
-            transition: opacity 0.5s ease, transform 0.5s ease, background 0.3s ease, box-shadow 0.3s ease;
+            transition: var(--transition);
             border: none;
-            box-shadow: 
-                0 4px 6px rgba(30, 64, 175, 0.3),
-                0 0 15px rgba(255, 255, 255, 0.3),
-                0 0 25px rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
             text-decoration: none;
-            margin: clamp(5px, 1vw, 10px);
+            margin: 10px;
             opacity: 0;
             transform: translateY(20px);
-            min-width: clamp(100px, 20vw, 150px);
-            position: relative;
-            overflow: hidden;
-            min-height: clamp(44px, 8vw, 56px);
         }
 
         .btn.visible {
@@ -459,91 +334,52 @@
             transform: translateY(0);
         }
 
-        .btn.disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            pointer-events: none;
-        }
-
-        .btn:hover:not(.disabled) {
-            background: linear-gradient(135deg, #1e3d9f 0%, #2454d6 100%);
-            box-shadow: 
-                0 6px 8px rgba(30, 58, 138, 0.4),
-                0 0 20px rgba(255, 255, 255, 0.4),
-                0 0 35px rgba(255, 255, 255, 0.15);
+        .btn:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            box-shadow: 0 6px 8px rgba(37, 99, 235, 0.3);
             transform: translateY(-2px);
         }
 
         .btn-next {
             position: absolute;
-            bottom: clamp(20px, 4vw, 40px);
-            right: clamp(20px, 4vw, 40px);
-            opacity: 0;
-            transition: opacity 0.5s ease;
-        }
-
-        .btn-next.visible {
-            opacity: 1;
+            bottom: 40px;
+            right: 40px;
         }
 
         .instruction-box {
-            background: transparent;
-            border-radius: 0;
-            padding: clamp(10px, 3vw, 20px);
-            margin: clamp(15px, 4vw, 30px) auto;
-            max-width: min(90%, 800px);
-            box-shadow: none;
-            border: none;
+            background: var(--light);
+            border-radius: 15px;
+            padding: 40px;
+            margin: 30px auto;
+            max-width: 800px;
+            box-shadow: var(--shadow-sm);
         }
 
         .instruction-text {
-            font-size: var(--font-size-large);
-            color: rgba(255, 255, 255, 0.9);
-            margin-bottom: clamp(10px, 3vw, 20px);
+            font-size: 1.4em;
+            color: var(--dark);
+            margin-bottom: 20px;
             line-height: 1.8;
         }
 
         .highlight-text {
-            color: white;
-            font-weight: bold;
-            font-size: clamp(20px, 3.5vw, 28px);
-            margin: clamp(10px, 3vw, 20px) 0;
+            color: var(--primary-dark);
+            font-weight: 600;
+            font-size: 1.5em;
+            margin: 20px 0;
             line-height: 1.8;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
         }
 
         .demo-info {
             position: absolute;
-            bottom: clamp(8px, 2vw, 15px);
+            bottom: 8px;
             left: 50%;
             transform: translateX(-50%);
-            font-size: clamp(16px, 2.5vw, 22px);
-            color: white;
+            font-size: 1.4em;
+            color: var(--dark);
             font-weight: 500;
-            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
-            z-index: 100;
             text-align: center;
-            width: max-content;
-            max-width: 80%;
-            padding: clamp(12px, 2vw, 18px) clamp(20px, 4vw, 40px);
-            background: rgba(30, 64, 175, 0.8);
-            backdrop-filter: blur(8px);
-            border-radius: var(--border-radius);
-            line-height: 1.5;
-            margin: clamp(5px, 1vw, 10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            animation: fadeInUp 0.8s ease-out;
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateX(-50%) translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(-50%) translateY(0);
-            }
+            z-index: 10;
         }
 
         .notification {
@@ -558,7 +394,7 @@
             z-index: 1000;
             opacity: 0;
             transition: opacity 0.3s ease;
-            font-size: var(--font-size-base);
+            font-size: 1.1em;
             max-width: 600px;
             text-align: center;
         }
@@ -579,90 +415,126 @@
             opacity: 1;
         }
 
-        /* Responsive Media Queries */
-        
-        /* Çok küçük telefon ekranları */
-        @media (max-width: 360px) {
+        /* Responsive tasarım */
+        @media (max-width: 1250px) {
             .container {
-                padding: clamp(10px, 3vw, 15px);
-            }
-            svg {
-                width: clamp(280px, 95vw, 400px);
-                max-height: clamp(200px, 50vh, 300px);
+                width: 95%;
+                max-width: 1200px;
             }
         }
 
-        /* Küçük telefon ekranları */
-        @media (max-width: 480px) {
+        @media (max-width: 768px) {
+            .container {
+                min-height: 90vh;
+                height: auto;
+                padding: 30px 20px;
+            }
+
+            .section-title {
+                font-size: 2em;
+            }
+
+            .info {
+                font-size: 1.2em;
+            }
+
+            .title-screen h1 {
+                font-size: 3em;
+                margin-bottom: 50px;
+            }
+
+            .btn {
+                padding: 15px 35px;
+                font-size: 1.2em;
+            }
+
             .btn-next {
-                position: relative;
-                bottom: auto;
-                right: auto;
+                bottom: 30px;
+                right: 30px;
+            }
+
+            .instruction-box {
+                padding: 30px;
+                margin: 20px auto;
+            }
+
+            .instruction-text {
+                font-size: 1.2em;
+            }
+
+            .highlight-text {
+                font-size: 1.3em;
+            }
+
+            .demo-info {
+                font-size: 1.2em;
+                bottom: 15px;
+            }
+
+            svg {
+                width: 100%;
+                height: auto;
+                max-width: 700px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px 15px;
+            }
+
+            .section-title {
+                font-size: 1.8em;
+            }
+
+            .info {
+                font-size: 1.1em;
                 margin-top: 20px;
             }
-            svg {
-                width: clamp(300px, 90vw, 500px);
-                max-height: clamp(250px, 55vh, 400px);
-            }
-        }
 
-        /* Tablet ve masaüstü */
-        @media (min-width: 481px) {
-            .container {
-                height: min(100vh - 30px, 800px);
-            }
-        }
-
-        /* Büyük ekranlar */
-        @media (min-width: 1400px) {
-            .container {
-                width: min(90%, 1400px);
-                height: min(100vh - 40px, 900px);
-            }
-        }
-
-        /* Landscape mode mobil */
-        @media (max-height: 500px) and (orientation: landscape) {
-            .container {
-                height: 95vh;
-                padding: 15px;
-            }
             .title-screen h1 {
-                margin-bottom: 20px;
+                font-size: 2.5em;
+                margin-bottom: 30px;
             }
+
+            .btn {
+                padding: 12px 30px;
+                font-size: 1.1em;
+            }
+
+            .btn-next {
+                bottom: 20px;
+                right: 20px;
+            }
+
             .instruction-box {
-                padding: 20px;
+                padding: 25px;
                 margin: 15px auto;
             }
-        }
 
-        /* High DPI ekranlar için font optimizasyonu */
-        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-            .title-screen h1 {
-                -webkit-font-smoothing: antialiased;
-                -moz-osx-font-smoothing: grayscale;
+            .instruction-text {
+                font-size: 1.1em;
             }
-        }
 
-        /* Accessibility improvements */
-        @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
+            .highlight-text {
+                font-size: 1.2em;
             }
-            .fake-cursor {
-                transition: none !important;
-            }
-        }
 
-        /* High contrast mode */
-        @media (prefers-contrast: high) {
-            .clickable {
-                stroke-width: 3px;
+            .demo-info {
+                font-size: 1.1em;
+                bottom: 10px;
             }
-            .btn {
-                border: 2px solid white;
+
+            svg {
+                max-width: 100%;
+                width: 100%;
+                height: auto;
+            }
+            
+            img {
+                max-width: 100%;
+                width: 100%;
+                height: auto;
             }
         }
     </style>
@@ -696,7 +568,7 @@
                 <!-- Arka plan -->
                 <rect width="957.3" height="666.7" style="fill: #282828;"/>
                 
-                <!-- Sol büyük kare - baştan görünür -->
+                <!-- Sol büyük kare -->
                 <rect x="120" y="109" width="268.4" height="268.4" style="fill: #fcbd0f; stroke: #000; stroke-miterlimit: 10; stroke-width: 5px;"/>
                 <path d="M379,199.5c0,1.7,0,3.7,0,5.4-1.6,33.1-26.6,50.8-47.8,72.4-24,24.4-47.9,49.1-72.2,73.2-2.8,2.5-7.4,2.4-10-.2-23.6-23.4-46.7-47.3-70-71-10.9-11.1-24.4-22.8-34.2-34.6-39.6-48.4,1.7-121.1,63.9-109.3,19.5,3.7,32.1,15.7,45.2,29.5,5.1-3.8,9.1-9.2,13.8-13.4,43.8-38.7,108.3-9,111.3,48.1Z" style="fill: #e94a4b;"/>
                 <line x1="120" y1="215.8" x2="388.4" y2="215.8" style="fill: none; stroke: #000; stroke-miterlimit: 10; stroke-width: 5px;"/>
@@ -801,16 +673,6 @@
             <button class="btn btn-next" id="practiceCompletionBtn" onclick="goToTestPreparation()">İleri</button>
         </div>
         
-        <!-- Practice Fail Screen -->
-        <div id="practice-fail-screen" class="puzzle-section">
-            <div class="instruction-box">
-                <div class="highlight-text">
-                    Yeterli doğru cevabı vermediniz, örnek uygulama tekrar edilecektir.
-                </div>
-            </div>
-            <button class="btn btn-next visible" onclick="retryPracticeFromFail()">Tamam</button>
-        </div>
-        
         <!-- Test Preparation Screen -->
         <div id="test-preparation-screen" class="puzzle-section">
             <div class="instruction-box">
@@ -823,11 +685,6 @@
         
         <!-- Test 1 Section -->
         <div id="test1-section" class="puzzle-section">
-            <!-- Soru Progress Bar (Üstte - 15 saniye) -->
-            <div class="question-progress-container">
-                <div id="test1-question-progress-bar" class="question-progress-bar"></div>
-            </div>
-            
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 957.3 666.7" width="1000">
                 <!-- Tanımlamalar -->
                 <defs>
@@ -873,16 +730,10 @@
                 <circle id="test1-highlight-pr-3" cx="671.85" cy="274.3" r="150" class="highlight-circle" style="display: none;"/>
                 <circle id="test1-highlight-pr-4" cx="474.1" cy="287.85" r="90" class="highlight-circle" style="display: none;"/>
             </svg>
-            
         </div>
         
         <!-- Test 2 Section -->
         <div id="test2-section" class="puzzle-section">
-            <!-- Soru Progress Bar (Üstte - 15 saniye) -->
-            <div class="question-progress-container">
-                <div id="test2-question-progress-bar" class="question-progress-bar"></div>
-            </div>
-            
             <svg id="test2-puzzle-svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 957.3 666.7" width="1000">
                 <!-- Tanımlamalar -->
                 <defs>
@@ -930,16 +781,10 @@
                 <circle id="test2-highlight-pr-3" cx="0" cy="0" r="0" class="highlight-circle" style="display: none;"/>
                 <circle id="test2-highlight-pr-4" cx="0" cy="0" r="0" class="highlight-circle" style="display: none;"/>
             </svg>
-            
         </div>
         
         <!-- Test 3 Section -->
         <div id="test3-section" class="puzzle-section">
-            <!-- Soru Progress Bar (Üstte - 15 saniye) -->
-            <div class="question-progress-container">
-                <div id="test3-question-progress-bar" class="question-progress-bar"></div>
-            </div>
-            
             <svg id="test3-puzzle-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 957.3 666.7" width="1000">
                 <!-- Tanımlamalar -->
                 <defs>
@@ -1004,16 +849,10 @@
                 <circle id="test3-highlight-pr-3" cx="0" cy="0" r="0" class="highlight-circle" style="display: none;"/>
                 <circle id="test3-highlight-pr-4" cx="0" cy="0" r="0" class="highlight-circle" style="display: none;"/>
             </svg>
-            
         </div>
         
         <!-- Test 4 Section -->
         <div id="test4-section" class="puzzle-section">
-            <!-- Soru Progress Bar (Üstte - 15 saniye) -->
-            <div class="question-progress-container">
-                <div id="test4-question-progress-bar" class="question-progress-bar"></div>
-            </div>
-            
             <svg id="test4-puzzle-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 957.3 666.7" width="1000">
                 <!-- Tanımlamalar -->
                 <defs>
@@ -1079,16 +918,10 @@
                 <circle id="test4-highlight-pr-3" cx="0" cy="0" r="0" class="highlight-circle" style="display: none;"/>
                 <circle id="test4-highlight-pr-4" cx="0" cy="0" r="0" class="highlight-circle" style="display: none;"/>
             </svg>
-            
         </div>
         
         <!-- Test 5 Section -->
         <div id="test5-section" class="puzzle-section">
-            <!-- Soru Progress Bar (Üstte - 15 saniye) -->
-            <div class="question-progress-container">
-                <div id="test5-question-progress-bar" class="question-progress-bar"></div>
-            </div>
-            
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 957.3 666.7" width="1000">
                 <!-- Arka plan -->
                 <rect width="957.3" height="666.7" style="fill: #282828;"/>
@@ -1108,16 +941,10 @@
                 <circle id="test5-highlight-pr-3" cx="700" cy="510" r="135" class="highlight-circle" style="display: none;"/>
                 <circle id="test5-highlight-pr-4" cx="550" cy="220" r="145" class="highlight-circle" style="display: none;"/>
             </svg>
-            
         </div>
         
         <!-- Test 6 Section -->
         <div id="test6-section" class="puzzle-section">
-            <!-- Soru Progress Bar (Üstte - 15 saniye) -->
-            <div class="question-progress-container">
-                <div id="test6-question-progress-bar" class="question-progress-bar"></div>
-            </div>
-            
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 957.3 666.7" width="1000">
                 <!-- Arka plan -->
                 <rect width="957.3" height="666.7" style="fill: #282828;"/>
@@ -1141,16 +968,10 @@
                 <circle id="test6-highlight-pr-5" cx="0" cy="0" r="50" class="highlight-circle" style="display: none;"/>
                 <circle id="test6-highlight-pr-6" cx="0" cy="0" r="50" class="highlight-circle" style="display: none;"/>
             </svg>
-            
         </div>
 
         <!-- test 7 section -->
         <div id="test7-section" class="puzzle-section">
-            <!-- Soru Progress Bar (Üstte - 15 saniye) -->
-            <div class="question-progress-container">
-                <div id="test7-question-progress-bar" class="question-progress-bar"></div>
-            </div>
-            
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 957.3 666.7" width="1000">
                 <!-- Arka plan -->
                 <rect width="957.3" height="666.7" style="fill: #282828;"/>
@@ -1201,16 +1022,10 @@
                 <circle id="test7-highlight-pr-8" cx="501" cy="135" r="108" class="highlight-circle"/>
                 <circle id="test7-highlight-pr-9" cx="845" cy="105" r="90" class="highlight-circle"/>
             </svg>
-            
         </div>
     
     <!-- Test 8 Section -->
     <div id="test8-section" class="puzzle-section">
-        <!-- Soru Progress Bar (Üstte - 15 saniye) -->
-        <div class="question-progress-container">
-            <div id="test8-question-progress-bar" class="question-progress-bar"></div>
-        </div>
-        
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 957.3 666.7" width="1000">
             <!-- Arka plan -->
             <rect width="957.3" height="666.7" style="fill: #282828;"/>
@@ -1260,16 +1075,10 @@
                                     <circle id="test8-highlight-pr-8" cx="580" cy="110" r="105" class="highlight-circle"/>
                 <circle id="test8-highlight-pr-9" cx="200" cy="565" r="90" class="highlight-circle"/>
         </svg>
-        
-                </div>
+    </div>
     
     <!-- Test 9 Section -->
     <div id="test9-section" class="puzzle-section">
-        <!-- Soru Progress Bar (Üstte - 15 saniye) -->
-        <div class="question-progress-container">
-            <div id="test9-question-progress-bar" class="question-progress-bar"></div>
-        </div>
-        
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 957.3 666.7" width="1000">
             <!-- Arka plan -->
             <rect width="957.3" height="666.7" style="fill: #282828;"/>
@@ -1328,8 +1137,12 @@
                         <circle id="test9-highlight-pr-15" cx="735" cy="455" r="75" class="highlight-circle"/>
                         <circle id="test9-highlight-pr-16" cx="520" cy="235" r="75" class="highlight-circle"/>
         </svg>
+    </div>
         
-                </div>
+                <div class="info">
+            <div id="message"></div>
+        </div>
+    </div>
     
     <!-- Test Completion Screen -->
     <div id="test-completion-screen" class="puzzle-section">
@@ -1340,816 +1153,35 @@
         </div>
         <button class="btn btn-next" id="testCompletionBtn" onclick="goToNextSection()" style="opacity: 0; transform: translateY(20px);">İleri</button>
     </div>
-
-    <!-- Genel Progress Bar - Test alanının altında -->
-    <div class="global-total-progress-container" id="globalProgressBar">
-        <div class="total-progress-bar" id="timeProgressFill"></div>
-    </div>
-
-</div> <!-- Container kapatma -->
     
     <script>
         // Global değişkenler
         let currentSection = 0;
-        const sections = ['demo-section', 'transition-screen', 'practice-section', 'practice-completion-screen', 'practice-fail-screen', 'test-preparation-screen', 'test1-section', 'test2-section', 'test3-section', 'test4-section', 'test5-section', 'test6-section', 'test7-section', 'test8-section', 'test9-section', 'test-completion-screen'];
+        const sections = ['demo-section', 'transition-screen', 'practice-section', 'practice-completion-screen', 'test-preparation-screen', 'test1-section', 'test2-section', 'test3-section', 'test4-section', 'test5-section', 'test6-section', 'test7-section', 'test8-section', 'test9-section', 'test-completion-screen'];
         const totalSteps = 57; // 3 + 4 + 4 + 4 + 4 + 4 + 9 + 9 + 16
         let completedSteps = 0;
         
-        // Progress Bar Değişkenleri
-        let questionTimer = null;
-        let totalTimer = null;
-        let questionTimeLeft = 15; // 15 saniye her soru için
-        let totalTimeLeft = 300; // 5 dakika toplam (300 saniye) 
-        let totalTestStartTime = null;
-        let currentTestNumber = 0; // Hangi testte olduğumuzu takip etmek için
-        
-        // Test Kategorileri - Excel'e göre
-        const testCategories = {
-            fourPiece: {
-                tests: ['test1', 'test2', 'test3', 'test4', 'test5'],
-                totalPieces: 4,
-                description: '4 Parçalı Puzzle\'lar'
-            },
-            sixPiece: {
-                tests: ['test6'],
-                totalPieces: 6,
-                description: '6 Parçalı Puzzle'
-            },
-            ninePiece: {
-                tests: ['test7', 'test8'],
-                totalPieces: 9,
-                description: '9 Parçalı Puzzle\'lar'
-            },
-            sixteenPiece: {
-                tests: ['test9'],
-                totalPieces: 16,
-                description: '16 Parçalı Puzzle'
-            }
-        };
-
-        // Test Sonuçları Takibi - Excel'deki tüm verileri kapsayacak şekilde genişletildi
-        let testResults = {
-            // Her test için detaylı veriler
-            test1: { 
-                questions: [], 
-                currentRound: 1, 
-                totalRounds: 4,
-                category: 'fourPiece',
-                testStartTime: null,
-                testEndTime: null,
-                testDuration: 0
-            },
-            test2: { 
-                questions: [], 
-                currentRound: 1, 
-                totalRounds: 4,
-                category: 'fourPiece',
-                testStartTime: null,
-                testEndTime: null,
-                testDuration: 0
-            },
-            test3: { 
-                questions: [], 
-                currentRound: 1, 
-                totalRounds: 4,
-                category: 'fourPiece',
-                testStartTime: null,
-                testEndTime: null,
-                testDuration: 0
-            },
-            test4: { 
-                questions: [], 
-                currentRound: 1, 
-                totalRounds: 4,
-                category: 'fourPiece',
-                testStartTime: null,
-                testEndTime: null,
-                testDuration: 0
-            },
-            test5: { 
-                questions: [], 
-                currentRound: 1, 
-                totalRounds: 4,
-                category: 'fourPiece',
-                testStartTime: null,
-                testEndTime: null,
-                testDuration: 0
-            },
-            test6: { 
-                questions: [], 
-                currentRound: 1, 
-                totalRounds: 6,
-                category: 'sixPiece',
-                testStartTime: null,
-                testEndTime: null,
-                testDuration: 0
-            },
-            test7: { 
-                questions: [], 
-                currentRound: 1, 
-                totalRounds: 9,
-                category: 'ninePiece',
-                testStartTime: null,
-                testEndTime: null,
-                testDuration: 0
-            },
-            test8: { 
-                questions: [], 
-                currentRound: 1, 
-                totalRounds: 9,
-                category: 'ninePiece',
-                testStartTime: null,
-                testEndTime: null,
-                testDuration: 0
-            },
-            test9: { 
-                questions: [], 
-                currentRound: 1, 
-                totalRounds: 16,
-                category: 'sixteenPiece',
-                testStartTime: null,
-                testEndTime: null,
-                testDuration: 0
-            },
-            // Excel'deki genel sonuçlar
-            summary: {
-                // Ham Veri
-                totalPieces: 60, // Toplam parça sayısı (4+4+4+4+4+6+9+9+16)
-                correctPieces: 0,
-                wrongPieces: 0,
-                timeoutPieces: 0,
-                
-                // Doğruluk Skorları (Her kategori için)
-                fourPieceAccuracy: 0, // 4 parçalıların doğruluk yüzdesi
-                sixPieceAccuracy: 0,  // 6 parçalının doğruluk yüzdesi  
-                ninePieceAccuracy: 0, // 9 parçalıların doğruluk yüzdesi
-                sixteenPieceAccuracy: 0, // 16 parçalının doğruluk yüzdesi
-                overallAccuracy: 0, // Genel doğruluk yüzdesi (60 parça üzerinden)
-                
-                // İşlem Hızı Skorları
-                averageResponseTime: 0, // Tüm doğru cevaplar için ortalama süre
-                fourPieceAvgTime: 0,    // 4 parçalılar için ortalama süre
-                sixPieceAvgTime: 0,     // 6 parçalı için ortalama süre
-                ninePieceAvgTime: 0,    // 9 parçalılar için ortalama süre
-                sixteenPieceAvgTime: 0, // 16 parçalı için ortalama süre
-                
-                // Test Tamamlama Süreleri
-                fourPieceCompletionTime: 0,    // 4 parçalıların toplam süresi
-                sixPieceCompletionTime: 0,     // 6 parçalının süresi
-                ninePieceCompletionTime: 0,    // 9 parçalıların toplam süresi
-                sixteenPieceCompletionTime: 0, // 16 parçalının süresi
-                totalCompletionTime: 0,        // Tüm testlerin toplam süresi
-                
-                // Bilgi İşleme Hızı Skorları (Excel'deki formüllere göre)
-                processingSpeedScore: 0,    // Süreye dayalı puanlama (hızlı doğru tepki yüksek puan)
-                normalizedSpeedScore: 0,    // 100 - (Ortalama Süre / Maksimum Süre) * 100
-                
-                // Tamamlanmama Durumu (Excel'deki "EKSTRA" kısmı)
-                incompleteTest: null,       // Hangi testte kaldığı
-                incompletePuzzle: null,     // Hangi puzzle'da kaldığı
-                incompletePieceNumber: null, // Kaç numaralı parçaya geçerken kaldığı
-                
-                // Test başlangıç ve bitiş zamanları
-                testSessionStartTime: null,
-                testSessionEndTime: null,
-                totalSessionDuration: 0
-            }
-        };
-
-        // ============================================================================
-        // EXCEL UYUMLU SAĞLAM LOGLAMA VE ANALİZ SİSTEMİ
-        // ============================================================================
-        
-        // Excel'deki tam veri yapısına uygun loglama sistemi
-        function createExcelCompatibleData() {
-            console.log("📊 EXCEL UYUMLU VERİ OLUŞTURULUYOR...");
-            
-            const excelData = {
-                // Excel'deki her test için ayrı veriler
-                tests: {
-                    // 4 Parçalı Testler (Test 1-5)
-                    fourPiece: {
-                        test1: extractTestData('test1', 4),
-                        test2: extractTestData('test2', 4), 
-                        test3: extractTestData('test3', 4),
-                        test4: extractTestData('test4', 4),
-                        test5: extractTestData('test5', 4),
-                        // Kategori toplamları
-                        categoryTotal: {
-                            totalCorrect: 0, // 20 parça üzerinden
-                            totalWrong: 0,
-                            totalResponseTime: 0,
-                            totalCompletionTime: 0,
-                            accuracyScore: 0, // (Doğru/20) * 100
-                            averageResponseTime: 0
-                        }
-                    },
-                    // 6 Parçalı Test (Test 6)
-                    sixPiece: {
-                        test6: extractTestData('test6', 6),
-                        categoryTotal: {
-                            totalCorrect: 0, // 6 parça üzerinden
-                            totalWrong: 0,
-                            accuracyScore: 0, // (Doğru/6) * 100
-                            completionTime: 0
-                        }
-                    },
-                    // 9 Parçalı Testler (Test 7-8)
-                    ninePiece: {
-                        // Her test için ayrı ayrı (9 parça üzerinden)
-                        test7: extractTestData('test7', 9), // Doğru Sayısı / 9 x 100
-                        test8: extractTestData('test8', 9), // Doğru Sayısı / 9 x 100
-                        // Kategori toplamı (18 parça üzerinden)
-                        categoryTotal: {
-                            totalCorrect: 0, // Test7 + Test8 doğru sayısı
-                            totalWrong: 0, // Test7 + Test8 yanlış sayısı
-                            accuracyScore: 0, // (Toplam Doğru/18) * 100
-                            totalCompletionTime: 0, // Test7 + Test8 süreleri
-                            averageResponseTime: 0 // Sadece doğru cevaplar için
-                        }
-                    },
-                    // 16 Parçalı Test (Test 9)
-                    sixteenPiece: {
-                        test9: extractTestData('test9', 16),
-                        categoryTotal: {
-                            totalCorrect: 0, // 16 parça üzerinden
-                            totalWrong: 0,
-                            accuracyScore: 0, // (Doğru/16) * 100
-                            completionTime: 0
-                        }
-                    }
-                },
-                // Genel sonuçlar
-                overallResults: {
-                    totalCorrectAllTests: 0, // 60 parça üzerinden
-                    totalWrongAllTests: 0,
-                    overallAccuracyScore: 0, // (Doğru/60) * 100
-                    averageResponseTimeAllCorrect: 0,
-                    processingSpeedScore: 0, // Bilgi İşleme Hızı Skoru
-                    normalizedScore: 0, // 100 - (Ortalama Süre / Max Süre) * 100
-                    incompleteInfo: {
-                        wasIncomplete: false,
-                        stoppedAtTest: null,
-                        stoppedAtPiece: null
-                    }
-                }
-            };
-            
-            return excelData;
-        }
-        
-        // Test verilerini çıkart (Excel formatında)
-        function extractTestData(testKey, expectedPieces) {
-            const testData = testResults[testKey];
-            if (!testData) return null;
-            
-            const questions = testData.questions || [];
-            
-            return {
-                testName: testKey,
-                expectedPieces: expectedPieces,
-                actualPieces: questions.length,
-                correctCount: questions.filter(q => q.isCorrect).length,
-                wrongCount: questions.filter(q => !q.isCorrect && q.answered).length,
-                unansweredCount: questions.filter(q => !q.answered).length,
-                accuracyScore: expectedPieces > 0 ? (questions.filter(q => q.isCorrect).length / expectedPieces) * 100 : 0,
-                totalResponseTime: questions.reduce((sum, q) => sum + (q.responseTime || 0), 0),
-                averageResponseTime: questions.length > 0 ? questions.reduce((sum, q) => sum + (q.responseTime || 0), 0) / questions.length : 0,
-                averageCorrectResponseTime: questions.filter(q => q.isCorrect).length > 0 ? 
-                    questions.filter(q => q.isCorrect).reduce((sum, q) => sum + (q.responseTime || 0), 0) / questions.filter(q => q.isCorrect).length : 0,
-                completionTime: testData.testEndTime && testData.testStartTime ? 
-                    (testData.testEndTime - testData.testStartTime) / 1000 : 0,
-                questions: questions.map(q => ({
-                    piece: q.round,
-                    correct: q.isCorrect,
-                    answered: q.answered,
-                    responseTime: q.responseTime,
-                    timeout: q.timeoutOccurred
-                }))
-            };
-        }
-
-        // Test başlangıç zamanını kaydet
-        function startTestTimer(testName) {
-            if (testResults[testName]) {
-                testResults[testName].testStartTime = Date.now();
-                
-                // İlk test başladığında session zamanını da başlat
-                if (!testResults.summary.testSessionStartTime) {
-                    testResults.summary.testSessionStartTime = Date.now();
-                    console.log(`🚀 TEST OTURUMU BAŞLADI: ${new Date().toLocaleTimeString()}`);
-                }
-                
-                console.log(`⏰ ${testName.toUpperCase()} BAŞLADI: ${new Date().toLocaleTimeString()}`);
-            }
-        }
-
-        // Test bitiş zamanını kaydet ve süreyi hesapla
-        function endTestTimer(testName) {
-            if (testResults[testName] && testResults[testName].testStartTime) {
-                testResults[testName].testEndTime = Date.now();
-                testResults[testName].testDuration = testResults[testName].testEndTime - testResults[testName].testStartTime;
-                
-                console.log(`⏹️ ${testName.toUpperCase()} BİTTİ: ${new Date().toLocaleTimeString()}`);
-    
-            }
-        }
-
-        // Doğruluk skorunu hesapla (Excel: Doğru Sayısı / Toplam Parça x 100)
-        function calculateAccuracyScore(testName) {
-            const test = testResults[testName];
-            if (!test || !test.questions.length) return 0;
-            
-            const correctCount = test.questions.filter(q => q.isCorrect).length;
-            const totalCount = test.totalRounds;
-            const accuracy = (correctCount / totalCount) * 100;
-            
-            console.log(`📊 ${testName.toUpperCase()} DOĞRULUK SKORU: ${correctCount}/${totalCount} = %${accuracy.toFixed(1)}`);
-            return accuracy;
-        }
-
-        // Ortalama tepki süresini hesapla (sadece doğru cevaplar için)
-        function calculateAverageResponseTime(testName) {
-            const test = testResults[testName];
-            if (!test || !test.questions.length) return 0;
-            
-            const correctAnswers = test.questions.filter(q => q.isCorrect && !q.timeoutOccurred);
-            if (correctAnswers.length === 0) return 0;
-            
-            const totalTime = correctAnswers.reduce((sum, q) => sum + q.responseTime, 0);
-            const avgTime = totalTime / correctAnswers.length;
-            
-            console.log(`🕒 ${testName.toUpperCase()} ORTALAMA TEPKİ SÜRESİ: ${avgTime.toFixed(2)} saniye (${correctAnswers.length} doğru cevap)`);
-            return avgTime;
-        }
-
-        // Bilgi işleme hızı skoru (Excel: Süreye dayalı puanlama - hızlı doğru tepki yüksek puan)
-        function calculateProcessingSpeedScore(responseTime, maxTime = 15) {
-            // Hızlı tepki yüksek puan getirir: 100 - (süre/max_süre * 100)
-            const score = Math.max(0, 100 - ((responseTime / maxTime) * 100));
-            return score;
-        }
-
-        // Normalize edilmiş hız skoru (Excel: 100 - (Ortalama Süre / Maksimum Süre) * 100)
-        function calculateNormalizedSpeedScore(averageTime, maxTime = 15) {
-            const normalizedScore = Math.max(0, 100 - ((averageTime / maxTime) * 100));
-            return normalizedScore;
-        }
-
-        // Kategori bazlı istatistikleri hesapla
-        function calculateCategoryStats(categoryName) {
-            const category = testCategories[categoryName];
-            if (!category) return null;
-            
-            let totalCorrect = 0;
-            let totalQuestions = 0;
-            let totalResponseTime = 0;
-            let correctResponseCount = 0;
-            let totalTestDuration = 0;
-            
-            category.tests.forEach(testName => {
-                const test = testResults[testName];
-                if (test && test.questions.length > 0) {
-                    const correctAnswers = test.questions.filter(q => q.isCorrect);
-                    const correctWithTime = correctAnswers.filter(q => !q.timeoutOccurred);
-                    
-                    totalCorrect += correctAnswers.length;
-                    totalQuestions += test.questions.length;
-                    totalTestDuration += test.testDuration || 0;
-                    
-                    if (correctWithTime.length > 0) {
-                        totalResponseTime += correctWithTime.reduce((sum, q) => sum + q.responseTime, 0);
-                        correctResponseCount += correctWithTime.length;
-                    }
-                }
-            });
-            
-            const accuracy = totalQuestions > 0 ? (totalCorrect / totalQuestions) * 100 : 0;
-            const avgResponseTime = correctResponseCount > 0 ? totalResponseTime / correctResponseCount : 0;
-            
-            console.log(`📈 ${category.description.toUpperCase()} İSTATİSTİKLERİ:`);
-            console.log(`   📊 Doğruluk: ${totalCorrect}/${totalQuestions} = %${accuracy.toFixed(1)}`);
-            console.log(`   🕒 Ortalama Tepki Süresi: ${avgResponseTime.toFixed(2)} saniye`);
-            console.log(`   ⏱️ Toplam Test Süresi: ${(totalTestDuration / 1000).toFixed(2)} saniye`);
-            
-            return {
-                accuracy,
-                avgResponseTime,
-                totalTestDuration,
-                totalCorrect,
-                totalQuestions
-            };
-        }
-
-        // Genel sonuçları hesapla ve güncelle
-        function updateSummaryStats() {
-            console.log(`\n🎯 ============= GENEL SONUÇLAR GÜNCELLENİYOR =============`);
-            
-            const summary = testResults.summary;
-            
-            // Test oturumu bitiş zamanı
-            summary.testSessionEndTime = Date.now();
-            if (summary.testSessionStartTime) {
-                summary.totalSessionDuration = summary.testSessionEndTime - summary.testSessionStartTime;
-            }
-            
-            // Ham veriler
-            let totalCorrect = 0;
-            let totalWrong = 0;
-            let totalTimeout = 0;
-            let totalResponseTime = 0;
-            let correctResponseCount = 0;
-            let totalTestDuration = 0;
-            
-            // Her test için verileri topla
-            Object.keys(testResults).forEach(testName => {
-                if (testName === 'summary') return;
-                
-                const test = testResults[testName];
-                if (test && test.questions.length > 0) {
-                    test.questions.forEach(q => {
-                        if (q.isCorrect) {
-                            totalCorrect++;
-                            if (!q.timeoutOccurred) {
-                                totalResponseTime += q.responseTime;
-                                correctResponseCount++;
-                            }
-                        } else {
-                            totalWrong++;
-                        }
-                        
-                        if (q.timeoutOccurred) {
-                            totalTimeout++;
-                        }
-                    });
-                    
-                    totalTestDuration += test.testDuration || 0;
-                }
-            });
-            
-            // Ham verileri güncelle
-            summary.correctPieces = totalCorrect;
-            summary.wrongPieces = totalWrong;
-            summary.timeoutPieces = totalTimeout;
-            summary.totalCompletionTime = totalTestDuration;
-            summary.averageResponseTime = correctResponseCount > 0 ? totalResponseTime / correctResponseCount : 0;
-            
-            // Genel doğruluk yüzdesi
-            summary.overallAccuracy = summary.totalPieces > 0 ? (totalCorrect / summary.totalPieces) * 100 : 0;
-            
-            // Kategori bazlı skorları hesapla
-            const fourPieceStats = calculateCategoryStats('fourPiece');
-            const sixPieceStats = calculateCategoryStats('sixPiece');
-            const ninePieceStats = calculateCategoryStats('ninePiece');
-            const sixteenPieceStats = calculateCategoryStats('sixteenPiece');
-            
-            if (fourPieceStats) {
-                summary.fourPieceAccuracy = fourPieceStats.accuracy;
-                summary.fourPieceAvgTime = fourPieceStats.avgResponseTime;
-                summary.fourPieceCompletionTime = fourPieceStats.totalTestDuration;
-            }
-            
-            if (sixPieceStats) {
-                summary.sixPieceAccuracy = sixPieceStats.accuracy;
-                summary.sixPieceAvgTime = sixPieceStats.avgResponseTime;
-                summary.sixPieceCompletionTime = sixPieceStats.totalTestDuration;
-            }
-            
-            if (ninePieceStats) {
-                summary.ninePieceAccuracy = ninePieceStats.accuracy;
-                summary.ninePieceAvgTime = ninePieceStats.avgResponseTime;
-                summary.ninePieceCompletionTime = ninePieceStats.totalTestDuration;
-            }
-            
-            if (sixteenPieceStats) {
-                summary.sixteenPieceAccuracy = sixteenPieceStats.accuracy;
-                summary.sixteenPieceAvgTime = sixteenPieceStats.avgResponseTime;
-                summary.sixteenPieceCompletionTime = sixteenPieceStats.totalTestDuration;
-            }
-            
-            // Bilgi işleme hızı skorları
-            summary.processingSpeedScore = calculateProcessingSpeedScore(summary.averageResponseTime);
-            summary.normalizedSpeedScore = calculateNormalizedSpeedScore(summary.averageResponseTime);
-            
-            console.log(`\n📋 ============= EXCEL VERİLERİ ÖZET =============`);
-            console.log(`📊 HAM VERİ:`);
-            console.log(`   Toplam Parça: ${summary.totalPieces}`);
-            console.log(`   Doğru Parça: ${summary.correctPieces}`);
-            console.log(`   Yanlış Parça: ${summary.wrongPieces}`);
-            console.log(`   Timeout Parça: ${summary.timeoutPieces}`);
-            console.log(`\n🎯 DOĞRULUK SKORLARI:`);
-            console.log(`   Genel Doğruluk: %${summary.overallAccuracy.toFixed(1)} (${summary.correctPieces}/${summary.totalPieces})`);
-            console.log(`   4 Parçalı Doğruluk: %${summary.fourPieceAccuracy.toFixed(1)}`);
-            console.log(`   6 Parçalı Doğruluk: %${summary.sixPieceAccuracy.toFixed(1)}`);
-            console.log(`   9 Parçalı Doğruluk: %${summary.ninePieceAccuracy.toFixed(1)}`);
-            console.log(`   16 Parçalı Doğruluk: %${summary.sixteenPieceAccuracy.toFixed(1)}`);
-            console.log(`\n⚡ İŞLEM HIZI SKORLARI:`);
-            console.log(`   Ortalama Tepki Süresi: ${summary.averageResponseTime.toFixed(2)} saniye`);
-            console.log(`   4 Parçalı Ort. Süre: ${summary.fourPieceAvgTime.toFixed(2)} saniye`);
-            console.log(`   6 Parçalı Ort. Süre: ${summary.sixPieceAvgTime.toFixed(2)} saniye`);
-            console.log(`   9 Parçalı Ort. Süre: ${summary.ninePieceAvgTime.toFixed(2)} saniye`);
-            console.log(`   16 Parçalı Ort. Süre: ${summary.sixteenPieceAvgTime.toFixed(2)} saniye`);
-            console.log(`\n🏆 BİLGİ İŞLEME HIZI SKORLARI:`);
-            console.log(`   İşleme Hızı Skoru: ${summary.processingSpeedScore.toFixed(1)} puan`);
-            console.log(`   Normalize Hız Skoru: ${summary.normalizedSpeedScore.toFixed(1)} puan`);
-            console.log(`\n⏱️ TAMAMLAMA SÜRELERİ:`);
-            console.log(`   Toplam Oturum Süresi: ${(summary.totalSessionDuration / 1000).toFixed(2)} saniye`);
-            console.log(`   Toplam Test Süresi: ${(summary.totalCompletionTime / 1000).toFixed(2)} saniye`);
-            console.log(`   4 Parçalı Toplam Süre: ${(summary.fourPieceCompletionTime / 1000).toFixed(2)} saniye`);
-            console.log(`   6 Parçalı Süre: ${(summary.sixPieceCompletionTime / 1000).toFixed(2)} saniye`);
-            console.log(`   9 Parçalı Toplam Süre: ${(summary.ninePieceCompletionTime / 1000).toFixed(2)} saniye`);
-            console.log(`   16 Parçalı Süre: ${(summary.sixteenPieceCompletionTime / 1000).toFixed(2)} saniye`);
-            
-            if (summary.incompleteTest) {
-                console.log(`\n⚠️ TAMAMLANMAMA DURUMU:`);
-                console.log(`   Kaldığı Test: ${summary.incompleteTest}`);
-                console.log(`   Kaldığı Puzzle: ${summary.incompletePuzzle}`);
-                console.log(`   Kaldığı Parça: ${summary.incompletePieceNumber}`);
-            }
-            
-            console.log(`\n============================================\n`);
-        }
-
-        // ================================
-        // YENİ LOGLAMA SİSTEMİ
-        // ================================
-        
-        // Parça numarası çıkarma fonksiyonu - UI gösterim sırasına göre
-        function getPieceNumber(testId, pieceId) {
-            // Test kurallarından UI gösterim sırasını al
-            const testRules = getTestRules(testId);
-            if (testRules) {
-                const rule = testRules.find(r => r.clickable_id === pieceId || r.tk === pieceId);
-                if (rule && rule.round_number) {
-                    return rule.round_number;
-                } else if (rule && rule.round) {
-                    return rule.round;
-                }
-            }
-            
-            // Fallback: ID'den numara çıkar
-            const match = pieceId.match(/-(\d+)$/) || pieceId.match(/tk-?(\d*)$/);
-            if (match && match[1]) {
-                return parseInt(match[1]);
-            }
-            
-            return 1; // Default
-        }
-        
-        // UI'daki mevcut round numarasını al (tıklama anında)
-        function getCurrentUIRoundAtClick(testId) {
-            // testResults'tan currentRound'u al (tıklama anında doğru değeri gösterir)
-            if (testResults[testId] && testResults[testId].currentRound) {
-                return testResults[testId].currentRound;
-            }
-            
-            return 1;
-        }
-        
-                 // Round numarası ile log fonksiyonu
-         function logQuestionResultWithRound(testId, pieceId, isCorrect, responseTime, roundNumber, isTimeout = false) {
-             const testType = getTestType(testId);
-             const currentData = testData.tests[testId];
-             
-             // Test adını daha okunabilir hale getir
-             const testName = testId === 'practice' ? 'ÖRNEK UYGULAMA' : 
-                             testId.toUpperCase().replace('TEST', 'TEST ');
-             
-             // Timeout durumunda özel mesaj
-             let resultText;
-             if (isTimeout) {
-                 resultText = 'İşaretlemedi ⏰';
-             } else {
-                 resultText = isCorrect ? 'EVET ✓' : 'HAYIR ✗';
-             }
-             
-             console.log(`\n🧩 ${testName} - PARÇA ${roundNumber} SONUCU:`);
-             console.log(`   ✅ Doğru mu: ${resultText}`);
-             console.log(`   ⏱️ Tepki Süresi: ${responseTime.toFixed(0)}ms (${(responseTime/1000).toFixed(2)}s)`);
-             console.log(`   🎯 Tıklanan Parça: ${roundNumber} (${pieceId})`);
-             console.log(`   📊 Test İlerlemesi: ${currentData ? currentData.correct : 0}/${testType.pieces} doğru`);
-             console.log(`   📈 Anlık Doğruluk: %${currentData ? currentData.accuracy.toFixed(1) : 0}`);
-             console.log(`   🕐 Zaman: ${new Date().toLocaleTimeString()}`);
-             
-             // Hız değerlendirmesi
-             const speedEval = responseTime < 2000 ? '🚀 Hızlı' : 
-                              responseTime < 5000 ? '⚡ Normal' : 
-                              responseTime < 10000 ? '🐌 Yavaş' : '⏰ Çok Yavaş';
-             console.log(`   🏆 Hız Değerlendirmesi: ${speedEval}`);
-         }
-        
-        // Test kurallarını getir
-        function getTestRules(testId) {
-            // Her test için kural dizisini döndür
-            switch(testId) {
-                case 'practice':
-                    return [
-                        { clickable_id: "practice-tk-1", highlight_id: "practice-pr-1", round_number: 1 },
-                        { clickable_id: "practice-tk-2", highlight_id: "practice-pr-2", round_number: 2 },
-                        { clickable_id: "practice-tk-3", highlight_id: "practice-pr-3", round_number: 3 }
-                    ];
-                case 'test1':
-                    return [
-                        { clickable_id: "test1-tk-1", highlight_id: "test1-pr-1", round_number: 1 },
-                        { clickable_id: "test1-tk-2", highlight_id: "test1-pr-2", round_number: 2 },
-                        { clickable_id: "test1-tk-3", highlight_id: "test1-pr-3", round_number: 3 },
-                        { clickable_id: "test1-tk-4", highlight_id: "test1-pr-4", round_number: 4 }
-                    ];
-                case 'test2':
-                    return [
-                        { clickable_id: "test2-tk-1", highlight_id: "test2-pr-1", round_number: 1 },
-                        { clickable_id: "test2-tk-2", highlight_id: "test2-pr-2", round_number: 2 },
-                        { clickable_id: "test2-tk-3", highlight_id: "test2-pr-3", round_number: 3 },
-                        { clickable_id: "test2-tk-4", highlight_id: "test2-pr-4", round_number: 4 }
-                    ];
-                case 'test3':
-                    return [
-                        { clickable_id: "test3-tk-1", highlight_id: "test3-pr-1", round_number: 1 },
-                        { clickable_id: "test3-tk-2", highlight_id: "test3-pr-2", round_number: 2 },
-                        { clickable_id: "test3-tk-3", highlight_id: "test3-pr-3", round_number: 3 },
-                        { clickable_id: "test3-tk-4", highlight_id: "test3-pr-4", round_number: 4 }
-                    ];
-                case 'test4':
-                    return [
-                        { clickable_id: "test4-tk-1", highlight_id: "test4-pr-1", round_number: 1 },
-                        { clickable_id: "test4-tk-2", highlight_id: "test4-pr-2", round_number: 2 },
-                        { clickable_id: "test4-tk-3", highlight_id: "test4-pr-3", round_number: 3 },
-                        { clickable_id: "test4-tk-4", highlight_id: "test4-pr-4", round_number: 4 }
-                    ];
-                case 'test5':
-                    return [
-                        { tk: "test5-tk-1", pr: "pr-1", round: 1 },
-                        { tk: "test5-tk-2", pr: "pr-2", round: 2 },
-                        { tk: "test5-tk-3", pr: "pr-3", round: 3 },
-                        { tk: "test5-tk-4", pr: "pr-4", round: 4 }
-                    ];
-                case 'test6':
-                    return [
-                        { clickable_id: "test6-tk-1", highlight_id: "test6-pr-1", round_number: 1 },
-                        { clickable_id: "test6-tk-2", highlight_id: "test6-pr-2", round_number: 2 },
-                        { clickable_id: "test6-tk-3", highlight_id: "test6-pr-3", round_number: 3 },
-                        { clickable_id: "test6-tk-4", highlight_id: "test6-pr-4", round_number: 4 },
-                        { clickable_id: "test6-tk-5", highlight_id: "test6-pr-5", round_number: 5 },
-                        { clickable_id: "test6-tk-6", highlight_id: "test6-pr-6", round_number: 6 }
-                    ];
-                case 'test7':
-                    return [
-                        { clickable_id: "test7-tk-1", highlight_id: "test7-pr-1", round_number: 1 },
-                        { clickable_id: "test7-tk-2", highlight_id: "test7-pr-2", round_number: 2 },
-                        { clickable_id: "test7-tk-3", highlight_id: "test7-pr-3", round_number: 3 },
-                        { clickable_id: "test7-tk-4", highlight_id: "test7-pr-4", round_number: 4 },
-                        { clickable_id: "test7-tk-5", highlight_id: "test7-pr-5", round_number: 5 },
-                        { clickable_id: "test7-tk-6", highlight_id: "test7-pr-6", round_number: 6 },
-                        { clickable_id: "test7-tk-7", highlight_id: "test7-pr-7", round_number: 7 },
-                        { clickable_id: "test7-tk-8", highlight_id: "test7-pr-8", round_number: 8 },
-                        { clickable_id: "test7-tk-9", highlight_id: "test7-pr-9", round_number: 9 }
-                    ];
-                case 'test8':
-                    return [
-                        { clickable_id: "test8-tk-1", highlight_id: "test8-pr-1", round_number: 1 },
-                        { clickable_id: "test8-tk-2", highlight_id: "test8-pr-2", round_number: 2 },
-                        { clickable_id: "test8-tk-3", highlight_id: "test8-pr-3", round_number: 3 },
-                        { clickable_id: "test8-tk-4", highlight_id: "test8-pr-4", round_number: 4 },
-                        { clickable_id: "test8-tk-5", highlight_id: "test8-pr-5", round_number: 5 },
-                        { clickable_id: "test8-tk-6", highlight_id: "test8-pr-6", round_number: 6 },
-                        { clickable_id: "test8-tk-7", highlight_id: "test8-pr-7", round_number: 7 },
-                        { clickable_id: "test8-tk-8", highlight_id: "test8-pr-8", round_number: 8 },
-                        { clickable_id: "test8-tk-9", highlight_id: "test8-pr-9", round_number: 9 }
-                    ];
-                case 'test9':
-                    return [
-                        { clickable_id: "test9-tk-1", highlight_id: "test9-pr-1", round_number: 1 },
-                        { clickable_id: "test9-tk-2", highlight_id: "test9-pr-2", round_number: 2 },
-                        { clickable_id: "test9-tk-3", highlight_id: "test9-pr-3", round_number: 3 },
-                        { clickable_id: "test9-tk-4", highlight_id: "test9-pr-4", round_number: 4 },
-                        { clickable_id: "test9-tk-5", highlight_id: "test9-pr-5", round_number: 5 },
-                        { clickable_id: "test9-tk-6", highlight_id: "test9-pr-6", round_number: 6 },
-                        { clickable_id: "test9-tk-7", highlight_id: "test9-pr-7", round_number: 7 },
-                        { clickable_id: "test9-tk-8", highlight_id: "test9-pr-8", round_number: 8 },
-                        { clickable_id: "test9-tk-9", highlight_id: "test9-pr-9", round_number: 9 },
-                        { clickable_id: "test9-tk-10", highlight_id: "test9-pr-10", round_number: 10 },
-                        { clickable_id: "test9-tk-11", highlight_id: "test9-pr-11", round_number: 11 },
-                        { clickable_id: "test9-tk-12", highlight_id: "test9-pr-12", round_number: 12 },
-                        { clickable_id: "test9-tk-13", highlight_id: "test9-pr-13", round_number: 13 },
-                        { clickable_id: "test9-tk-14", highlight_id: "test9-pr-14", round_number: 14 },
-                        { clickable_id: "test9-tk-15", highlight_id: "test9-pr-15", round_number: 15 },
-                        { clickable_id: "test9-tk-16", highlight_id: "test9-pr-16", round_number: 16 }
-                    ];
-                default:
-                    return null;
-            }
-        }
-
-
-
-        // Test bölümü tamamlandığında çağrılacak fonksiyon
-        function logSectionCompletion(testId) {
-            const test = testData.tests[testId];
-            if (!test || !test.completed) return;
-            
-            const testType = getTestType(testId);
-            
-            console.log(`\n🏁 =============== ${testType.type} TAMAMLANDI ===============`);
-            console.log(`📊 ${testId.toUpperCase()} BÖLÜM İSTATİSTİKLERİ:`);
-            console.log(`   🎯 Test Tipi: ${testType.type}`);
-            console.log(`   📦 Kategori: ${testType.category} (${testType.pieces} parça)`);
-            console.log(`   ✅ Doğru Cevaplar: ${test.correct}/${test.totalPieces}`);
-            console.log(`   ❌ Yanlış Cevaplar: ${test.wrong}/${test.totalPieces}`);
-            console.log(`   📈 Doğruluk Oranı: %${test.accuracy.toFixed(1)}`);
-            console.log(`   ⏱️ Ortalama Tepki Süresi: ${test.averageResponseTime.toFixed(0)}ms`);
-            console.log(`   ⏰ TEST SÜRESİ: ${(test.duration / 1000).toFixed(2)} saniye`);
-            console.log(`   📅 Başlangıç: ${new Date(test.startTime).toLocaleTimeString()}`);
-            console.log(`   🏁 Bitiş: ${new Date(test.endTime).toLocaleTimeString()}`);
-            
-            // Parça detayları - UI sırasına göre
-            console.log(`\n📋 ${testId.toUpperCase()} PARÇA DETAYLARI:`);
-            
-            // Parçaları UI sırasına göre sıralayalım
-            const sortedPieces = Object.values(test.pieces).sort((a, b) => {
-                // Piece ID'den round numarası çıkar ve sırala
-                const aRound = getPieceNumber(testId, a.pieceId);
-                const bRound = getPieceNumber(testId, b.pieceId);
-                return aRound - bRound;
-            });
-            
-            sortedPieces.forEach((piece, index) => {
-                let status, statusText;
-                if (piece.isTimeout) {
-                    status = '⏰';
-                    statusText = 'İşaretlemedi';
-                } else if (piece.isCorrect) {
-                    status = '✅';
-                    statusText = 'Doğru';
-                } else {
-                    status = '❌';
-                    statusText = 'Yanlış';
-                }
-                
-                const attempts = piece.attempts > 1 ? ` (${piece.attempts} deneme)` : '';
-                const pieceNumber = index + 1; // UI sırası (1, 2, 3, 4...)
-                console.log(`   ${status} Parça ${pieceNumber} (${piece.pieceId}): ${piece.responseTime.toFixed(0)}ms${attempts} - ${statusText}`);
-            });
-            
-            // Excel kategorisine göre özel bilgi
-            if (testType.category === '4piece') {
-                console.log(`   🔢 4 Parçalı Puzzle Kategorisi - Excel Sütun: Dörtparçalı`);
-            } else if (testType.category === '6piece') {
-                console.log(`   🔢 6 Parçalı Puzzle Kategorisi - Excel Sütun: Altıparçalı`);
-            } else if (testType.category === '9piece') {
-                console.log(`   🔢 9 Parçalı Puzzle Kategorisi - Excel Sütun: Dokuzparçalı`);
-            } else if (testType.category === '16piece') {
-                console.log(`   🔢 16 Parçalı Puzzle Kategorisi - Excel Sütun: Onaltıparçalı`);
-            }
-            
-            console.log(`============================================\n`);
-        }
-
-        // ============================================================================
-        // DEMO VE NAVİGASYON FONKSİYONLARI
-        // ============================================================================
-        
         // Demo başlatma
         function startDemo() {
-            // Demo section'a geç
-            currentSection = 0;
-            nextSection();
+            setTimeout(() => {
+                nextSection();
+            }, 15000); // 15 saniye demo
         }
         
         // Sonraki bölüme geç
         function nextSection() {
-            // Sayfa değişiminde ses durdur
-            stopCurrentAudio();
-            
-            // Sadece question timer'ı durdur, alttaki progress bar çalışmaya devam etsin
-            stopQuestionTimer();
-            
-            // Önceki test'in veri kaydını bitir
-            const previousSection = sections[currentSection];
-            if (previousSection && previousSection.includes('test') && previousSection !== 'test-preparation-screen' && previousSection !== 'test-completion-screen') {
-                const testId = previousSection.replace('-section', '');
-                onTestComplete(testId);
-            }
-            
             document.getElementById(sections[currentSection]).classList.remove('active');
             currentSection++;
             
             if (currentSection < sections.length) {
                 document.getElementById(sections[currentSection]).classList.add('active');
                 
-                // Yeni test başlıyorsa veri kaydını başlat
-                const newSection = sections[currentSection];
-                if (newSection && newSection.includes('test') && newSection !== 'test-preparation-screen' && newSection !== 'test-completion-screen') {
-                    const testId = newSection.replace('-section', '');
-                    initializeTestRecording(testId);
-                    startPieceTimer();
-                }
-                
                 if (currentSection > 0) { // Demo değilse
                     initCurrentSection();
                 }
             } else {
                 // Tüm testler tamamlandı
-                showTestCompletion();
+                document.getElementById('message').textContent = 'Tüm Testler Tamamlandı!';
             }
         }
         
@@ -2167,40 +1199,37 @@
                 case 3: // Practice Completion
                     // Bu ekranda herhangi bir init işlemi gerekmiyor
                     break;
-                case 4: // Practice Fail
-                    // Bu ekranda herhangi bir init işlemi gerekmiyor
-                    break;
-                case 5: // Test Preparation
+                case 4: // Test Preparation
                     initTestPreparationSection();
                     break;
-                case 6: // Test 1
+                case 5: // Test 1
                     initTest1Section();
                     break;
-                case 7: // Test 2
+                case 6: // Test 2
                     initTest2Section();
                     break;
-                case 8: // Test 3
+                case 7: // Test 3
                     initTest3Section();
                     break;
-                case 9: // Test 4
+                case 8: // Test 4
                     initTest4Section();
                     break;
-                case 10: // Test 5
+                case 9: // Test 5
                     initTest5Section();
                     break;
-                case 11: // Test 6
+                case 10: // Test 6
                     initTest6Section();
                     break;
-                case 12: // Test 7
+                case 11: // Test 7
                     initTest7Section();
                     break;
-                case 13: // Test 8
+                case 12: // Test 8
                     initTest8Section();
                     break;
-                case 14: // Test 9
+                case 13: // Test 9
                     initTest9Section();
                     break;
-                case 15: // Test Completion
+                case 14: // Test Completion
                     initTestCompletionSection();
                     break;
             }
@@ -2225,7 +1254,6 @@
             let currentRound = 1;
             let gameActive = true;
             let correctClicks = 0;
-            let roundStartTime = null; // Her round için başlangıç zamanı
             
             function setupClickHandlers() {
                 document.querySelectorAll('#practice-section .clickable').forEach(element => {
@@ -2239,12 +1267,6 @@
                 const clickedId = event.target.id;
                 const currentRule = practiceRules[currentRound - 1];
                 const isCorrect = clickedId === currentRule.clickable_id;
-                
-                // Tepki süresini hesapla
-                const responseTime = Date.now() - roundStartTime;
-                
-                // Veri toplama sistemine kaydet
-                onPieceClick(clickedId, currentRule.clickable_id);
                 
                 // Önceki durumları temizle
                 document.querySelectorAll('#practice-section .clickable').forEach(el => {
@@ -2268,9 +1290,6 @@
                     if (currentRound <= practiceRules.length) {
                         startRound(currentRound);
                     } else {
-                        // Practice tamamlandığında veri kaydını bitir
-                        onTestComplete('practice');
-                        
                         // Practice tamamlandı, kontrol et
                         if (correctClicks >= 2) {
                             // En az 2 doğru varsa devam et
@@ -2278,9 +1297,14 @@
                                 showPracticeCompletion();
                             }, 1000);
                         } else {
-                            // 2'den az doğru varsa fail screen'a git
+                            // 2'den az doğru varsa uyarı ver ve demo'ya geri dön
                             setTimeout(() => {
-                                showPracticeFail();
+                                showNotification('Örnek uygulamada en az 2 doğru parçaya tıklamalısınız. Örnek gösterim tekrar oynatılacak.', 'warning');
+                                
+                                setTimeout(() => {
+                                    currentSection = 0; // Demo section'a geri dön
+                                    startDemo(); // Demo'yu tamamen baştan başlat
+                                }, 2000);
                             }, 1000);
                         }
                     }
@@ -2289,12 +1313,6 @@
             
             function startRound(roundNumber) {
                 gameActive = true;
-                
-                // Round başlangıç zamanını kaydet
-                roundStartTime = Date.now();
-                
-                // Parça timer'ını başlat
-                startPieceTimer();
                 
                 // Tüm yeşil daireleri gizle
                 document.querySelectorAll('#practice-section .highlight-circle').forEach(circle => {
@@ -2327,16 +1345,6 @@
             
             let currentRound = 1;
             let gameActive = true;
-            let roundStartTime = null; // Her round için başlangıç zamanı
-            currentTestNumber = 1;
-            
-            // Test timer'ını başlat ve loglama yap
-            startTestTimer('test1');
-            
-            // İlk test başladığında toplam timer'ı başlat
-            if (!totalTestStartTime) {
-                startTotalTimer();
-            }
             
             function calculateAndPositionHighlights() {
                 const prElements = ['test1-pr-1', 'test1-pr-2', 'test1-pr-3', 'test1-pr-4'];
@@ -2501,35 +1509,6 @@
                 const clickedId = event.target.id;
                 const currentRule = test1Rules[currentRound - 1];
                 const isCorrect = clickedId === currentRule.clickable_id;
-                const responseTime = (Date.now() - roundStartTime) / 1000; // Round başlangıç zamanından itibaren
-                
-                // Veri toplama sistemine kaydet
-                onPieceClick(clickedId, currentRule.clickable_id);
-                
-                // Soru timer'ını durdur ve progress bar animasyonunu temizle
-                stopQuestionTimer();
-                
-                // Progress bar animasyonunu durdur
-                const questionProgressBar = document.getElementById(`test1-question-progress-bar`);
-                if (questionProgressBar) {
-                    questionProgressBar.classList.remove('animating');
-                }
-                
-                // Test sonucunu kaydet
-                const questionData = {
-                    round: currentRound,
-                    answered: true,
-                    isCorrect: isCorrect,
-                    responseTime: Math.min(responseTime, 15), // Max 15 saniye
-                    timeoutOccurred: false,
-                    selectedElement: clickedId,
-                    correctElement: currentRule.clickable_id,
-                    timestamp: Date.now()
-                };
-                
-                testResults.test1.questions.push(questionData);
-                
-
                 
                 // Önceki durumları temizle
                 document.querySelectorAll('#test1-section .clickable').forEach(el => {
@@ -2546,14 +1525,10 @@
                     event.target.classList.remove('correct');
                     currentRound++;
                     
-                    // Global değişkeni senkronize et (timeout için)
-                    testResults.test1.currentRound = currentRound;
-                    
                     if (currentRound <= test1Rules.length) {
                         startRound(currentRound);
                     } else {
-                        // Test 1 tamamlandı, veri kaydını bitir
-                        onTestComplete('test1');
+                        // Test 1 tamamlandı, sonraki bölüme geç
                         setTimeout(() => {
                             nextSection();
                         }, 1000);
@@ -2563,10 +1538,6 @@
             
             function startRound(roundNumber) {
                 gameActive = true;
-                roundStartTime = Date.now(); // Round başlangıç zamanını kaydet
-                
-                // Soru timer'ını başlat
-                startQuestionTimer(1);
                 
                 // Tüm yeşil daireleri gizle
                 document.querySelectorAll('#test1-section .highlight-circle').forEach(circle => {
@@ -2580,18 +1551,6 @@
                     highlightCircle.style.display = 'block';
                 }
             }
-            
-            // Global fonksiyon - timeout durumunda çağrılacak
-            window.test1StartNextRound = function() {
-                // Test 1 round'larını güncellemeli ama testResults'taki currentRound zaten artırıldı
-                currentRound = testResults.test1.currentRound;
-                
-                if (currentRound <= test1Rules.length) {
-                    startRound(currentRound);
-                } else {
-                                            // Test 1 tamamlandı, zaten nextSection çağrılacak
-                }
-            };
             
             calculateAndPositionHighlights();
             setupClickHandlers();
@@ -2610,16 +1569,6 @@
             
             let currentRound = 1;
             let gameActive = true;
-            let roundStartTime = null; // Her round için başlangıç zamanı
-            currentTestNumber = 2;
-            
-            // Test timer'ını başlat ve loglama yap
-            startTestTimer('test2');
-            
-            // İlk test başladığında toplam timer'ı başlat (güvenlik kontrolü)
-            if (!totalTestStartTime) {
-                startTotalTimer();
-            }
             
             // Oyunu başlat
             function initGame() {
@@ -2745,35 +1694,6 @@
                 const clickedId = event.target.id;
                 const currentRule = test2Rules[currentRound - 1];
                 const isCorrect = clickedId === currentRule.clickable_id;
-                const responseTime = (Date.now() - roundStartTime) / 1000; // Round başlangıç zamanından itibaren
-                
-                // Veri toplama sistemine kaydet
-                onPieceClick(clickedId, currentRule.clickable_id);
-                
-                // Soru timer'ını durdur ve progress bar animasyonunu temizle
-                stopQuestionTimer();
-                
-                // Progress bar animasyonunu durdur
-                const questionProgressBar = document.getElementById(`test2-question-progress-bar`);
-                if (questionProgressBar) {
-                    questionProgressBar.classList.remove('animating');
-                }
-                
-                // Test sonucunu kaydet
-                const questionData = {
-                    round: currentRound,
-                    answered: true,
-                    isCorrect: isCorrect,
-                    responseTime: Math.min(responseTime, 15), // Max 15 saniye
-                    timeoutOccurred: false,
-                    selectedElement: clickedId,
-                    correctElement: currentRule.clickable_id,
-                    timestamp: Date.now()
-                };
-                
-                testResults.test2.questions.push(questionData);
-                
-
                 
                 // Önceki durumları temizle
                 document.querySelectorAll('#test2-section .clickable').forEach(el => {
@@ -2787,34 +1707,21 @@
                 // Sonraki parçaya geç
                 setTimeout(() => {
                     event.target.classList.remove('correct');
+                    currentRound++;
                     
-                    // proceedToNextRound fonksiyonu round artırma işlemini yapacak
-                    proceedToNextRound(2);
+                    if (currentRound <= test2Rules.length) {
+                        startRound(currentRound);
+                    } else {
+                        // Test 2 tamamlandı, sonraki bölüme geç
+                        setTimeout(() => {
+                            nextSection();
+                        }, 1000);
+                    }
                 }, 1500);
             }
             
-            // Global fonksiyon olarak tanımla (proceedToNextRound için)
-            window.test2StartNextRound = function() {
-                // Local currentRound'u global ile senkronize et
-                currentRound = testResults.test2.currentRound;
-                
-                if (currentRound <= test2Rules.length) {
-                    startRound(currentRound);
-                } else {
-                    // Test 2 tamamlandı, veri kaydını bitir
-                    onTestComplete('test2');
-                    setTimeout(() => {
-                        nextSection();
-                    }, 1000);
-                }
-            };
-
             function startRound(roundNumber) {
                 gameActive = true;
-                roundStartTime = Date.now(); // Round başlangıç zamanını kaydet
-                
-                // Soru timer'ını başlat
-                startQuestionTimer(2);
                 
                 // Tüm yeşil daireleri gizle
                 document.querySelectorAll('#test2-section .highlight-circle').forEach(circle => {
@@ -2829,26 +1736,12 @@
                 }
             }
             
-            // Global fonksiyon - timeout durumunda çağrılacak
-            window.test2StartNextRound = function() {
-                // Test 2 round'larını güncellemeli ama testResults'taki currentRound zaten artırıldı
-                currentRound = testResults.test2.currentRound;
-                
-                if (currentRound <= test2Rules.length) {
-                    startRound(currentRound);
-                } else {
-                                            // Test 2 tamamlandı, zaten nextSection çağrılacak
-                }
-            };
-            
             // Test 2 başlat
             initGame();
         }
         
         // Test 3 section logic
         function initTest3Section() {
-            // Test timer'ını başlat ve loglama yap
-            startTestTimer('test3');
             // Eşleştirme kuralları - sıralı olarak pr-1'den başlayıp pr-4'e kadar
             const test3Rules = [
                 { clickable_id: "test3-tk-1", highlight_id: "test3-pr-1", round_number: 1 },
@@ -2859,13 +1752,6 @@
             
             let currentRound = 1;
             let gameActive = true;
-            let roundStartTime = null; // Her round için başlangıç zamanı
-            currentTestNumber = 3;
-            
-            // İlk test başladığında toplam timer'ı başlat (güvenlik kontrolü)
-            if (!totalTestStartTime) {
-                startTotalTimer();
-            }
             
             // Oyunu başlat
             function initGame() {
@@ -2984,33 +1870,6 @@
                 const clickedId = event.target.id;
                 const currentRule = test3Rules[currentRound - 1];
                 const isCorrect = clickedId === currentRule.clickable_id;
-                const responseTime = (Date.now() - roundStartTime) / 1000; // Round başlangıç zamanından itibaren
-                
-                // Veri toplama sistemine kaydet
-                onPieceClick(clickedId, currentRule.clickable_id);
-                
-                // Soru timer'ını durdur ve progress bar animasyonunu temizle
-                stopQuestionTimer();
-                
-                // Progress bar animasyonunu durdur
-                const questionProgressBar = document.getElementById(`test3-question-progress-bar`);
-                if (questionProgressBar) {
-                    questionProgressBar.classList.remove('animating');
-                }
-                
-                // Test sonucunu kaydet
-                testResults.test3.questions.push({
-                    round: currentRound,
-                    answered: true,
-                    isCorrect: isCorrect,
-                    responseTime: Math.min(responseTime, 15), // Max 15 saniye
-                    timeoutOccurred: false,
-                    selectedElement: clickedId,
-                    correctElement: currentRule.clickable_id,
-                    timestamp: Date.now()
-                });
-                
-
                 
                 // Önceki durumları temizle
                 document.querySelectorAll('#test3-section .clickable').forEach(el => {
@@ -3026,9 +1885,6 @@
                     event.target.classList.remove('correct');
                     currentRound++;
                     
-                    // Global değişkeni senkronize et (timeout için)
-                    testResults.test3.currentRound = currentRound;
-                    
                     if (currentRound <= test3Rules.length) {
                         startRound(currentRound);
                     } else {
@@ -3042,10 +1898,6 @@
             
             function startRound(roundNumber) {
                 gameActive = true;
-                roundStartTime = Date.now(); // Round başlangıç zamanını kaydet
-                
-                // Soru timer'ını başlat
-                startQuestionTimer(3);
                 
                 // Tüm yeşil daireleri gizle
                 document.querySelectorAll('#test3-section .highlight-circle').forEach(circle => {
@@ -3060,43 +1912,22 @@
                 }
             }
             
-            // Global fonksiyon - timeout durumunda çağrılacak
-            window.test3StartNextRound = function() {
-                // Test 3 round'larını güncellemeli ama testResults'taki currentRound zaten artırıldı
-                currentRound = testResults.test3.currentRound;
-                
-                if (currentRound <= test3Rules.length) {
-                    startRound(currentRound);
-                } else {
-                                            // Test 3 tamamlandı, zaten nextSection çağrılacak
-                }
-            };
-            
             // Test 3 başlat
             initGame();
         }
         
         // Test 4 section logic
         function initTest4Section() {
-            // Test timer'ını başlat ve loglama yap
-            startTestTimer('test4');
-            // Eşleştirme kuralları - mantıklı pozisyon eşleştirmesi
+            // Eşleştirme kuralları - sıralı olarak pr-1'den başlayıp pr-4'e kadar
             const test4Rules = [
-                { clickable_id: "test4-tk-1", highlight_id: "test4-pr-2", round_number: 1 }, // Sol üst → Sol taraf
-                { clickable_id: "test4-tk-2", highlight_id: "test4-pr-4", round_number: 2 }, // Sağ üst → Sağ taraf
-                { clickable_id: "test4-tk-3", highlight_id: "test4-pr-1", round_number: 3 }, // Sol alt → Alt orta
-                { clickable_id: "test4-tk-4", highlight_id: "test4-pr-3", round_number: 4 }  // Sağ alt → Sağ alt
+                { clickable_id: "test4-tk-1", highlight_id: "test4-pr-1", round_number: 1 },
+                { clickable_id: "test4-tk-2", highlight_id: "test4-pr-2", round_number: 2 },
+                { clickable_id: "test4-tk-3", highlight_id: "test4-pr-3", round_number: 3 },
+                { clickable_id: "test4-tk-4", highlight_id: "test4-pr-4", round_number: 4 }
             ];
             
             let currentRound = 1;
             let gameActive = true;
-            let roundStartTime = null; // Her round için başlangıç zamanı
-            currentTestNumber = 4;
-            
-            // İlk test başladığında toplam timer'ı başlat (güvenlik kontrolü)
-            if (!totalTestStartTime) {
-                startTotalTimer();
-            }
             
             // Oyunu başlat
             function initGame() {
@@ -3210,33 +2041,6 @@
                 const clickedId = event.target.id;
                 const currentRule = test4Rules[currentRound - 1];
                 const isCorrect = clickedId === currentRule.clickable_id;
-                const responseTime = (Date.now() - roundStartTime) / 1000; // Round başlangıç zamanından itibaren
-                
-                // Veri toplama sistemine kaydet
-                onPieceClick(clickedId, currentRule.clickable_id);
-                
-                // Soru timer'ını durdur ve progress bar animasyonunu temizle
-                stopQuestionTimer();
-                
-                // Progress bar animasyonunu durdur
-                const questionProgressBar = document.getElementById(`test4-question-progress-bar`);
-                if (questionProgressBar) {
-                    questionProgressBar.classList.remove('animating');
-                }
-                
-                // Test sonucunu kaydet
-                testResults.test4.questions.push({
-                    round: currentRound,
-                    answered: true,
-                    isCorrect: isCorrect,
-                    responseTime: Math.min(responseTime, 15), // Max 15 saniye
-                    timeoutOccurred: false,
-                    selectedElement: clickedId,
-                    correctElement: currentRule.clickable_id,
-                    timestamp: Date.now()
-                });
-                
-
                 
                 // Önceki durumları temizle
                 document.querySelectorAll('#test4-section .clickable').forEach(el => {
@@ -3252,9 +2056,6 @@
                     event.target.classList.remove('correct');
                     currentRound++;
                     
-                    // Global değişkeni senkronize et (timeout için)
-                    testResults.test4.currentRound = currentRound;
-                    
                     if (currentRound <= test4Rules.length) {
                         startRound(currentRound);
                     } else {
@@ -3268,10 +2069,6 @@
             
             function startRound(roundNumber) {
                 gameActive = true;
-                roundStartTime = Date.now(); // Round başlangıç zamanını kaydet
-                
-                // Soru timer'ını başlat
-                startQuestionTimer(4);
                 
                 // Tüm yeşil daireleri gizle
                 document.querySelectorAll('#test4-section .highlight-circle').forEach(circle => {
@@ -3286,26 +2083,12 @@
                 }
             }
             
-            // Global fonksiyon - timeout durumunda çağrılacak
-            window.test4StartNextRound = function() {
-                // Test 4 round'larını güncellemeli ama testResults'taki currentRound zaten artırıldı
-                currentRound = testResults.test4.currentRound;
-                
-                if (currentRound <= test4Rules.length) {
-                    startRound(currentRound);
-                } else {
-                                            // Test 4 tamamlandı, zaten nextSection çağrılacak
-                }
-            };
-            
             // Test 4 başlat
             initGame();
         }
         
         // Test 5 section logic
         function initTest5Section() {
-            // Test timer'ını başlat ve loglama yap
-            startTestTimer('test5');
             // TK→PR eşleştirme kuralları
             const mappingRules = [
                 { tk: "test5-tk-1", pr: "pr-1", round: 1 },
@@ -3316,14 +2099,7 @@
             
             let currentRound = 1;
             let gameActive = true;
-            let roundStartTime = null; // Her round için başlangıç zamanı
             const totalRounds = mappingRules.length;
-            currentTestNumber = 5;
-            
-            // İlk test başladığında toplam timer'ı başlat (güvenlik kontrolü)
-            if (!totalTestStartTime) {
-                startTotalTimer();
-            }
             
             // Oyunu başlat
             function startGame() {
@@ -3344,34 +2120,6 @@
                 
                 const clickedTK = event.target.id;
                 const currentRule = mappingRules[currentRound - 1];
-                const isCorrect = clickedTK === currentRule.tk;
-                const responseTime = (Date.now() - roundStartTime) / 1000; // Round başlangıç zamanından itibaren
-                
-                // Veri toplama sistemine kaydet
-                onPieceClick(clickedTK, currentRule.tk);
-                
-                // Soru timer'ını durdur ve progress bar animasyonunu temizle
-                stopQuestionTimer();
-                
-                // Progress bar animasyonunu durdur
-                const questionProgressBar = document.getElementById(`test5-question-progress-bar`);
-                if (questionProgressBar) {
-                    questionProgressBar.classList.remove('animating');
-                }
-                
-                // Test sonucunu kaydet
-                testResults.test5.questions.push({
-                    round: currentRound,
-                    answered: true,
-                    isCorrect: isCorrect,
-                    responseTime: Math.min(responseTime, 15), // Max 15 saniye
-                    timeoutOccurred: false,
-                    selectedElement: clickedTK,
-                    correctElement: currentRule.tk,
-                    timestamp: Date.now()
-                });
-                
-
                 
                 // Önceki stilleri temizle
                 document.querySelectorAll('#test5-section .clickable').forEach(piece => {
@@ -3387,9 +2135,6 @@
                     event.target.classList.remove('correct');
                     currentRound++;
                     
-                    // Global değişkeni senkronize et (timeout için)
-                    testResults.test5.currentRound = currentRound;
-                    
                     if (currentRound <= totalRounds) {
                         showCurrentRound();
                     } else {
@@ -3404,10 +2149,6 @@
             // Mevcut round'u göster
             function showCurrentRound() {
                 gameActive = true;
-                roundStartTime = Date.now(); // Round başlangıç zamanını kaydet
-                
-                // Soru timer'ını başlat
-                startQuestionTimer(5);
                 
                 // Tüm vurguları gizle
                 hideAllHighlights();
@@ -3429,48 +2170,24 @@
                 });
             }
             
-            // Global fonksiyon - timeout durumunda çağrılacak
-            window.test5StartNextRound = function() {
-                // Test 5 round'larını güncellemeli ama testResults'taki currentRound zaten artırıldı
-                currentRound = testResults.test5.currentRound;
-                
-                if (currentRound <= mappingRules.length) {
-                    showCurrentRound();
-                } else {
-                                            // Test 5 tamamlandı, zaten nextSection çağrılacak
-                }
-            };
-            
             // Oyunu başlat
             startGame();
         }
         
         // Test 6 section logic
         function initTest6Section() {
-            // Test timer'ını başlat ve loglama yap
-            startTestTimer('test6');
-            
-            // Test veri kaydını başlat
-            initializeTestRecording('test6');
-            // Eşleştirme kuralları - sıralı eşleştirme
+            // Python analizi sonucu doğru eşleştirme kuralları
             const test6Rules = [
-                { clickable_id: "test6-tk-1", highlight_id: "pr-1", round_number: 1 },
+                { clickable_id: "test6-tk-1", highlight_id: "pr-5", round_number: 1 },
                 { clickable_id: "test6-tk-2", highlight_id: "pr-2", round_number: 2 },
-                { clickable_id: "test6-tk-3", highlight_id: "pr-3", round_number: 3 },
-                { clickable_id: "test6-tk-4", highlight_id: "pr-4", round_number: 4 },
-                { clickable_id: "test6-tk-5", highlight_id: "pr-5", round_number: 5 },
+                { clickable_id: "test6-tk-3", highlight_id: "pr-4", round_number: 3 },
+                { clickable_id: "test6-tk-4", highlight_id: "pr-1", round_number: 4 },
+                { clickable_id: "test6-tk-5", highlight_id: "pr-3", round_number: 5 },
                 { clickable_id: "test6-tk-6", highlight_id: "pr-6", round_number: 6 }
             ];
             
             let currentRound = 1;
             let gameActive = true;
-            let roundStartTime = null; // Her round için başlangıç zamanı
-            currentTestNumber = 6;
-            
-            // İlk test başladığında toplam timer'ı başlat (güvenlik kontrolü)
-            if (!totalTestStartTime) {
-                startTotalTimer();
-            }
             
             // Oyunu başlat
             function initGame() {
@@ -3515,34 +2232,6 @@
                 
                 const clickedId = event.target.id;
                 const currentRule = test6Rules[currentRound - 1];
-                const isCorrect = clickedId === currentRule.clickable_id;
-                const responseTime = (Date.now() - roundStartTime) / 1000; // Round başlangıç zamanından itibaren
-                
-                // Veri toplama sistemine kaydet
-                onPieceClick(clickedId, currentRule.clickable_id);
-                
-                // Soru timer'ını durdur ve progress bar animasyonunu temizle
-                stopQuestionTimer();
-                
-                // Progress bar animasyonunu durdur
-                const questionProgressBar = document.getElementById(`test6-question-progress-bar`);
-                if (questionProgressBar) {
-                    questionProgressBar.classList.remove('animating');
-                }
-                
-                // Test sonucunu kaydet
-                testResults.test6.questions.push({
-                    round: currentRound,
-                    answered: true,
-                    isCorrect: isCorrect,
-                    responseTime: Math.min(responseTime, 15), // Max 15 saniye
-                    timeoutOccurred: false,
-                    selectedElement: clickedId,
-                    correctElement: currentRule.clickable_id,
-                    timestamp: Date.now()
-                });
-                
-
                 
                 // Önceki durumları temizle
                 document.querySelectorAll('#test6-section .clickable').forEach(el => {
@@ -3558,9 +2247,6 @@
                     event.target.classList.remove('correct');
                     currentRound++;
                     
-                    // Global değişkeni senkronize et (timeout için)
-                    testResults.test6.currentRound = currentRound;
-                    
                     if (currentRound <= test6Rules.length) {
                         startRound(currentRound);
                     } else {
@@ -3575,10 +2261,6 @@
             
             function startRound(roundNumber) {
                 gameActive = true;
-                roundStartTime = Date.now(); // Round başlangıç zamanını kaydet
-                
-                // Soru timer'ını başlat
-                startQuestionTimer(6);
                 
                 // Tüm yeşil daireleri gizle
                 document.querySelectorAll('#test6-section .highlight-circle').forEach(circle => {
@@ -3593,29 +2275,12 @@
                 }
             }
             
-            // Global fonksiyon - timeout durumunda çağrılacak
-            window.test6StartNextRound = function() {
-                // Test 6 round'larını güncellemeli ama testResults'taki currentRound zaten artırıldı
-                currentRound = testResults.test6.currentRound;
-                
-                if (currentRound <= test6Rules.length) {
-                    startRound(currentRound);
-                } else {
-                                            // Test 6 tamamlandı, zaten nextSection çağrılacak
-                }
-            };
-            
             // Test 6 başlat
             initGame();
         }
         
         // Test 7 section logic
         function initTest7Section() {
-            // Test timer'ını başlat ve loglama yap
-            startTestTimer('test7');
-            
-            // Test veri kaydını başlat
-            initializeTestRecording('test7');
             // Test 7 eşleştirme kuralları - orijinal sıralama
             const test7Rules = [
                 { clickable_id: "test7-tk-1", highlight_id: "test7-pr-1", round_number: 1 },
@@ -3631,13 +2296,6 @@
             
             let currentRound = 1;
             let gameActive = true;
-            let roundStartTime = null; // Her round için başlangıç zamanı
-            currentTestNumber = 7;
-            
-            // İlk test başladığında toplam timer'ı başlat (güvenlik kontrolü)
-            if (!totalTestStartTime) {
-                startTotalTimer();
-            }
             
             // Oyunu başlat
             function initGame() {
@@ -3663,34 +2321,6 @@
                 
                 const clickedId = event.target.id;
                 const currentRule = test7Rules[currentRound - 1];
-                const isCorrect = clickedId === currentRule.clickable_id;
-                const responseTime = (Date.now() - roundStartTime) / 1000; // Round başlangıç zamanından itibaren
-                
-                // Veri toplama sistemine kaydet
-                onPieceClick(clickedId, currentRule.clickable_id);
-                
-                // Soru timer'ını durdur ve progress bar animasyonunu temizle
-                stopQuestionTimer();
-                
-                // Progress bar animasyonunu durdur
-                const questionProgressBar = document.getElementById(`test7-question-progress-bar`);
-                if (questionProgressBar) {
-                    questionProgressBar.classList.remove('animating');
-                }
-                
-                // Test sonucunu kaydet
-                testResults.test7.questions.push({
-                    round: currentRound,
-                    answered: true,
-                    isCorrect: isCorrect,
-                    responseTime: Math.min(responseTime, 15), // Max 15 saniye
-                    timeoutOccurred: false,
-                    selectedElement: clickedId,
-                    correctElement: currentRule.clickable_id,
-                    timestamp: Date.now()
-                });
-                
-
                 
                 // Önceki stilleri temizle
                 document.querySelectorAll('#test7-section .clickable').forEach(piece => {
@@ -3706,9 +2336,6 @@
                     event.target.classList.remove('correct');
                     currentRound++;
                     
-                    // Global değişkeni senkronize et (timeout için)
-                    testResults.test7.currentRound = currentRound;
-                    
                     if (currentRound <= test7Rules.length) {
                         startRound(currentRound);
                     } else {
@@ -3723,10 +2350,6 @@
             
             function startRound(roundNumber) {
                 gameActive = true;
-                roundStartTime = Date.now(); // Round başlangıç zamanını kaydet
-                
-                // Soru timer'ını başlat
-                startQuestionTimer(7);
                 
                 // Tüm yeşil daireleri gizle
                 document.querySelectorAll('#test7-section .highlight-circle').forEach(circle => {
@@ -3741,29 +2364,12 @@
                 }
             }
             
-            // Global fonksiyon - timeout durumunda çağrılacak
-            window.test7StartNextRound = function() {
-                // Test 7 round'larını güncellemeli ama testResults'taki currentRound zaten artırıldı
-                currentRound = testResults.test7.currentRound;
-                
-                if (currentRound <= test7Rules.length) {
-                    startRound(currentRound);
-                } else {
-                                            // Test 7 tamamlandı, zaten nextSection çağrılacak
-                }
-            };
-            
             // Test 7 başlat
             initGame();
         }
         
         // Test 8 section logic
         function initTest8Section() {
-            // Test timer'ını başlat ve loglama yap
-            startTestTimer('test8');
-            
-            // Test veri kaydını başlat
-            initializeTestRecording('test8');
             // Test 8 eşleştirme kuralları - orijinal sıralama
             const test8Rules = [
                 { clickable_id: "test8-tk-1", highlight_id: "test8-pr-1", round_number: 1 },
@@ -3779,13 +2385,6 @@
             
             let currentRound = 1;
             let gameActive = true;
-            let roundStartTime = null; // Her round için başlangıç zamanı  
-            currentTestNumber = 8;
-            
-            // İlk test başladığında toplam timer'ı başlat (güvenlik kontrolü)
-            if (!totalTestStartTime) {
-                startTotalTimer();
-            }
             
             // Oyunu başlat
             function initGame() {
@@ -3804,34 +2403,6 @@
                 
                 const clickedId = event.target.id;
                 const currentRule = test8Rules[currentRound - 1];
-                const isCorrect = clickedId === currentRule.clickable_id;
-                const responseTime = (Date.now() - roundStartTime) / 1000; // Round başlangıç zamanından itibaren
-                
-                // Veri toplama sistemine kaydet
-                onPieceClick(clickedId, currentRule.clickable_id);
-                
-                // Soru timer'ını durdur ve progress bar animasyonunu temizle
-                stopQuestionTimer();
-                
-                // Progress bar animasyonunu durdur
-                const questionProgressBar = document.getElementById(`test8-question-progress-bar`);
-                if (questionProgressBar) {
-                    questionProgressBar.classList.remove('animating');
-                }
-                
-                // Test sonucunu kaydet
-                testResults.test8.questions.push({
-                    round: currentRound,
-                    answered: true,
-                    isCorrect: isCorrect,
-                    responseTime: Math.min(responseTime, 15), // Max 15 saniye
-                    timeoutOccurred: false,
-                    selectedElement: clickedId,
-                    correctElement: currentRule.clickable_id,
-                    timestamp: Date.now()
-                });
-                
-
                 
                 // Önceki stilleri temizle
                 document.querySelectorAll('#test8-section .clickable').forEach(piece => {
@@ -3847,9 +2418,6 @@
                     event.target.classList.remove('correct');
                     currentRound++;
                     
-                    // Global değişkeni senkronize et (timeout için)
-                    testResults.test8.currentRound = currentRound;
-                    
                     if (currentRound <= test8Rules.length) {
                         startRound(currentRound);
                     } else {
@@ -3864,10 +2432,6 @@
             
             function startRound(roundNumber) {
                 gameActive = true;
-                roundStartTime = Date.now(); // Round başlangıç zamanını kaydet
-                
-                // Soru timer'ını başlat
-                startQuestionTimer(8);
                 
                 // Tüm yeşil daireleri gizle
                 document.querySelectorAll('#test8-section .highlight-circle').forEach(circle => {
@@ -3882,29 +2446,12 @@
                 }
             }
             
-            // Global fonksiyon - timeout durumunda çağrılacak
-            window.test8StartNextRound = function() {
-                // Test 8 round'larını güncellemeli ama testResults'taki currentRound zaten artırıldı
-                currentRound = testResults.test8.currentRound;
-                
-                if (currentRound <= test8Rules.length) {
-                    startRound(currentRound);
-                } else {
-                                            // Test 8 tamamlandı, zaten nextSection çağrılacak
-                }
-            };
-            
             // Test 8 başlat
             initGame();
         }
         
         // Test 9 section logic
         function initTest9Section() {
-            // Test timer'ını başlat ve loglama yap
-            startTestTimer('test9');
-            
-            // Test veri kaydını başlat
-            initializeTestRecording('test9');
             // Test 9 eşleştirme kuralları - orijinal sıralama (16 parça)
             const test9Rules = [
                 { clickable_id: "test9-tk-1", highlight_id: "test9-pr-1", round_number: 1 },
@@ -3927,13 +2474,6 @@
             
             let currentRound = 1;
             let gameActive = true;
-            let roundStartTime = null; // Her round için başlangıç zamanı
-            currentTestNumber = 9;
-            
-            // İlk test başladığında toplam timer'ı başlat (güvenlik kontrolü)
-            if (!totalTestStartTime) {
-                startTotalTimer();
-            }
             
             // Oyunu başlat
             function initGame() {
@@ -3952,34 +2492,6 @@
                 
                 const clickedId = event.target.id;
                 const currentRule = test9Rules[currentRound - 1];
-                const isCorrect = clickedId === currentRule.clickable_id;
-                const responseTime = (Date.now() - roundStartTime) / 1000; // Round başlangıç zamanından itibaren
-                
-                // Veri toplama sistemine kaydet
-                onPieceClick(clickedId, currentRule.clickable_id);
-                
-                // Soru timer'ını durdur ve progress bar animasyonunu temizle
-                stopQuestionTimer();
-                
-                // Progress bar animasyonunu durdur
-                const questionProgressBar = document.getElementById(`test9-question-progress-bar`);
-                if (questionProgressBar) {
-                    questionProgressBar.classList.remove('animating');
-                }
-                
-                // Test sonucunu kaydet
-                testResults.test9.questions.push({
-                    round: currentRound,
-                    answered: true,
-                    isCorrect: isCorrect,
-                    responseTime: Math.min(responseTime, 15), // Max 15 saniye
-                    timeoutOccurred: false,
-                    selectedElement: clickedId,
-                    correctElement: currentRule.clickable_id,
-                    timestamp: Date.now()
-                });
-                
-
                 
                 // Önceki stilleri temizle
                 document.querySelectorAll('#test9-section .clickable').forEach(piece => {
@@ -3995,9 +2507,6 @@
                     event.target.classList.remove('correct');
                     currentRound++;
                     
-                    // Global değişkeni senkronize et (timeout için)
-                    testResults.test9.currentRound = currentRound;
-                    
                     if (currentRound <= test9Rules.length) {
                         startRound(currentRound);
                     } else {
@@ -4011,10 +2520,6 @@
             
             function startRound(roundNumber) {
                 gameActive = true;
-                roundStartTime = Date.now(); // Round başlangıç zamanını kaydet
-                
-                // Soru timer'ını başlat
-                startQuestionTimer(9);
                 
                 // Tüm yeşil daireleri gizle
                 document.querySelectorAll('#test9-section .highlight-circle').forEach(circle => {
@@ -4029,309 +2534,10 @@
                 }
             }
             
-            // Global fonksiyon - timeout durumunda çağrılacak
-            window.test9StartNextRound = function() {
-                // Test 9 round'larını güncellemeli ama testResults'taki currentRound zaten artırıldı
-                currentRound = testResults.test9.currentRound;
-                
-                if (currentRound <= test9Rules.length) {
-                    startRound(currentRound);
-                } else {
-                    // Test 9 tamamlandı, zaten showTestCompletion çağrılacak
-
-                }
-            };
-            
             // Test 9 başlat
             initGame();
         }
         
-        // PROGRESS BAR YÖNETİMİ
-        function startQuestionTimer(testNum) {
-            // Önceki timer'ı temizle
-            if (questionTimer) {
-                clearTimeout(questionTimer);
-            }
-            
-            questionTimeLeft = 15; // 15 saniye sıfırla
-            const questionProgressBar = document.getElementById(`test${testNum}-question-progress-bar`);
-            
-            if (!questionProgressBar) {
-                console.warn(`Test ${testNum} progress bar not found`);
-                return;
-            }
-            
-            // Progress bar'ı sıfırla ve animasyonu başlat (akıl-mantık testindeki gibi)
-            questionProgressBar.classList.remove('animating');
-            questionProgressBar.style.width = '100%';
-            
-            // Bir sonraki frame'de animasyonu başlat (reflow için)
-            requestAnimationFrame(() => {
-                questionProgressBar.classList.add('animating');
-            });
-            
-            // 15 saniye sonra otomatik geçiş
-            questionTimer = setTimeout(() => {
-                questionTimer = null;
-                handleQuestionTimeout(testNum);
-            }, 15000); // 15 saniye = 15000 ms
-        }
-        
-        function startTotalTimer() {
-            // Toplam timer zaten başlamışsa tekrar başlatma
-            if (totalTestStartTime) {
-                console.log('🔵 Total timer zaten başlamış, return ediliyor');
-                return;
-            }
-            
-            console.log('🟢 Total timer başlatılıyor - sadece bir kez çalışmalı!');
-            totalTestStartTime = Date.now();
-            totalTimeLeft = 300; // 5 dakika
-            
-            // Wrapper'ı görünür yap
-            const wrapper = document.getElementById('globalProgressBar');
-            if (wrapper) {
-                wrapper.style.display = 'block';
-            }
-            
-            // Progress bar'ı başlat (akıl-mantık testindeki gibi)
-            const progressBar = document.getElementById('timeProgressFill');
-            if (progressBar) {
-                // Progress bar'ı sıfırla
-                progressBar.style.width = '0%';
-                progressBar.classList.remove('animating');
-                
-                // Bir sonraki frame'de animasyonu başlat (reflow için)
-                requestAnimationFrame(() => {
-                    progressBar.classList.add('animating');
-                });
-            }
-            
-            // 5 dakika sonra testi bitir
-            if (!totalTimer) {
-                totalTimer = setTimeout(() => {
-                    totalTimer = null;
-                    handleTotalTimeout();
-                }, 300000); // 5 dakika = 300000 ms
-            }
-        }
-        
-        function stopQuestionTimer() {
-            if (questionTimer) {
-                clearTimeout(questionTimer);
-                questionTimer = null;
-            }
-        }
-        
-        function stopTotalTimer() {
-            if (totalTimer) {
-                clearTimeout(totalTimer);
-                totalTimer = null;
-            }
-            // totalTestStartTime'ı null YAPMA - böylece timer tekrar başlamaz
-        }
-        
-        function stopAllTimers() {
-            stopQuestionTimer();
-            // Alttaki progress bar hiç durmasın - sadece question timer'ı durdur
-            // stopTotalTimer(); // Bu satırı yorum yapıyoruz
-        }
-        
-        function handleQuestionTimeout(testNum) {
-            // Test sonucunu "işaretlememiş" olarak kaydet
-            const testKey = `test${testNum}`;
-            const currentRound = testResults[testKey].currentRound;
-            
-            // Timeout olan gerçek round - currentRound timeout anında doğru değeri gösterir
-            const timeoutRound = currentRound;
-            
-            // 15 saniye doldu - "İşaretlememiş" olarak kaydet ve sonraki soruya geç
-            console.log(`⏰ TEST ${testNum} - PARÇA ${timeoutRound} - Zaman doldu, işaretlemediğiniz parça`);
-            
-            // Progress bar animasyonunu durdur
-            const questionProgressBar = document.getElementById(`test${testNum}-question-progress-bar`);
-            if (questionProgressBar) {
-                questionProgressBar.classList.remove('animating');
-            }
-            
-            // ROUND SİSTEM DÜZELTMESİ: Mevcut round'u kullan, artırma!
-            
-            
-            // Doğru cevabı bul (timeout durumunda)
-            let correctElement = null;
-            const testRules = {
-                1: ["test1-tk-1", "test1-tk-2", "test1-tk-3", "test1-tk-4"],
-                2: ["test2-tk-1", "test2-tk-2", "test2-tk-3", "test2-tk-4"],
-                3: ["test3-tk-1", "test3-tk-2", "test3-tk-3", "test3-tk-4"],
-                4: ["test4-tk-1", "test4-tk-2", "test4-tk-3", "test4-tk-4"],
-                5: ["test5-tk-1", "test5-tk-2", "test5-tk-3", "test5-tk-4"],
-                6: ["test6-tk-1", "test6-tk-2", "test6-tk-3", "test6-tk-4", "test6-tk-5", "test6-tk-6"],
-                7: ["test7-tk-1", "test7-tk-2", "test7-tk-3", "test7-tk-4", "test7-tk-5", "test7-tk-6", "test7-tk-7", "test7-tk-8", "test7-tk-9"],
-                8: ["test8-tk-1", "test8-tk-2", "test8-tk-3", "test8-tk-4", "test8-tk-5", "test8-tk-6", "test8-tk-7", "test8-tk-8", "test8-tk-9"],
-                9: ["test9-tk-1", "test9-tk-2", "test9-tk-3", "test9-tk-4", "test9-tk-5", "test9-tk-6", "test9-tk-7", "test9-tk-8", "test9-tk-9", "test9-tk-10", "test9-tk-11", "test9-tk-12", "test9-tk-13", "test9-tk-14", "test9-tk-15", "test9-tk-16"]
-            };
-            
-            if (testRules[testNum] && testRules[testNum][timeoutRound - 1]) {
-                correctElement = testRules[testNum][timeoutRound - 1];
-            }
-            
-            // Excel'e uygun veri yapısı - her parça için ayrı kayıt
-            const questionData = {
-                round: timeoutRound,
-                answered: false, // İşaretlememiş
-                isCorrect: false,
-                responseTime: 15, // Tam süre doldu (maksimum süre)
-                timeoutOccurred: true,
-                selectedElement: null,
-                correctElement: correctElement,
-                timestamp: Date.now(),
-                // Excel için ek veriler
-                testNumber: testNum,
-                testCategory: testResults[testKey].category,
-                pieceNumber: timeoutRound, // Hangi parça (Excel için)
-                maxResponseTime: 15 // Her parça için maksimum süre
-            };
-            
-            testResults[testKey].questions.push(questionData);
-            
-            // Yeni veri sistemi ile timeout durumunu kaydet
-            if (correctElement) {
-                console.log(`🔍 DEBUG TIMEOUT: testKey=${testKey}, correctElement=${correctElement}, timeoutRound=${timeoutRound}`);
-                recordPieceClick(testKey, correctElement, false, 15000, true); // isTimeout = true
-                logQuestionResultWithRound(testKey, correctElement, false, 15000, timeoutRound, true); // isTimeout = true
-            } else {
-                console.log(`❌ DEBUG TIMEOUT: correctElement bulunamadı! testKey=${testKey}, testNum=${testNum}, timeoutRound=${timeoutRound}`);
-                console.log(`❌ testRules[${testNum}]:`, testRules[testNum]);
-                console.log(`❌ testRules[${testNum}][${timeoutRound - 1}]:`, testRules[testNum] ? testRules[testNum][timeoutRound - 1] : 'undefined');
-            }
-            
-            // ROUND YÖNETİMİ: Round artırma işlemi proceedToNextRound'da yapılacak
-            // testResults[testKey].currentRound++; // Bu satırı kaldırıyoruz
-            
-            
-            
-            // Test tamamlandı mı kontrol et
-            if (testResults[testKey].currentRound > testResults[testKey].totalRounds) {
-
-                // Test tamamlandı, veri kaydını bitir
-                onTestComplete(testKey);
-                
-                // Tamamlanmama durumunu kaydet (Excel'deki EKSTRA kısmı)
-                if (testResults.summary.incompleteTest === null) {
-                    testResults.summary.incompleteTest = testKey;
-                    testResults.summary.incompletePuzzle = testNum;
-                    testResults.summary.incompletePieceNumber = currentRound;
-                    console.log(`⚠️ Tamamlanmama durumu kaydedildi: ${testKey}, Parça: ${currentRound}`);
-                }
-                
-                // Sonraki test'e geç
-                if (testNum < 9) {
-                    setTimeout(() => {
-                        nextSection();
-                    }, 1000);
-                } else {
-                    setTimeout(() => {
-                        showTestCompletion();
-                    }, 1000);
-                }
-            } else {
-                // Sonraki round'a geç - proceedToNextRound kullan
-                setTimeout(() => {
-                    proceedToNextRound(testNum);
-                }, 1000);
-            }
-        }
-        
-        function proceedToNextRound(testNum) {
-            const testKey = `test${testNum}`;
-            const currentTest = testResults[testKey];
-            
-            // Round sayısını artır
-            currentTest.currentRound++;
-            
-            // Test tamamlandı mı kontrol et
-            if (currentTest.currentRound > currentTest.totalRounds) {
-                // Test tamamlandı, veri kaydını bitir
-                onTestComplete(testKey);
-                
-                // Sonraki test'e geç
-                if (testNum < 9) {
-                    nextSection();
-                } else {
-                    showTestCompletion();
-                }
-                return;
-            }
-            
-            // Aynı testte sonraki round'a geç
-
-            
-            // Test'e özel sonraki round başlatma mantığı
-            if (testNum === 1) {
-                // Test 1 için sonraki round'u başlat
-                if (window.test1StartNextRound) {
-                    window.test1StartNextRound();
-                }
-            } else if (testNum === 2) {
-                // Test 2 için sonraki round'u başlat  
-                if (window.test2StartNextRound) {
-                    window.test2StartNextRound();
-                }
-                         } else if (testNum === 3) {
-                 // Test 3 için sonraki round'u başlat
-                 if (window.test3StartNextRound) {
-                     window.test3StartNextRound();
-                 }
-             } else if (testNum === 4) {
-                 // Test 4 için sonraki round'u başlat
-                 if (window.test4StartNextRound) {
-                     window.test4StartNextRound();
-                 }
-             } else if (testNum === 5) {
-                 // Test 5 için sonraki round'u başlat
-                 if (window.test5StartNextRound) {
-                     window.test5StartNextRound();
-                 }
-             } else if (testNum === 6) {
-                 // Test 6 için sonraki round'u başlat
-                 if (window.test6StartNextRound) {
-                     window.test6StartNextRound();
-                 }
-             } else if (testNum === 7) {
-                 // Test 7 için sonraki round'u başlat
-                 if (window.test7StartNextRound) {
-                     window.test7StartNextRound();
-                 }
-             } else if (testNum === 8) {
-                 // Test 8 için sonraki round'u başlat
-                 if (window.test8StartNextRound) {
-                     window.test8StartNextRound();
-                 }
-             } else if (testNum === 9) {
-                 // Test 9 için sonraki round'u başlat
-                 if (window.test9StartNextRound) {
-                     window.test9StartNextRound();
-                 }
-             }
-        }
-        
-        function handleTotalTimeout() {
-            // 5 dakika doldu - testi bitir
-            console.log('🔴 Toplam test süresi doldu, test bitiriliyok');
-            stopQuestionTimer();
-            stopTotalTimer();
-            
-            // Test completion screen'a git
-            showTestCompletion();
-        }
-        
-        function resetTimersForNewTest() {
-            stopQuestionTimer();
-            // totalTestStartTime = null; // BUNU YAPMA - alttaki bar sıfırlanır
-            totalTimeLeft = 300;
-            questionTimeLeft = 15;
-        }
-
         // SES YÖNETİMİ
         let currentAudio = null;
 
@@ -4341,7 +2547,7 @@
                 currentAudio.currentTime = 0;
             }
             
-            const audio = new Audio(`mp3/${filename}`);
+            const audio = new Audio(`./mp3/${filename}`);
             currentAudio = audio;
             
             audio.addEventListener('ended', () => {
@@ -4362,7 +2568,7 @@
                 currentAudio.currentTime = 0;
             }
             
-            const audio = new Audio(`mp3/${filename}`);
+            const audio = new Audio(`./mp3/${filename}`);
             currentAudio = audio;
             
             // Belirtilen süre sonra sesi durdur ve callback çağır
@@ -4429,23 +2635,17 @@
 
         // Title screen'dan instruction'a geç
         function goToInstructions() {
-            // Sayfa değişiminde ses durdur
-            stopCurrentAudio();
-            
             document.getElementById('title-screen').classList.remove('active');
             document.getElementById('instructions-screen').classList.add('active');
             
             // Ses çal
-            playAudio('giris.mp3', () => {
+            playAudio('giriş.mp3', () => {
                 showButton('instructionsNextBtn');
             });
         }
 
         // Instructions'dan demo'ya geç veya demo'yu yeniden başlat
         function startDemo() {
-            // Sayfa değişiminde ses durdur
-            stopCurrentAudio();
-            
             // Tüm section'ları temizle
             document.querySelectorAll('.puzzle-section').forEach(section => {
                 section.classList.remove('active');
@@ -4454,12 +2654,16 @@
             // Demo section'ı aktif yap
             document.getElementById('demo-section').classList.add('active');
             
-            // Pozisyonları hemen hesapla (DOM render edilmeden önce)
-            setTimeout(() => {
-                updateFakeCursorPosition();
-            }, 100);
-            
             // Tüm animasyonları sıfırla
+            document.querySelectorAll('.demo-section .pr-piece').forEach(piece => {
+                piece.style.animation = 'none';
+                piece.style.animationDelay = '0s';
+                piece.style.opacity = '0';
+                piece.offsetHeight; // Force reflow
+                piece.style.animation = '';
+                piece.style.animationDelay = '';
+                piece.style.opacity = '';
+            });
             
             document.querySelectorAll('.demo-section .highlight-circle').forEach(circle => {
                 circle.style.animation = 'none';
@@ -4490,13 +2694,10 @@
         
         // Demo ses dosyalarını sırayla çal
         function startDemoAudio() {
-            // İlk olarak pozisyonları hesapla (animasyon başlamadan önce)
-            updateFakeCursorPosition();
-            
-            // Önce ornek1.mp3 çal
-            playAudio('ornek1.mp3', () => {
-                // Örnek1 bitince ornek2.mp3 çal
-                playAudio('ornek2.mp3', () => {
+            // Önce örnek1.mp3 çal
+            playAudio('örnek1.mp3', () => {
+                // Örnek1 bitince örnek2.mp3 çal
+                playAudio('örnek2.mp3', () => {
                     // Örnek2 bitince demo animasyonunu başlat
                     setTimeout(() => {
                         demoAnimation();
@@ -4507,59 +2708,6 @@
         
         // Demo animasyonu
         function demoAnimation() {
-            // Önceki event listener'ı temizle
-            window.removeEventListener('resize', updateFakeCursorPosition);
-            
-            // Throttled resize handler
-            let resizeTimeout;
-            const throttledUpdatePosition = () => {
-                clearTimeout(resizeTimeout);
-                resizeTimeout = setTimeout(updateFakeCursorPosition, 100);
-            };
-            
-            // Window resize event'ine throttled handler bağla
-            window.addEventListener('resize', throttledUpdatePosition);
-            
-            // Debug: SVG ve element pozisyonlarını console'a yazdır
-            setTimeout(() => {
-                const svg = document.querySelector('.demo-section svg');
-                const targetElement = document.getElementById('demo-tk-2');
-                const container = document.querySelector('.demo-section');
-                
-                if (svg && targetElement && container) {
-                    const svgRect = svg.getBoundingClientRect();
-                    const containerRect = container.getBoundingClientRect();
-                    
-                    console.log('=== DEBUG INFO ===');
-                    console.log('Container rect:', containerRect);
-                    console.log('SVG rect:', svgRect);
-                    console.log('SVG viewBox:', svg.viewBox.baseVal);
-                    console.log('Target element attrs:', {
-                        x: targetElement.getAttribute('x'),
-                        y: targetElement.getAttribute('y'),
-                        width: targetElement.getAttribute('width'),
-                        height: targetElement.getAttribute('height')
-                    });
-                    
-                    // Gerçek hedef pozisyonu hesapla
-                    const targetX = parseFloat(targetElement.getAttribute('x'));
-                    const targetY = parseFloat(targetElement.getAttribute('y'));
-                    const targetWidth = parseFloat(targetElement.getAttribute('width'));
-                    const targetHeight = parseFloat(targetElement.getAttribute('height'));
-                    
-                    const centerX = targetX + (targetWidth / 2);
-                    const centerY = targetY + (targetHeight / 2);
-                    
-                    const scaleX = svgRect.width / svg.viewBox.baseVal.width;
-                    const scaleY = svgRect.height / svg.viewBox.baseVal.height;
-                    
-                    const realX = (svgRect.left - containerRect.left) + (centerX * scaleX);
-                    const realY = (svgRect.top - containerRect.top) + (centerY * scaleY);
-                    
-                    console.log('Calculated target position:', realX, realY);
-                }
-            }, 1000);
-            
             // Ana animasyonları:
             // - Tıklama efekti başlar: 17s delay
             // - Tıklama efekti animasyonu: 1s sürer
@@ -4567,13 +2715,6 @@
             
             // Yeşil daire pulse animasyonu başladıktan hemen sonra geçiş yap
             setTimeout(() => {
-                // Sayfa değişiminde ses durdur
-                stopCurrentAudio();
-                
-                // Event listener'ları temizle
-                window.removeEventListener('resize', updateFakeCursorPosition);
-                window.removeEventListener('resize', throttledUpdatePosition);
-                
                 document.getElementById('demo-section').classList.remove('active');
                 document.getElementById('transition-screen').classList.add('active');
                 
@@ -4583,94 +2724,8 @@
             }, 4000); // 4 saniye sonra transition screen'a geç
         }
 
-        // Fake cursor pozisyonunu dinamik olarak hesapla
-        function updateFakeCursorPosition() {
-            try {
-                const targetElement = document.getElementById('demo-tk-2');
-                const cursor = document.querySelector('.demo-section .fake-cursor');
-                const container = document.querySelector('.demo-section');
-                
-                // Null check
-                if (!targetElement || !cursor || !container) {
-                    console.warn('Fake cursor: Gerekli elementler bulunamadı');
-                    return;
-                }
-                
-                // SVG container'ı bul
-                const svgContainer = targetElement.closest('svg');
-                if (!svgContainer || !svgContainer.viewBox || !svgContainer.viewBox.baseVal) {
-                    console.warn('Fake cursor: SVG container veya viewBox bulunamadı');
-                    return;
-                }
-                
-                // SVG'nin gerçek boyutlarını al
-                const svgRect = svgContainer.getBoundingClientRect();
-                const containerRect = container.getBoundingClientRect();
-                
-                // Sıfıra bölme kontrolü
-                if (svgContainer.viewBox.baseVal.width === 0 || svgContainer.viewBox.baseVal.height === 0) {
-                    console.warn('Fake cursor: SVG viewBox boyutları geçersiz');
-                    return;
-                }
-                
-                // Target element'in SVG içindeki pozisyonu
-                const targetX = parseFloat(targetElement.getAttribute('x'));
-                const targetY = parseFloat(targetElement.getAttribute('y'));
-                const targetWidth = parseFloat(targetElement.getAttribute('width'));
-                const targetHeight = parseFloat(targetElement.getAttribute('height'));
-                
-                // NaN kontrolü
-                if (isNaN(targetX) || isNaN(targetY) || isNaN(targetWidth) || isNaN(targetHeight)) {
-                    console.warn('Fake cursor: Target element boyutları geçersiz');
-                    return;
-                }
-                
-                // Merkez koordinatları hesapla
-                const centerX = targetX + (targetWidth / 2);
-                const centerY = targetY + (targetHeight / 2);
-                
-                // SVG'nin scale oranını hesapla
-                const scaleX = svgRect.width / svgContainer.viewBox.baseVal.width;
-                const scaleY = svgRect.height / svgContainer.viewBox.baseVal.height;
-                
-                // Gerçek pixel pozisyonunu hesapla
-                const realX = (svgRect.left - containerRect.left) + (centerX * scaleX);
-                const realY = (svgRect.top - containerRect.top) + (centerY * scaleY);
-                
-                // Başlangıç pozisyonunu hesapla (SVG'nin merkezinden başlasın)
-                const startX = (svgRect.left - containerRect.left) + (svgRect.width * 0.5);
-                const startY = (svgRect.top - containerRect.top) + (svgRect.height * 0.5);
-                
-                // Geçerli değer kontrolü
-                if (isNaN(realX) || isNaN(realY) || isNaN(startX) || isNaN(startY)) {
-                    console.warn('Fake cursor: Hesaplanan pozisyonlar geçersiz');
-                    return;
-                }
-                
-                // CSS custom property'leri güncelle
-                document.documentElement.style.setProperty('--cursor-start-x', startX + 'px');
-                document.documentElement.style.setProperty('--cursor-start-y', startY + 'px');
-                document.documentElement.style.setProperty('--cursor-target-x', realX + 'px');
-                document.documentElement.style.setProperty('--cursor-target-y', realY + 'px');
-                
-                console.log(`Cursor start position: ${startX}px, ${startY}px`);
-                console.log(`Cursor target position: ${realX}px, ${realY}px`);
-                
-            } catch (error) {
-                console.error('Fake cursor pozisyon hesaplama hatası:', error);
-                // Fallback pozisyonlar
-                document.documentElement.style.setProperty('--cursor-start-x', '50%');
-                document.documentElement.style.setProperty('--cursor-start-y', '50%');
-                document.documentElement.style.setProperty('--cursor-target-x', '60%');
-                document.documentElement.style.setProperty('--cursor-target-y', '40%');
-            }
-        }
-
         // Practice tamamlandı mesajını göster
         function showPracticeCompletion() {
-            // Sayfa değişiminde ses durdur
-            stopCurrentAudio();
-            
             // Practice section'ı kapat
             document.getElementById('practice-section').classList.remove('active');
             
@@ -4687,49 +2742,13 @@
             showButton('practiceCompletionBtn');
         }
 
-        // Practice başarısızlık mesajını göster
-        function showPracticeFail() {
-            // Sayfa değişiminde ses durdur
-            stopCurrentAudio();
-            
-            // Practice section'ı kapat
-            document.getElementById('practice-section').classList.remove('active');
-            
-            // Fail screen'ı aç
-            document.getElementById('practice-fail-screen').classList.add('active');
-            
-            // currentSection'ı güncelle
-            currentSection = sections.indexOf('practice-fail-screen');
-        }
-
-        // Practice fail'den tekrar dene
-        function retryPracticeFromFail() {
-            console.log('🔄 Örnek uygulama tekrar edilecek...');
-            
-            // Sayfa değişiminde ses durdur
-            stopCurrentAudio();
-            
-            // Fail screen'ı kapat
-            document.getElementById('practice-fail-screen').classList.remove('active');
-            
-            // Demo section'a geri dön
-            currentSection = 0; // Demo section'a geri dön
-            document.getElementById('demo-section').classList.add('active');
-            
-            // Demo'yu tamamen baştan başlat
-            startDemo();
-        }
-
         // Test preparation'a geç
         function goToTestPreparation() {
-            // Sayfa değişiminde ses durdur
-            stopCurrentAudio();
-            
             document.getElementById('practice-completion-screen').classList.remove('active');
             document.getElementById('test-preparation-screen').classList.add('active');
             
             // Test preparation section'ı başlat
-            currentSection = 5; // practice-completion-screen'den sonra test-preparation-screen (yeni index)
+            currentSection = 4; // practice-completion-screen'den sonra test-preparation-screen
             initCurrentSection();
         }
 
@@ -4743,9 +2762,6 @@
 
         // Test'e geç
         function goToTest() {
-            // Sayfa değişiminde ses durdur
-            stopCurrentAudio();
-            
             // Tüm section'ları kapat
             document.querySelectorAll('.puzzle-section').forEach(section => {
                 section.classList.remove('active');
@@ -4754,47 +2770,21 @@
             // Sadece test1-section'ı aç
             document.getElementById('test1-section').classList.add('active');
             
-            // Test1 veri kaydını başlat
-            initializeTestRecording('test1');
-            startPieceTimer();
-            
-            // Genel progress bar'ı göster (ana test başladığı için)
-            document.getElementById('globalProgressBar').style.display = 'block';
-            
             // Test 1 section'ı başlat
-            currentSection = 6; // test-preparation-screen'den sonra test1-section (yeni index)
+            currentSection = 5; // test-preparation-screen'den sonra test1-section
             initCurrentSection();
         }
 
         // Test completion screen'ı göster
         function showTestCompletion() {
-            // Sayfa değişiminde ses durdur
-            stopCurrentAudio();
-            
-            // Test bitince tüm timer'ları durdur
-            stopQuestionTimer();
-            stopTotalTimer();
-            
-            // Progress bar'ı gizle
-            const progressContainer = document.querySelector('.progress-container');
-            if (progressContainer) {
-                progressContainer.style.display = 'none';
-            }
-            
-            // Genel sonuçları hesapla ve logla
-            updateOverallStatistics();
-            displayTestResults();
-            
-            // TÜM test section'larını kapat (sadece test9 değil)
-            document.querySelectorAll('.puzzle-section').forEach(section => {
-                section.classList.remove('active');
-            });
+            // Test 9 section'ı kapat
+            document.getElementById('test9-section').classList.remove('active');
             
             // Completion screen'ı aç
             document.getElementById('test-completion-screen').classList.add('active');
             
             // Test completion section'ı başlat
-            currentSection = 15; // yeni index
+            currentSection = 14; // test9-section'den sonra test-completion-screen
             initCurrentSection();
         }
 
@@ -4808,89 +2798,12 @@
 
         // Sonraki bölüme geç
         function goToNextSection() {
-
-            
-            // Ana pencereye test tamamlandığını bildir
-            try {
-                // Genel sonuçları güncelle (son kez)
-                updateSummaryStats();
-                
-                // Test sonuçlarını localStorage'a kaydet
-                const fullTestResults = {
-                    // Excel'deki tüm veriler
-                    summary: testResults.summary,
-                    // Her test için detaylı veriler
-                    individualTests: {},
-                    // Metadata
-                    metadata: {
-                        testVersion: '1.0',
-                        completedAt: new Date().toISOString(),
-                        userAgent: navigator.userAgent,
-                        screenResolution: `${window.screen.width}x${window.screen.height}`
-                    }
-                };
-                
-                // Her test için verileri ekle
-                Object.keys(testResults).forEach(testName => {
-                    if (testName !== 'summary') {
-                        const test = testResults[testName];
-                        if (test && test.questions && test.questions.length > 0) {
-                            fullTestResults.individualTests[testName] = {
-                                questions: test.questions,
-                                category: test.category,
-                                totalRounds: test.totalRounds,
-                                testDuration: test.testDuration,
-                                accuracy: calculateAccuracyScore(testName),
-                                averageResponseTime: calculateAverageResponseTime(testName)
-                            };
-                        }
-                    }
-                });
-                
-                // localStorage'a kaydet
-                localStorage.setItem('puzzleTestResults', JSON.stringify(fullTestResults));
-                console.log('📦 Test sonuçları localStorage\'a kaydedildi');
-                
-                // Ana pencereye gönderilecek veri
-                let testResultsForParent = fullTestResults;
-                
-                const messageData = {
-                    type: 'test-complete',
-                    testName: 'puzzle',
-                    results: testResultsForParent,
-                    timestamp: new Date().toISOString()
-                };
-                
-                // Ana pencereye mesaj gönder (window.opener kullan)
-                if (window.opener) {
-                    window.opener.postMessage(messageData, window.location.origin);
-                    console.log('✅ Puzzle testi sonuçları ana pencereye gönderildi:', messageData);
-                } else {
-                    console.error('❌ window.opener mevcut değil - ana pencereye mesaj gönderilemedi');
-                }
-            } catch (error) {
-                console.error('❌ Test completion hatası:', error);
-                // Hata durumunda da ana pencereye hata mesajı gönder
-                if (window.opener) {
-                    window.opener.postMessage({
-                        type: 'test-complete',
-                        testName: 'puzzle',
-                        results: { error: 'Test completion hatası' },
-                        timestamp: new Date().toISOString()
-                    }, window.location.origin);
-                }
-            }
+            // Bu fonksiyon daha sonra genişletilebilir
+            alert('Testi tamamladınız!');
         }
 
         // Transition screen'dan practice'a geç
         function startPractice() {
-            // Sayfa değişiminde ses durdur
-            stopCurrentAudio();
-            
-            // Veri kaydını başlat
-            initializeTestRecording('practice');
-            startPieceTimer();
-            
             document.getElementById('transition-screen').classList.remove('active');
             document.getElementById('practice-section').classList.add('active');
             
@@ -4908,501 +2821,6 @@
         window.addEventListener('beforeunload', function() {
             stopCurrentAudio();
         });
-
-        // NOT: visibilitychange ve blur event'leri kaldırıldı
-        // Çünkü dev tools açıldığında veya başka ekrana geçince ses durmasın
-
-        // ================================
-        // VERİ TOPLAMA SİSTEMİ
-        // ================================
-        
-        // Test verilerini saklamak için global değişkenler
-        let testData = {
-            userId: null,
-            testStartTime: null,
-            testEndTime: null,
-            tests: {},
-            summary: {
-                totalCorrect: 0,
-                totalWrong: 0,
-                totalPieces: 0,
-                totalTime: 0,
-                averageResponseTime: 0
-            }
-        };
-
-        // Her test için veri yapısı
-        function initTestData(testId, totalPieces) {
-            testData.tests[testId] = {
-                testId: testId,
-                testType: getTestType(testId),
-                totalPieces: totalPieces,
-                startTime: null,
-                endTime: null,
-                duration: 0,
-                pieces: {},
-                correct: 0,
-                wrong: 0,
-                accuracy: 0,
-                averageResponseTime: 0,
-                completed: false
-            };
-        }
-
-        // Test tipini belirle
-        function getTestType(testId) {
-            const testTypes = {
-                'practice': { type: 'Örnek Uygulama', pieces: 3, category: 'practice' },
-                'test1': { type: 'Dörtparçalıtekrenklikare', pieces: 4, category: '4piece' },
-                'test2': { type: 'Dörtparçalıtekrenkliyuvarlak', pieces: 4, category: '4piece' },
-                'test3': { type: 'Dörtparçalıtekrenkliüçgen', pieces: 4, category: '4piece' },
-                'test4': { type: 'Dörtparçalıçiftrenklibir', pieces: 4, category: '4piece' },
-                'test5': { type: 'Dörtparçalıçiftrenkliiki', pieces: 4, category: '4piece' },
-                'test6': { type: 'Altıparçalıçiftrenkli', pieces: 6, category: '6piece' },
-                'test7': { type: 'Dokuzparçalıtekrenklibir', pieces: 9, category: '9piece' },
-                'test8': { type: 'Dokuzparçalıçokrenklibir', pieces: 9, category: '9piece' },
-                'test9': { type: 'Onaltıparçalıtekrenkli', pieces: 16, category: '16piece' }
-            };
-            return testTypes[testId] || { type: 'Bilinmeyen', pieces: 0, category: 'unknown' };
-        }
-
-        // Parça tıklaması için veri kaydet
-        function recordPieceClick(testId, pieceId, isCorrect, responseTime, isTimeout = false) {
-            if (!testData.tests[testId]) {
-                const testType = getTestType(testId);
-                initTestData(testId, testType.pieces);
-            }
-
-            const test = testData.tests[testId];
-            
-            // Parça verilerini kaydet
-            test.pieces[pieceId] = {
-                pieceId: pieceId,
-                clickTime: Date.now(),
-                responseTime: responseTime,
-                isCorrect: isCorrect,
-                isTimeout: isTimeout, // Timeout durumu
-                answered: !isTimeout, // Timeout ise cevaplamadı
-                attempts: (test.pieces[pieceId]?.attempts || 0) + 1
-            };
-
-            // Test istatistiklerini güncelle
-            updateTestStatistics(testId);
-        }
-
-        // Test istatistiklerini güncelle
-        function updateTestStatistics(testId) {
-            const test = testData.tests[testId];
-            if (!test) return;
-
-            let correct = 0;
-            let wrong = 0;
-            let totalResponseTime = 0;
-            let validResponses = 0;
-
-            Object.values(test.pieces).forEach(piece => {
-                if (piece.isCorrect) {
-                    correct++;
-                    totalResponseTime += piece.responseTime;
-                    validResponses++;
-                } else {
-                    wrong++;
-                }
-            });
-
-            test.correct = correct;
-            test.wrong = wrong;
-            test.accuracy = test.totalPieces > 0 ? (correct / test.totalPieces) * 100 : 0;
-            test.averageResponseTime = validResponses > 0 ? totalResponseTime / validResponses : 0;
-        }
-
-        // Test başlangıcını kaydet
-        function startTestRecording(testId) {
-            const testType = getTestType(testId);
-            if (!testData.tests[testId]) {
-                initTestData(testId, testType.pieces);
-            }
-            
-            testData.tests[testId].startTime = Date.now();
-            
-            // İlk test ise genel başlangıç zamanını kaydet
-            if (!testData.testStartTime) {
-                testData.testStartTime = Date.now();
-            }
-        }
-
-        // Test bitişini kaydet
-        function finishTestRecording(testId) {
-            const test = testData.tests[testId];
-            if (!test) return;
-            
-            test.endTime = Date.now();
-            test.duration = test.endTime - test.startTime;
-            test.completed = true;
-            
-            updateTestStatistics(testId);
-            updateOverallStatistics();
-        }
-
-        // Genel istatistikleri güncelle
-        function updateOverallStatistics() {
-            let totalCorrect = 0;
-            let totalWrong = 0;
-            let totalPieces = 0;
-            let totalTime = 0;
-            let totalResponseTime = 0;
-            let validResponses = 0;
-
-            // Kategori bazlı hesaplamalar
-            let fourPieceTime = 0, fourPieceCorrect = 0, fourPieceTotal = 0, fourPieceResponseTime = 0, fourPieceValidResponses = 0;
-            let sixPieceTime = 0, sixPieceCorrect = 0, sixPieceTotal = 0, sixPieceResponseTime = 0, sixPieceValidResponses = 0;
-            let ninePieceTime = 0, ninePieceCorrect = 0, ninePieceTotal = 0, ninePieceResponseTime = 0, ninePieceValidResponses = 0;
-            let sixteenPieceTime = 0, sixteenPieceCorrect = 0, sixteenPieceTotal = 0, sixteenPieceResponseTime = 0, sixteenPieceValidResponses = 0;
-
-            Object.keys(testData.tests).forEach(testId => {
-                const test = testData.tests[testId];
-                if (test.completed) {
-                    totalCorrect += test.correct;
-                    totalWrong += test.wrong;
-                    totalPieces += test.totalPieces;
-                    totalTime += test.duration;
-                    
-                    // Kategori bazlı süre hesaplamaları
-                    const testType = getTestType(testId);
-                    if (testType.category === '4piece') {
-                        fourPieceTime += test.duration;
-                        fourPieceCorrect += test.correct;
-                        fourPieceTotal += test.totalPieces;
-                    } else if (testType.category === '6piece') {
-                        sixPieceTime += test.duration;
-                        sixPieceCorrect += test.correct;
-                        sixPieceTotal += test.totalPieces;
-                    } else if (testType.category === '9piece') {
-                        ninePieceTime += test.duration;
-                        ninePieceCorrect += test.correct;
-                        ninePieceTotal += test.totalPieces;
-                    } else if (testType.category === '16piece') {
-                        sixteenPieceTime += test.duration;
-                        sixteenPieceCorrect += test.correct;
-                        sixteenPieceTotal += test.totalPieces;
-                    }
-                    
-                    Object.values(test.pieces).forEach(piece => {
-                        if (piece.isCorrect) {
-                            totalResponseTime += piece.responseTime;
-                            validResponses++;
-                            
-                            // Kategori bazlı tepki süreleri
-                            if (testType.category === '4piece') {
-                                fourPieceResponseTime += piece.responseTime;
-                                fourPieceValidResponses++;
-                            } else if (testType.category === '6piece') {
-                                sixPieceResponseTime += piece.responseTime;
-                                sixPieceValidResponses++;
-                            } else if (testType.category === '9piece') {
-                                ninePieceResponseTime += piece.responseTime;
-                                ninePieceValidResponses++;
-                            } else if (testType.category === '16piece') {
-                                sixteenPieceResponseTime += piece.responseTime;
-                                sixteenPieceValidResponses++;
-                            }
-                        }
-                    });
-                }
-            });
-
-            testData.summary = {
-                // Temel istatistikler
-                totalCorrect,
-                totalWrong,
-                totalPieces,
-                totalTime,
-                averageResponseTime: validResponses > 0 ? totalResponseTime / validResponses : 0,
-                overallAccuracy: totalPieces > 0 ? (totalCorrect / totalPieces) * 100 : 0,
-                
-                // Kategori bazlı doğruluk
-                fourPieceAccuracy: fourPieceTotal > 0 ? (fourPieceCorrect / fourPieceTotal) * 100 : 0,
-                sixPieceAccuracy: sixPieceTotal > 0 ? (sixPieceCorrect / sixPieceTotal) * 100 : 0,
-                ninePieceAccuracy: ninePieceTotal > 0 ? (ninePieceCorrect / ninePieceTotal) * 100 : 0,
-                sixteenPieceAccuracy: sixteenPieceTotal > 0 ? (sixteenPieceCorrect / sixteenPieceTotal) * 100 : 0,
-                
-                // Kategori bazlı ortalama tepki süreleri (saniye cinsinden)
-                fourPieceAvgTime: fourPieceValidResponses > 0 ? (fourPieceResponseTime / fourPieceValidResponses) / 1000 : 0,
-                sixPieceAvgTime: sixPieceValidResponses > 0 ? (sixPieceResponseTime / sixPieceValidResponses) / 1000 : 0,
-                ninePieceAvgTime: ninePieceValidResponses > 0 ? (ninePieceResponseTime / ninePieceValidResponses) / 1000 : 0,
-                sixteenPieceAvgTime: sixteenPieceValidResponses > 0 ? (sixteenPieceResponseTime / sixteenPieceValidResponses) / 1000 : 0,
-                
-                // Kategori bazlı toplam tamamlama süreleri
-                fourPieceCompletionTime: fourPieceTime,
-                sixPieceCompletionTime: sixPieceTime,
-                ninePieceCompletionTime: ninePieceTime,
-                sixteenPieceCompletionTime: sixteenPieceTime,
-                
-                // Toplam süre hesaplamaları
-                totalCompletionTime: totalTime,
-                totalSessionDuration: testData.testEndTime && testData.testStartTime ? testData.testEndTime - testData.testStartTime : 0,
-                
-                // Hız skorları (basit hesaplama)
-                processingSpeedScore: validResponses > 0 ? Math.max(0, 100 - (totalResponseTime / validResponses) / 100) : 0,
-                normalizedSpeedScore: validResponses > 0 ? Math.max(0, 100 - (totalResponseTime / validResponses) / 100) : 0,
-                
-                // Diğer alanlar
-                correctPieces: totalCorrect,
-                wrongPieces: totalWrong,
-                timeoutPieces: totalPieces - totalCorrect - totalWrong
-            };
-
-            if (testData.testStartTime) {
-                testData.testEndTime = Date.now();
-                testData.summary.totalSessionDuration = testData.testEndTime - testData.testStartTime;
-            }
-        }
-
-        // Excel formatında veri çıktısı
-        function generateExcelData() {
-            const excelData = {
-                // Genel Bilgiler
-                testInfo: {
-                    userId: testData.userId || 'Anonymous',
-                    testDate: new Date().toISOString(),
-                    totalDuration: testData.testEndTime - testData.testStartTime,
-                    totalTests: Object.keys(testData.tests).length
-                },
-                
-                // Test Kategorileri
-                categories: {
-                    fourPiece: {
-                        tests: ['test1', 'test2', 'test3', 'test4', 'test5'],
-                        totalPieces: 20,
-                        correctAnswers: 0,
-                        wrongAnswers: 0,
-                        accuracy: 0,
-                        averageTime: 0
-                    },
-                    sixPiece: {
-                        tests: ['test6'],
-                        totalPieces: 6,
-                        correctAnswers: 0,
-                        wrongAnswers: 0,
-                        accuracy: 0,
-                        averageTime: 0
-                    },
-                    ninePiece: {
-                        tests: ['test7', 'test8'],
-                        totalPieces: 18,
-                        correctAnswers: 0,
-                        wrongAnswers: 0,
-                        accuracy: 0,
-                        averageTime: 0
-                    },
-                    sixteenPiece: {
-                        tests: ['test9'],
-                        totalPieces: 16,
-                        correctAnswers: 0,
-                        wrongAnswers: 0,
-                        accuracy: 0,
-                        averageTime: 0
-                    }
-                },
-                
-                // Detaylı Test Verileri
-                detailedResults: {},
-                
-                // Özet İstatistikler
-                summary: testData.summary
-            };
-
-            // Kategori verilerini hesapla
-            Object.keys(excelData.categories).forEach(categoryKey => {
-                const category = excelData.categories[categoryKey];
-                let categoryCorrect = 0;
-                let categoryWrong = 0;
-                let categoryTotalTime = 0;
-                let categoryValidResponses = 0;
-
-                category.tests.forEach(testId => {
-                    const test = testData.tests[testId];
-                    if (test && test.completed) {
-                        categoryCorrect += test.correct;
-                        categoryWrong += test.wrong;
-                        categoryTotalTime += test.duration;
-                        
-                        Object.values(test.pieces).forEach(piece => {
-                            if (piece.isCorrect) {
-                                categoryValidResponses++;
-                            }
-                        });
-                    }
-                });
-
-                category.correctAnswers = categoryCorrect;
-                category.wrongAnswers = categoryWrong;
-                category.accuracy = category.totalPieces > 0 ? (categoryCorrect / category.totalPieces) * 100 : 0;
-                category.averageTime = categoryValidResponses > 0 ? categoryTotalTime / categoryValidResponses : 0;
-                category.totalDuration = categoryTotalTime; // Kategori toplam süresi
-            });
-
-            // Detaylı test verilerini ekle
-            Object.keys(testData.tests).forEach(testId => {
-                const test = testData.tests[testId];
-                excelData.detailedResults[testId] = {
-                    testType: test.testType.type,
-                    category: test.testType.category,
-                    totalPieces: test.totalPieces,
-                    correctAnswers: test.correct,
-                    wrongAnswers: test.wrong,
-                    accuracy: test.accuracy,
-                    duration: test.duration,
-                    averageResponseTime: test.averageResponseTime,
-                    pieces: test.pieces
-                };
-            });
-
-            return excelData;
-        }
-
-        // Veriyi konsola yazdır (geliştirme amaçlı)
-        function logTestData() {
-            console.log('=== PUZZLE TEST VERİLERİ ===');
-            console.log('Genel Özet:', testData.summary);
-            console.log('Test Detayları:', testData.tests);
-            console.log('Excel Formatı:', generateExcelData());
-        }
-
-        // Genel test sonuçlarını göster
-        function displayTestResults() {
-            const results = generateExcelData();
-            
-            console.log('\n🎯 ================= GENEL PUZZLE TEST SONUÇLARI =================');
-            console.log('📊 GENEL İSTATİSTİKLER:');
-            console.log(`   👤 Kullanıcı: ${results.testInfo.userId}`);
-            console.log(`   📅 Test Tarihi: ${new Date(results.testInfo.testDate).toLocaleString()}`);
-            console.log(`   ⏰ TOPLAM TEST SÜRESİ: ${(results.testInfo.totalDuration / 1000).toFixed(2)} saniye`);
-            console.log(`   🧩 Tamamlanan Testler: ${results.testInfo.totalTests}`);
-            console.log(`   ✅ Toplam Doğru: ${results.summary.totalCorrect}/${results.summary.totalPieces}`);
-            console.log(`   ❌ Toplam Yanlış: ${results.summary.totalWrong}/${results.summary.totalPieces}`);
-            console.log(`   📈 Genel Başarı Oranı: %${results.summary.overallAccuracy.toFixed(1)}`);
-            console.log(`   ⏱️ Ortalama Tepki Süresi: ${results.summary.averageResponseTime.toFixed(0)}ms`);
-            
-            console.log('\n📦 KATEGORİ BAZLI SONUÇLAR (EXCEL FORMAT):');
-            
-            // 4 Parçalı Puzzlelar
-            const fourPiece = results.categories.fourPiece;
-            console.log(`   🔲 4 PARÇALI PUZZLELAR (Dörtparçalı):`);
-            console.log(`      ✅ Doğru: ${fourPiece.correctAnswers}/${fourPiece.totalPieces}`);
-            console.log(`      📈 Başarı: %${fourPiece.accuracy.toFixed(1)}`);
-            console.log(`      ⏱️ Ortalama Tepki: ${fourPiece.averageTime.toFixed(0)}ms`);
-            console.log(`      ⏰ Toplam Süre: ${(fourPiece.totalDuration / 1000).toFixed(2)}s`);
-            console.log(`      🧩 Testler: ${fourPiece.tests.join(', ')}`);
-            
-            // 6 Parçalı Puzzle
-            const sixPiece = results.categories.sixPiece;
-            console.log(`   🔷 6 PARÇALI PUZZLE (Altıparçalı):`);
-            console.log(`      ✅ Doğru: ${sixPiece.correctAnswers}/${sixPiece.totalPieces}`);
-            console.log(`      📈 Başarı: %${sixPiece.accuracy.toFixed(1)}`);
-            console.log(`      ⏱️ Ortalama Tepki: ${sixPiece.averageTime.toFixed(0)}ms`);
-            console.log(`      ⏰ Toplam Süre: ${(sixPiece.totalDuration / 1000).toFixed(2)}s`);
-            console.log(`      🧩 Testler: ${sixPiece.tests.join(', ')}`);
-            
-            // 9 Parçalı Puzzlelar
-            const ninePiece = results.categories.ninePiece;
-            console.log(`   🔳 9 PARÇALI PUZZLELAR (Dokuzparçalı):`);
-            console.log(`      ✅ Doğru: ${ninePiece.correctAnswers}/${ninePiece.totalPieces}`);
-            console.log(`      📈 Başarı: %${ninePiece.accuracy.toFixed(1)}`);
-            console.log(`      ⏱️ Ortalama Tepki: ${ninePiece.averageTime.toFixed(0)}ms`);
-            console.log(`      ⏰ Toplam Süre: ${(ninePiece.totalDuration / 1000).toFixed(2)}s`);
-            console.log(`      🧩 Testler: ${ninePiece.tests.join(', ')}`);
-            
-            // 16 Parçalı Puzzle
-            const sixteenPiece = results.categories.sixteenPiece;
-            console.log(`   🔴 16 PARÇALI PUZZLE (Onaltıparçalı):`);
-            console.log(`      ✅ Doğru: ${sixteenPiece.correctAnswers}/${sixteenPiece.totalPieces}`);
-            console.log(`      📈 Başarı: %${sixteenPiece.accuracy.toFixed(1)}`);
-            console.log(`      ⏱️ Ortalama Tepki: ${sixteenPiece.averageTime.toFixed(0)}ms`);
-            console.log(`      ⏰ Toplam Süre: ${(sixteenPiece.totalDuration / 1000).toFixed(2)}s`);
-            console.log(`      🧩 Testler: ${sixteenPiece.tests.join(', ')}`);
-            
-            console.log('\n📋 DETAYLI TEST SONUÇLARI VE SÜRELERİ:');
-            Object.keys(results.detailedResults).forEach(testId => {
-                const test = results.detailedResults[testId];
-                console.log(`   🧩 ${testId.toUpperCase()} (${test.testType}):`);
-                console.log(`      ✅ ${test.correctAnswers}/${test.totalPieces} doğru (%${test.accuracy.toFixed(1)})`);
-                console.log(`      ⏱️ ${test.averageResponseTime.toFixed(0)}ms ortalama tepki süresi`);
-                console.log(`      ⏰ ${(test.duration / 1000).toFixed(2)} saniye test süresi`);
-            });
-            
-            console.log('\n📁 VERİ ERİŞİMİ:');
-            console.log('   window.puzzleTestResults - Excel formatında sonuçlar');
-            console.log('   window.puzzleTestData - Ham test verileri');
-            console.log('   window.getPuzzleResults() - Sonuçları getir');
-            console.log('   window.logPuzzleData() - Ham verileri göster');
-            
-            console.log('================================================================\n');
-        }
-
-        // Mevcut tıklama event'lerini güncelle
-        let currentTestId = null;
-        let pieceClickStartTime = null;
-
-        // Test başlangıcında çağrılacak fonksiyon
-        function initializeTestRecording(testId) {
-            currentTestId = testId;
-            startTestRecording(testId);
-        }
-
-        // Parça tıklamasında çağrılacak fonksiyon
-        function onPieceClick(pieceId, targetPieceId) {
-            if (!currentTestId || !pieceClickStartTime) return;
-            
-            const responseTime = Date.now() - pieceClickStartTime;
-            const isCorrect = pieceId === targetPieceId;
-            
-            // Veriyi kaydet
-            recordPieceClick(currentTestId, pieceId, isCorrect, responseTime);
-            
-            // UI sırasını kaydet (tıklama anında)
-            const currentUIRound = getCurrentUIRoundAtClick(currentTestId);
-            
-            // Yeni loglama sistemi ile logla
-            logQuestionResultWithRound(currentTestId, pieceId, isCorrect, responseTime, currentUIRound);
-            
-            // Bir sonraki tıklama için hazırla
-            pieceClickStartTime = Date.now();
-        }
-
-        // Test tamamlandığında çağrılacak fonksiyon
-        function onTestComplete(testId) {
-            finishTestRecording(testId);
-            
-            // Bölüm tamamlandığında log göster
-            logSectionCompletion(testId);
-            
-            // Son test ise sonuçları göster
-            if (testId === 'test9') {
-                setTimeout(() => {
-                    displayTestResults();
-                    
-                    // Veriyi global olarak erişilebilir yap
-                    window.puzzleTestResults = generateExcelData();
-                }, 1000);
-            }
-        }
-
-        // Parça tıklama zamanını başlat
-        function startPieceTimer() {
-            pieceClickStartTime = Date.now();
-        }
-
-        // Test başladığında kullanıcı ID'sini ayarla
-        function setUserId(userId) {
-            testData.userId = userId;
-        }
-
-        // Global fonksiyonları window'a ekle
-        window.puzzleTestData = testData;
-        window.getPuzzleResults = generateExcelData;
-        window.logPuzzleData = logTestData;
-        window.setPuzzleUserId = setUserId;
     </script>
 </body>
-</html>
+</html> 
