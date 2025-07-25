@@ -527,9 +527,9 @@
                 this.wordTimeout = null;
                 
                 this.stageData = {
-                    stage1: { responses: [], correctCount: 0, totalWords: 12 },
-                    stage2: { responses: [], correctCount: 0, totalWords: 23, matchingWords: 11 },
-                    stage3: { responses: [], correctCount: 0, totalWords: 40, conflictingWords: 17 }
+                    stage1: { responses: [], correctCount: 0, totalWords: 12, startTime: null, endTime: null, duration: 0 },
+                    stage2: { responses: [], correctCount: 0, totalWords: 23, matchingWords: 11, startTime: null, endTime: null, duration: 0 },
+                    stage3: { responses: [], correctCount: 0, totalWords: 40, conflictingWords: 17, startTime: null, endTime: null, duration: 0 }
                 };
             }
 
@@ -1071,9 +1071,25 @@
             state.isTestActive = true;
             state.currentWordIndex = 0;
             state.stageData[`stage${stageNum}`].responses = [];
+            
+            // Aşama başlangıç zamanını kaydet
+            state.stageData[`stage${stageNum}`].startTime = Date.now();
+
+            // 🚀 AŞAMA BAŞLANGICI LOGLAMA
+            console.log(`🚀 AŞAMA ${stageNum} BAŞLADI:`, {
+                başlıq: stage.title,
+                talimat: stage.instruction,
+                toplamKelime: stage.testWords.length,
+                başlangıçZamanı: new Date().toLocaleTimeString(),
+                testMi: 'ANA TEST'
+            });
 
             if (stageNum === 1) {
                 state.testStartTime = Date.now();
+                console.log(`🎯 TÜM STROOP TESTİ BAŞLADI:`, {
+                    başlangıçZamanı: new Date().toLocaleTimeString(),
+                    toplam3Aşama: 'Evet'
+                });
             }
 
             // Önce 3-2-1 countdown göster
@@ -1104,6 +1120,20 @@
             }
 
             state.isTestActive = false;
+            
+            // Aşama bitiş zamanını kaydet ve süreyi hesapla
+            state.stageData[`stage${stageNum}`].endTime = Date.now();
+            state.stageData[`stage${stageNum}`].duration = Math.round(
+                (state.stageData[`stage${stageNum}`].endTime - state.stageData[`stage${stageNum}`].startTime) / 1000
+            );
+            
+            // 🏁 AŞAMA TAMAMLANDI LOGLAMA
+            console.log(`🏁 AŞAMA ${stageNum} TAMAMLANDI:`, {
+                toplamSure: state.stageData[`stage${stageNum}`].duration + ' saniye',
+                toplamKelime: state.stageData[`stage${stageNum}`].responses.length,
+                başlangıçZamanı: new Date(state.stageData[`stage${stageNum}`].startTime).toLocaleTimeString(),
+                bitişZamanı: new Date(state.stageData[`stage${stageNum}`].endTime).toLocaleTimeString()
+            });
 
             // Sonraki aşamaya geç veya testi bitir
             if (stageNum < 3) {
@@ -1141,6 +1171,15 @@
                     wordIndex: wordIndex
                 };
                 
+                // 📊 KELİME VERİSİ LOGLAMA
+                console.log(`📝 AŞAMA ${stageNum} - KELİME ${wordIndex + 1}:`, {
+                    kelime: word,
+                    renk: color,
+                    basmasıGereken: responseRequired ? 'EVET' : 'HAYIR',
+                    gösterimSüresi: timing + 'ms',
+                    zaman: new Date().toLocaleTimeString()
+                });
+                
                 state.stageData[`stage${stageNum}`].responses.push(wordData);
                 
                 wordDisplay.innerHTML = `<div class="${colorClass}">${word}</div>`;
@@ -1156,7 +1195,27 @@
                         wordData.responded = true;
                         wordData.responseTime = performance.now() - wordData.startTime;
                         
-                        console.log(`Space tuşuna basıldı - Aşama ${stageNum}, Kelime: ${word}, Süre: ${wordData.responseTime.toFixed(0)}ms`);
+                        // 🎯 TEPKİ VERİSİ LOGLAMA
+                        if (stageNum === 1) {
+                            // 1. aşamada doğru/yanlış yok, sadece tepki süresi
+                            console.log(`⚡ TEPKİ VERİLDİ (1.AŞAMA):`, {
+                                kelime: word,
+                                tepkiSüresi: Math.round(wordData.responseTime) + 'ms',
+                                durum: '✅ TEPKİ VERDİ',
+                                açıklama: '1. aşamada her kelimede basması beklenir',
+                                zaman: new Date().toLocaleTimeString()
+                            });
+                        } else {
+                            // 2-3. aşamada doğru/yanlış var
+                            const isCorrect = wordData.responseRequired;
+                            console.log(`⚡ TEPKİ VERİLDİ (${stageNum}.AŞAMA):`, {
+                                kelime: word,
+                                tepkiSüresi: Math.round(wordData.responseTime) + 'ms',
+                                doğruMu: isCorrect ? '✅ DOĞRU' : '❌ YANLIŞ',
+                                açıklama: isCorrect ? 'Basması gerekiyordu - bastı' : 'Basmaması gerekiyordu - bastı',
+                                zaman: new Date().toLocaleTimeString()
+                            });
+                        }
                         
                         // Timer'ı temizle
                         if (timeoutId) {
@@ -1179,7 +1238,30 @@
                 timeoutId = setTimeout(() => {
                     if (!hasResponded) {
                         hasResponded = true;
-                        console.log(`Zaman aşımı - Aşama ${stageNum}, Kelime: ${word}`);
+                        
+                        // ⏰ ZAMAN AŞIMI LOGLAMA
+                        if (stageNum === 1) {
+                            // 1. aşamada tepki vermemek her zaman eksikliktir
+                            console.log(`⏰ ZAMAN AŞIMI (1.AŞAMA):`, {
+                                kelime: word,
+                                süre: timing + 'ms',
+                                durum: '❌ TEPKİ VERMEDİ',
+                                açıklama: '1. aşamada her kelimede basması bekleniyordu',
+                                tepkiSüresi: 'null (ortalamaya dahil edilmez)',
+                                zaman: new Date().toLocaleTimeString()
+                            });
+                        } else {
+                            // 2-3. aşamada doğru/yanlış var
+                            const isCorrect = !wordData.responseRequired;
+                            console.log(`⏰ ZAMAN AŞIMI (${stageNum}.AŞAMA):`, {
+                                kelime: word,
+                                süre: timing + 'ms',
+                                doğruMu: isCorrect ? '✅ DOĞRU' : '❌ YANLIŞ',
+                                açıklama: isCorrect ? 'Basmaması gerekiyordu - basmadı' : 'Basması gerekiyordu - basmadı',
+                                tepkiSüresi: 'null (ortalamaya dahil edilmez)',
+                                zaman: new Date().toLocaleTimeString()
+                            });
+                        }
                         
                         document.removeEventListener('keydown', spaceHandler);
                         wordDisplay.innerHTML = '';
@@ -1255,10 +1337,17 @@
 
         // 10. Test Tamamlandı Ekranı
         function showTestComplete() {
-            // Test tamamlandı state'ini set et - beforeunload uyarısını engellemek için
-            state.currentScreen = 'resultsScreen';
-            
-            const container = document.querySelector('.container');
+                    // Test tamamlandı state'ini set et - beforeunload uyarısını engellemek için
+        state.currentScreen = 'resultsScreen';
+        
+        // 🎊 TEST TAMAMLANDI LOGLAMA
+        console.log(`🎊 STROOP TESTİ TAMAMLANDI!`, {
+            bitişZamanı: new Date().toLocaleTimeString(),
+            toplamTestSüresi: Math.round((Date.now() - state.testStartTime) / 1000) + ' saniye',
+            tüm3AşamaTamamlandı: 'EVET ✅'
+        });
+        
+        const container = document.querySelector('.container');
             
             container.innerHTML = `
                 <!-- Loading Overlay -->
@@ -1288,6 +1377,7 @@
         // ==================== VERİTABANI KAYIT ====================
         async function saveTestResults() {
             try {
+                console.log(`💾 VERİTABANI KAYIT İŞLEMİ BAŞLADI`);
                 const results = calculateScores();
                 const urlParams = new URLSearchParams(window.location.search);
                 
@@ -1311,6 +1401,18 @@
                     detailed_responses: state.stageData
                 };
                 
+                // 📦 PAYLOAD LOGLAMA
+                console.log(`📦 VERİTABANINA GÖNDERİLECEK VERİLER:`, {
+                    testTipi: payload.testType,
+                    kullanıcı: payload.learnworlds_user_name,
+                    testSüresi: payload.test_elapsed_time_seconds + ' saniye',
+                    aşama1Sonuçları: payload.stage1_results,
+                    aşama2Sonuçları: payload.stage2_results,
+                    aşama3Sonuçları: payload.stage3_results,
+                    interferansEtkisi: payload.interference_effect,
+                    detaylıTepkiSayısı: Object.keys(payload.detailed_responses).length + ' aşama'
+                });
+                
                 const response = await fetch('/api/fortest-stroop-sonuclari', {
                     method: 'POST',
                     headers: {
@@ -1322,25 +1424,48 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    console.log('✅ Test sonuçları başarıyla kaydedildi:', result.submissionId);
+                    console.log('✅ VERİTABANI KAYIT BAŞARILI:', {
+                        kayıtID: result.submissionId,
+                        durum: 'BAŞARILI ✅',
+                        zaman: new Date().toLocaleTimeString()
+                    });
                     showNotification('Test sonuçlarınız başarıyla kaydedildi!', 'success');
                 } else {
                     throw new Error(result.message);
                 }
                 
             } catch (error) {
-                console.error('❌ Test sonuçları kaydedilemedi:', error);
+                console.error('❌ VERİTABANI KAYIT HATASI:', {
+                    hata: error.message,
+                    durum: 'BAŞARISIZ ❌',
+                    zaman: new Date().toLocaleTimeString()
+                });
                 showNotification('Test sonuçları kaydedilirken bir hata oluştu.', 'error');
             }
         }
 
         // Puanlama sistemi
         function calculateScores() {
+            console.log(`🎯 FİNAL SKOR HESAPLAMA BAŞLADI`);
+            console.log(`📝 TEPKİ SÜRESİ HESAPLAMA MANTĞI:`);
+            console.log(`   1. AŞAMA: Sadece tepki süresi ölçülür, doğru/yanlış yok`);
+            console.log(`   - Ortalama: Sadece tepki verdiği kelimeler (responseTime > 0)`);
+            console.log(`   - Timeout: Tepki süresi null, ortalamaya dahil edilmez`);
+            console.log(`   2-3. AŞAMA: Doğru/yanlış mantığı var`);
+            console.log(`   - Ortalama: Sadece DOĞRU tepki verdiği kelimeler`);
+            console.log(`   - Timeout: Basmaması gereken yerde doğru sayılabilir`);
+            console.log(`=====================================`);
+            
             const results = {
                 A1_BTS: calculateStageScore(1),
                 A2_KTS: calculateStageScore(2),
                 A3_STS: calculateStageScore(3)
             };
+            
+            // Dürtüsellik hesaplama (2. ve 3. aşama için - 1. aşamada yok)
+            results.A1_BTS.Durtusellk = 0; // 1. aşamada dürtüsellik hesaplanmaz
+            results.A2_KTS.Durtusellk = calculateImpulsivity(2);
+            results.A3_STS.Durtusellk = calculateImpulsivity(3);
             
             // İnterferans hesaplama
             if (results.A2_KTS.OrtalamaSure_ms > 0) {
@@ -1355,30 +1480,162 @@
                 };
             }
             
+            // İnterferans loglama
+            console.log(`🔄 İNTERFERANS HESAPLANDI:`, {
+                A3_suresi: results.A3_STS.OrtalamaSure_ms + 'ms',
+                A2_suresi: results.A2_KTS.OrtalamaSure_ms + 'ms',
+                fark: results.Interferans.Fark_ms + 'ms',
+                oranı: results.Interferans.Oran + '%'
+            });
+            
+            // Toplam süre hesaplama
+            results.ToplamSure = {
+                Asama1_saniye: results.A1_BTS.BolumSuresi_saniye,
+                Asama2_saniye: results.A2_KTS.BolumSuresi_saniye,
+                Asama3_saniye: results.A3_STS.BolumSuresi_saniye,
+                TumTest_saniye: results.A1_BTS.BolumSuresi_saniye + results.A2_KTS.BolumSuresi_saniye + results.A3_STS.BolumSuresi_saniye
+            };
+            
+            // 🎉 FİNAL SONUÇLAR LOGLAMA
+            console.log(`🎉 TÜM TEST SONUÇLARI:`, {
+                '1.Aşama_BTS': {
+                    ortalamaSüre: results.A1_BTS.OrtalamaSure_ms + 'ms',
+                    tepkiVermeOranı: results.A1_BTS.Dogruluk + '% (doğru/yanlış yok)',
+                    tepkiVermediği: results.A1_BTS.HataSayisi,
+                    dürtüsellik: 'YOK (sadece 2-3. aşamada)',
+                    süre: results.A1_BTS.BolumSuresi_saniye + 's'
+                },
+                '2.Aşama_KTS': {
+                    ortalamaSüre: results.A2_KTS.OrtalamaSure_ms + 'ms',
+                    doğruluk: results.A2_KTS.Dogruluk + '%',
+                    hataSayısı: results.A2_KTS.HataSayisi,
+                    dürtüsellik: results.A2_KTS.Durtusellk + '%',
+                    süre: results.A2_KTS.BolumSuresi_saniye + 's'
+                },
+                '3.Aşama_STS': {
+                    ortalamaSüre: results.A3_STS.OrtalamaSure_ms + 'ms',
+                    doğruluk: results.A3_STS.Dogruluk + '%',
+                    hataSayısı: results.A3_STS.HataSayisi,
+                    dürtüsellik: results.A3_STS.Durtusellk + '%',
+                    süre: results.A3_STS.BolumSuresi_saniye + 's'
+                },
+                'Interferans': {
+                    fark: results.Interferans.Fark_ms + 'ms',
+                    oran: results.Interferans.Oran + '%'
+                },
+                'ToplamSüreler': results.ToplamSure
+            });
+            
             return results;
         }
 
         function calculateStageScore(stageNum) {
             const responses = state.stageData[`stage${stageNum}`].responses;
-            const correctResponses = responses.filter(r => {
-                if (r.responseRequired) {
-                    return r.responded; // Basması gereken yerde bastı
-                } else {
-                    return !r.responded; // Basmaması gereken yerde basmadı
-                }
+            
+            if (stageNum === 1) {
+                // 1. AŞAMA: Sadece tepki süresi ölçülür, doğru/yanlış yok
+                const respondedItems = responses.filter(r => r.responded && r.responseTime > 0);
+                const avgTime = respondedItems.length > 0 
+                    ? Math.round(respondedItems.reduce((sum, r) => sum + r.responseTime, 0) / respondedItems.length)
+                    : 0;
+                
+                const result = {
+                    OrtalamaSure_ms: avgTime,
+                    Dogruluk: ((respondedItems.length / responses.length) * 100).toFixed(1), // Tepki verme oranı
+                    HataSayisi: responses.length - respondedItems.length, // Tepki vermediği sayısı
+                    BolumSuresi_saniye: state.stageData[`stage${stageNum}`].duration || 0
+                };
+                
+                // 📊 1. AŞAMA LOGLAMA
+                console.log(`📊 AŞAMA ${stageNum} SKORU HESAPLANDI (Basit Tepki):`, {
+                    ortalamaTepkiSüresi: avgTime + 'ms',
+                    tepkiVermeOranı: result.Dogruluk + '%',
+                    tepkiVerdiği: respondedItems.length + '/' + responses.length,
+                    tepkiVermediği: result.HataSayisi,
+                    aşamaSüresi: result.BolumSuresi_saniye + ' saniye',
+                    açıklama: '1. aşamada doğru/yanlış yok, sadece tepki süresi ölçülür'
+                });
+                
+                return result;
+                
+            } else {
+                // 2. ve 3. AŞAMA: Doğru/yanlış mantığı var
+                const correctResponses = responses.filter(r => {
+                    if (r.responseRequired) {
+                        return r.responded; // Basması gereken yerde bastı
+                    } else {
+                        return !r.responded; // Basmaması gereken yerde basmadı
+                    }
+                });
+                
+                // Ortalama süre için sadece DOĞRU TEPKI VERDİĞİ durumları al
+                const correctWithTime = correctResponses.filter(r => r.responded && r.responseTime > 0);
+                const avgTime = correctWithTime.length > 0 
+                    ? Math.round(correctWithTime.reduce((sum, r) => sum + r.responseTime, 0) / correctWithTime.length)
+                    : 0;
+                
+                const result = {
+                    OrtalamaSure_ms: avgTime,
+                    Dogruluk: ((correctResponses.length / responses.length) * 100).toFixed(1),
+                    HataSayisi: responses.length - correctResponses.length,
+                    BolumSuresi_saniye: state.stageData[`stage${stageNum}`].duration || 0
+                };
+                
+                // 📊 2-3. AŞAMA LOGLAMA
+                console.log(`📊 AŞAMA ${stageNum} SKORU HESAPLANDI:`, {
+                    ortalamaTepkiSüresi: avgTime + 'ms',
+                    doğrulukOranı: result.Dogruluk + '%',
+                    doğruTepki: correctResponses.length + '/' + responses.length,
+                    hataSayısı: result.HataSayisi,
+                    aşamaSüresi: result.BolumSuresi_saniye + ' saniye',
+                    ortalamaSüreHesabı: `Sadece doğru+tepki verdiği ${correctWithTime.length} kelime kullanıldı`
+                });
+                
+                return result;
+            }
+        }
+
+        // Dürtüsellik hesaplama fonksiyonu (2. ve 3. aşama için)
+        function calculateImpulsivity(stageNum) {
+            const responses = state.stageData[`stage${stageNum}`].responses;
+            
+            // Aşamaya göre hız eşikleri
+            const thresholds = {
+                2: 600, // 2. aşama: 600ms altı hızlı sayılır
+                3: 800  // 3. aşama: 800ms altı hızlı sayılır
+            };
+            
+            const threshold = thresholds[stageNum];
+            if (!threshold) return 0;
+            
+            // Hızlı yanlış tepkiler
+            const fastIncorrectResponses = responses.filter(r => {
+                // Tepki zamanı var ve eşiğin altında
+                const isFast = r.responseTime && r.responseTime < threshold;
+                if (!isFast) return false;
+                
+                // Yanlış tepki mi?
+                const isIncorrect = (r.responseRequired && !r.responded) || 
+                                   (!r.responseRequired && r.responded);
+                
+                return isIncorrect;
             });
             
-            const totalRequired = responses.length;
-            
-            const avgTime = correctResponses.length > 0 
-                ? Math.round(correctResponses.reduce((sum, r) => sum + (r.responseTime || 0), 0) / correctResponses.length)
+            // Dürtüsellik puanı hesapla (0-100 arası)
+            const impulsivityScore = responses.length > 0 
+                ? (fastIncorrectResponses.length / responses.length * 100).toFixed(1)
                 : 0;
             
-            return {
-                OrtalamaSure_ms: avgTime,
-                Dogruluk: ((correctResponses.length / totalRequired) * 100).toFixed(1),
-                HataSayisi: totalRequired - correctResponses.length
-            };
+            // 🎯 DÜRTÜSELLİK LOGLAMA
+            console.log(`🎯 AŞAMA ${stageNum} DÜRTÜSELLİK HESAPLANDI:`, {
+                hızEşiği: threshold + 'ms',
+                hızlıYanlışTepki: fastIncorrectResponses.length,
+                toplamTepki: responses.length,
+                dürtüsellikSkoru: impulsivityScore + '%',
+                değerlendirme: impulsivityScore >= 15 ? 'YÜKSEK' : impulsivityScore >= 8 ? 'ORTA' : 'NORMAL'
+            });
+            
+            return parseFloat(impulsivityScore);
         }
 
         function completeTest() {
@@ -1502,9 +1759,13 @@
         });
 
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Stroop Testi başlatılıyor...');
+            console.log('🚀 STROOP TESTİ SİSTEMİ BAŞLATILIYOR...');
             console.log('📱 Cihaz:', navigator.userAgent);
             console.log('🖥️ Ekran:', window.innerWidth + 'x' + window.innerHeight);
+            console.log('⏰ Yükleme Zamanı:', new Date().toLocaleString());
+            console.log('🎯 Loglama Sistemi Aktif: Her kelime, tepki ve hesaplama loglanacak');
+            console.log('📊 Excel Verileri: 24/24 veri alanı destekleniyor');
+            console.log('=====================================');
         });
     </script>
 </body>
