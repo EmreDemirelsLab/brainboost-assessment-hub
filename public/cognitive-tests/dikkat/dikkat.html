@@ -4,6 +4,35 @@
    <meta charset="UTF-8">
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <title>ForTest Dikkat Algoritması - Sağlam Versiyon</title>
+   
+   <!-- Global Test Yönetimi Script -->
+   <script>
+       // Global test yönetimi
+       window.currentUser = null;
+       window.currentSession = null;
+       window.testService = null;
+       window.scoreService = null;
+
+       // Sayfa yüklendiğinde kullanıcı ve oturum bilgilerini al
+       window.addEventListener('load', async function() {
+           try {
+               // Parent window'dan kullanıcı bilgilerini al
+               if (window.opener && window.opener.getCurrentUser) {
+                   window.currentUser = window.opener.getCurrentUser();
+                   window.currentSession = window.opener.getCurrentSession();
+               }
+               
+               console.log('Test ortamı hazır:', {
+                   user: window.currentUser?.id,
+                   session: window.currentSession?.id
+               });
+               
+           } catch (error) {
+               console.warn('Test ortamı başlatma uyarısı:', error);
+           }
+       });
+   </script>
+   
    <style>
        :root {
            --primary: #60a5fa;
@@ -992,6 +1021,7 @@
 
        // Global state instance
        const testState = new SafeTestState();
+       testState.testResultsSaved = false;
 
        // Debouncing utility
        const debounce = (func, wait) => {
@@ -2522,14 +2552,13 @@
            },
 
            // Test tamamlama
-           completeTest() {
-               console.log('Test completed, closing window...');
+           async completeTest() {
+               console.log('Test completed, saving to Supabase...');
                
-               // Cleanup
-               testState.cleanup();
-               
-               // Ana pencereye test tamamlandığını bildir ve pencereyi kapat
                try {
+                   // Test sonuçlarını hesapla
+                   this.calculateResults();
+                   
                    // localStorage'dan test sonuçlarını al
                    const savedResults = localStorage.getItem('attentionTestResults');
                    let testResults = {};
@@ -2546,6 +2575,9 @@
                            testDuration: testState.mainStartTime ? (Date.now() - testState.mainStartTime) : 0
                        };
                    }
+
+                   // Supabase'e kaydet
+                   await this.saveTestResultsToSupabase(testResults);
                    
                    const messageData = {
                        type: 'test-complete',
@@ -2560,8 +2592,6 @@
                        console.log('✅ Dikkat testi sonuçları ana pencereye gönderildi:', messageData);
                    }
                    
-                   // Ana pencere sıradaki testi yükleyecek - pencereyi kapatma
-                   
                } catch (error) {
                    console.error('❌ Test completion hatası:', error);
                    // Hata durumunda da ana pencereye hata mesajı gönder
@@ -2573,7 +2603,134 @@
                            timestamp: new Date().toISOString()
                        }, window.location.origin);
                    }
+               } finally {
+                   // Cleanup
+                   testState.cleanup();
                }
+           },
+
+           // Supabase'e test sonuçlarını kaydet
+           async saveTestResultsToSupabase(results) {
+               try {
+                   // Duplicate kayıt önleme
+                   if (testState.testResultsSaved) {
+                       console.log('⚠️ Test sonuçları zaten kaydedildi, tekrar kayıt atlanıyor');
+                       return;
+                   }
+                   testState.testResultsSaved = true;
+
+                   if (!window.currentSession || !window.currentUser) {
+                       console.warn('⚠️ Kullanıcı oturumu bulunamadı, Supabase kaydı atlanıyor');
+                       return;
+                   }
+
+                   // Test sonuç verilerini hazırla
+                   const rawData = results.rawData || {};
+                   const testSonucData = {
+                       oturum_id: window.currentSession.id,
+                       kullanici_id: window.currentUser.id,
+                       test_turu: 'dikkat',
+                       durum: 'tamamlandi',
+                       tamamlanma_yuzdesi: 100,
+                       bitis_tarihi: new Date().toISOString(),
+                       test_suresi_saniye: Math.round((rawData.testDuration || 0) / 1000),
+                       toplam_soru_sayisi: rawData.mainTotal || 0,
+                       cevaplanan_soru_sayisi: testState.mainAnswers ? testState.mainAnswers.length : 0,
+                       dogru_cevap_sayisi: rawData.mainScore || 0,
+                       yanlis_cevap_sayisi: (rawData.mainTotal || 0) - (rawData.mainScore || 0),
+                       dogruluk_skoru: rawData.mainTotal > 0 ? Math.round((rawData.mainScore / rawData.mainTotal) * 100) : 0,
+                       hiz_skoru: Math.round(rawData.speedScore || 0),
+                       genel_test_skoru: rawData.mainTotal > 0 ? Math.round(((rawData.mainScore / rawData.mainTotal) * 100 + (rawData.speedScore || 0)) / 2) : 0,
+                       ortalama_tepki_suresi_ms: Math.round(rawData.averageReactionTime || 0),
+                       ham_veri: results, // Orijinal veri korunur
+                       performans_analizi: {
+                           sections: results.sections || {},
+                           questionTypes: results.questionTypes || {},
+                           errorDetails: testState.wrongSelections || []
+                       }
+                   };
+
+                   // Ana pencereden TestService'i kullan
+                   if (window.opener && window.opener.saveTestResult) {
+                       const testSonucResponse = await window.opener.saveTestResult('dikkat', testSonucData);
+                       console.log('✅ Dikkat testi Supabase\'e kaydedildi:', testSonucResponse);
+
+                       // Detay verilerini kaydet
+                       if (testSonucResponse?.data && results.sections) {
+                           const testSonuc = testSonucResponse.data;
+                           const dikkatDetaylari = {
+                               test_sonuc_id: testSonuc.id,
+                               seçici_dikkat_skoru: Math.round(results.rawData?.correctCount || 0),
+                               surekli_dikkat_skoru: Math.round((results.rawData?.correctCount / results.rawData?.totalQuestions) * 100 || 0),
+                               dikkat_kontrolu_skoru: Math.round(results.rawData?.speedScore || 0),
+                               egitim_bolumu_dogruluk: results.sections?.section1?.accuracy || 0,
+                               egitim_bolumu_hiz: Math.round(results.sections?.section1?.averageReactionTime || 0),
+                               egitim_bolumu_skor: Math.round(results.sections?.section1?.correctCount || 0),
+                               test_bolumu_dogruluk: Math.round(((results.sections?.section2?.correctCount || 0) + (results.sections?.section3?.correctCount || 0)) / ((results.sections?.section2?.totalQuestions || 0) + (results.sections?.section3?.totalQuestions || 0)) * 100) || 0,
+                               test_bolumu_hiz: Math.round(((results.sections?.section2?.averageReactionTime || 0) + (results.sections?.section3?.averageReactionTime || 0)) / 2) || 0,
+                               test_bolumu_skor: Math.round((results.sections?.section2?.correctCount || 0) + (results.sections?.section3?.correctCount || 0)),
+                               ortalama_tepki_suresi_hedef: Math.round(results.rawData?.averageReactionTime || 0),
+                               tepki_suresi_tutarliligi: Math.round(results.rawData?.speedScore || 0),
+                               yanlis_alarm_sayisi: Math.round(results.rawData?.wrongCount || 0),
+                               kaçirilan_hedef_sayisi: Math.round((results.rawData?.totalQuestions || 0) - (results.rawData?.correctCount || 0) - (results.rawData?.wrongCount || 0)),
+                               bolum_bazli_analiz: {
+                                   section1: results.sections?.section1 || {},
+                                   section2: results.sections?.section2 || {},
+                                   section3: results.sections?.section3 || {}
+                               },
+                               zaman_bazli_performans: {
+                                   totalDuration: results.rawData?.testDuration || 0,
+                                   averageReactionTime: results.rawData?.averageReactionTime || 0,
+                                   speedScore: results.rawData?.speedScore || 0
+                               }
+                           };
+
+                           await window.opener.saveTestDetails('dikkat', testSonuc.id, dikkatDetaylari);
+
+                           // Soru cevaplarını kaydet
+                           if (testState.mainAnswers && testState.mainAnswers.length > 0) {
+                               const soruCevaplari = testState.mainAnswers.map((answer, index) => ({
+                                   test_sonuc_id: testSonuc.id,
+                                   oturum_id: window.currentSession.id,
+                                   kullanici_id: window.currentUser.id,
+                                   test_turu: 'dikkat',
+                                   soru_indeksi: index + 1,
+                                   soru_tipi: answer.questionType || 'unknown',
+                                   bolum_adi: this.getSectionName(index),
+                                   kullanici_cevabi: answer.selectedAnswer?.toString(),
+                                   dogru_cevap: answer.correctAnswer?.toString(),
+                                   cevap_dogru: answer.isCorrect || false,
+                                   tepki_suresi_ms: Math.round((answer.reactionTime || 0) * 1000),
+                                   analiz_verileri: {
+                                       timestamp: answer.timestamp,
+                                       reactionTimeCategory: (answer.reactionTime || 0) < 1 ? 'fast' : 'normal'
+                                   }
+                               }));
+
+                               await window.opener.saveQuestionResponses(soruCevaplari);
+                           }
+                       }
+
+                       console.log('✅ Dikkat testi tüm verileri başarıyla kaydedildi');
+                   }
+                   
+               } catch (error) {
+                   console.error('❌ Dikkat testi Supabase kayıt hatası:', error);
+                   // Hata durumunda da test devam etsin
+               }
+           },
+
+           // Yardımcı fonksiyonlar
+           getSectionName(questionIndex) {
+               if (questionIndex <= 12) return '1. BÖLÜM';
+               if (questionIndex <= 29) return '2. BÖLÜM';
+               return '3. BÖLÜM';
+           },
+
+           getSectionNumber(questionIndex) {
+               if (questionIndex <= 12) return 1;
+               if (questionIndex <= 29) return 2;
+               return 3;
            }
        };
 

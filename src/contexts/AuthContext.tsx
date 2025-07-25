@@ -39,8 +39,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Fetch user profile and roles
   const fetchUserProfile = async (authUser: User) => {
     try {
-      // Get user profile
-      const { data: profile, error: profileError } = await supabase
+      // Get user profile from users table
+      const { data: profile, error: profileError } = await (supabase as any)
         .from('users')
         .select('*')
         .eq('auth_user_id', authUser.id)
@@ -67,14 +67,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                           roles.includes('trainer') ? 'trainer' :
                           roles.includes('representative') ? 'representative' : 'user';
 
+      // Use both original columns and ad_soyad as fallback
+      const firstName = profile.first_name || (profile?.ad_soyad || '').split(' ')[0] || '';
+      const lastName = profile.last_name || (profile?.ad_soyad || '').split(' ').slice(1).join(' ') || '';
+
       const authUserData: AuthUser = {
         id: profile.id,
         email: profile.email,
-        firstName: profile.first_name,
-        lastName: profile.last_name,
-        phone: profile.phone,
-        avatarUrl: profile.avatar_url,
-        isActive: profile.is_active,
+        firstName: firstName,
+        lastName: lastName,
+        phone: profile.phone || null,
+        avatarUrl: profile.avatar_url || null,
+        isActive: profile.is_active !== false, // Default to true if not specified
         roles,
         currentRole: primaryRole
       };

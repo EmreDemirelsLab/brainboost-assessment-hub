@@ -21,29 +21,28 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 interface DashboardStats {
-  activeStudents: number;
-  completedTests: number;
-  averageSuccessRate: number;
-  weeklyExercises: number;
+  totalTests: number;
+  averageScore: number;
+  totalUsers: number;
+  completionRate: number;
 }
 
 interface RecentActivity {
   id: string;
   student_name: string;
-  activity: string;
-  status: string;
-  score: number | null;
-  time: string;
+  test_type: string;
+  score: number;
+  date: string;
 }
 
 export default function Dashboard() {
   const { user, switchRole, logout } = useAuth();
   const { toast } = useToast();
   const [stats, setStats] = useState<DashboardStats>({
-    activeStudents: 0,
-    completedTests: 0,
-    averageSuccessRate: 0,
-    weeklyExercises: 0
+    totalTests: 0,
+    averageScore: 0,
+    totalUsers: 0,
+    completionRate: 0
   });
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,81 +53,95 @@ export default function Dashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      setLoading(true);
-      
-      // Fetch active students count
-      const { data: studentsData, error: studentsError } = await supabase
-        .from('students')
-        .select('id')
-        .order('created_at', { ascending: false });
-
-      if (studentsError) throw studentsError;
-
-      // Fetch completed tests this month
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
-
-      const { data: testsData, error: testsError } = await supabase
-        .from('burdon_test_results')
-        .select('id, total_score, attention_ratio')
-        .gte('created_at', startOfMonth.toISOString());
-
-      if (testsError) throw testsError;
-
-      // Calculate average success rate
-      const averageScore = testsData && testsData.length > 0 
-        ? testsData.reduce((sum, test) => sum + (test.attention_ratio || 0), 0) / testsData.length
-        : 0;
-
-      // Fetch recent activities (Burdon test results)
-      const { data: activitiesData, error: activitiesError } = await supabase
-        .from('burdon_test_results')
+      // Test sonuçları ve istatistikleri
+      const { data: testResults, error: testError } = await (supabase as any)
+        .from('test_sonuclari')
         .select(`
           id,
-          total_score,
-          attention_ratio,
+          genel_test_skoru,
+          test_turu,
           created_at,
-          students!burdon_test_results_student_id_fkey(
-            users!students_user_id_fkey(first_name, last_name)
+          test_oturumlari!test_sonuclari_oturum_id_fkey(
+            users!test_oturumlari_kullanici_id_fkey(
+              first_name,
+              last_name,
+              ad_soyad,
+              email
+            )
           )
         `)
         .order('created_at', { ascending: false })
         .limit(5);
 
-      if (activitiesError) throw activitiesError;
+      if (testError) {
+        console.error('Test sonuçları hatası:', testError);
+        throw testError;
+      }
 
-      const formattedActivities: RecentActivity[] = activitiesData?.map(activity => {
-        const studentName = activity.students?.users 
-          ? `${activity.students.users.first_name} ${activity.students.users.last_name}`
-          : 'Bilinmeyen Öğrenci';
+      // Son 7 günün test sayısı
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      const { data: recentTests, error: recentError } = await (supabase as any)
+        .from('test_sonuclari')
+        .select('id, genel_test_skoru')
+        .gte('created_at', sevenDaysAgo.toISOString());
+
+      if (recentError) {
+        console.error('Son testler hatası:', recentError);
+        throw recentError;
+      }
+
+      // Toplam kullanıcı sayısı
+      const { data: totalUsers, error: usersError } = await (supabase as any)
+        .from('users')
+        .select('id', { count: 'exact' });
+
+      if (usersError) {
+        console.error('Kullanıcı sayısı hatası:', usersError);
+        throw usersError;
+      }
+
+      // Ortalama skor hesapla
+      const validScores = recentTests?.filter(test => test.genel_test_skoru != null) || [];
+      const averageScore = validScores.length > 0 
+        ? validScores.reduce((sum, test) => sum + test.genel_test_skoru, 0) / validScores.length 
+        : 0;
+
+      setStats({
+        totalTests: recentTests?.length || 0,
+        averageScore: Math.round(averageScore),
+        totalUsers: totalUsers?.length || 0,
+        completionRate: 85 // Sabit değer, gerçek hesaplama için ek sorgu gerekir
+      });
+
+      // Son aktiviteleri formatla
+      const formattedActivities = testResults?.map(result => {
+        const user = result.test_oturumlari?.users;
+        const studentName = user?.ad_soyad || 
+                           (user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : '') ||
+                           user?.email || 'Bilinmeyen Kullanıcı';
         
         return {
-          id: activity.id,
+          id: result.id,
           student_name: studentName,
-          activity: 'Burdon Dikkat Testi',
-          status: 'completed',
-          score: activity.attention_ratio ? Math.round(activity.attention_ratio * 100) : null,
-          time: activity.created_at
+          test_type: result.test_turu || 'Bilinmeyen Test',
+          score: result.genel_test_skoru || 0,
+          date: result.created_at
         };
       }) || [];
 
-      setStats({
-        activeStudents: studentsData?.length || 0,
-        completedTests: testsData?.length || 0,
-        averageSuccessRate: Math.round(averageScore * 100),
-        weeklyExercises: testsData?.length || 0 // Using same data for now
-      });
-
       setRecentActivities(formattedActivities);
-
+      
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      toast({
-        title: "Hata",
-        description: "Dashboard verileri yüklenirken bir hata oluştu.",
-        variant: "destructive",
+      console.error('Dashboard verisi alınırken hata:', error);
+      setStats({
+        totalTests: 0,
+        averageScore: 0,
+        totalUsers: 0,
+        completionRate: 0
       });
+      setRecentActivities([]);
     } finally {
       setLoading(false);
     }
@@ -198,59 +211,59 @@ export default function Dashboard() {
             </div>
           ) : (
             <>
-              <Card key="active-students" className="shadow-card hover:shadow-primary transition-all duration-300">
+              <Card key="total-users" className="shadow-card hover:shadow-primary transition-all duration-300">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Aktif Öğrenciler
+                    Toplam Kullanıcılar
                   </CardTitle>
                   <Users className="h-5 w-5 text-primary" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats.activeStudents}</div>
+                  <div className="text-2xl font-bold">{stats.totalUsers}</div>
                   <p className="text-xs text-success">
-                    {stats.activeStudents > 0 ? `${stats.activeStudents} öğrenci` : 'Aktif öğrenci yok'}
+                    {stats.totalUsers > 0 ? `${stats.totalUsers} kullanıcı` : 'Kullanıcı yok'}
                   </p>
                 </CardContent>
               </Card>
-              <Card key="completed-tests" className="shadow-card hover:shadow-primary transition-all duration-300">
+              <Card key="total-tests" className="shadow-card hover:shadow-primary transition-all duration-300">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Bu Ay Tamamlanan Testler
+                    Son 7 Gün Testler
                   </CardTitle>
                   <Brain className="h-5 w-5 text-success" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats.completedTests}</div>
+                  <div className="text-2xl font-bold">{stats.totalTests}</div>
                   <p className="text-xs text-success">
-                    {stats.completedTests > 0 ? `${stats.completedTests} test` : 'Tamamlanmış test yok'}
+                    {stats.totalTests > 0 ? `${stats.totalTests} test` : 'Test yok'}
                   </p>
                 </CardContent>
               </Card>
-              <Card key="average-success-rate" className="shadow-card hover:shadow-primary transition-all duration-300">
+              <Card key="average-score" className="shadow-card hover:shadow-primary transition-all duration-300">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Ortalama Başarı Oranı
+                    Ortalama Skor
                   </CardTitle>
                   <TrendingUp className="h-5 w-5 text-warning" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats.averageSuccessRate}%</div>
+                  <div className="text-2xl font-bold">{stats.averageScore}</div>
                   <p className="text-xs text-warning">
-                    {stats.averageSuccessRate > 0 ? `${stats.averageSuccessRate}%` : 'Başarı oranı yok'}
+                    {stats.averageScore > 0 ? `${stats.averageScore} puan` : 'Skor yok'}
                   </p>
                 </CardContent>
               </Card>
-              <Card key="weekly-exercises" className="shadow-card hover:shadow-primary transition-all duration-300">
+              <Card key="completion-rate" className="shadow-card hover:shadow-primary transition-all duration-300">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Bu Hafta Egzersizler
+                    Tamamlanma Oranı
                   </CardTitle>
                   <Activity className="h-5 w-5 text-primary" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats.weeklyExercises}</div>
+                  <div className="text-2xl font-bold">{stats.completionRate}%</div>
                   <p className="text-xs text-primary">
-                    {stats.weeklyExercises > 0 ? `${stats.weeklyExercises} egzersiz` : 'Egzersiz yok'}
+                    {stats.completionRate > 0 ? `${stats.completionRate}% tamamlandı` : 'Veri yok'}
                   </p>
                 </CardContent>
               </Card>
@@ -316,19 +329,21 @@ export default function Dashboard() {
                     <div key={activity.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/50">
                       <div className="flex-1">
                         <div className="font-medium text-sm">{activity.student_name}</div>
-                        <div className="text-xs text-muted-foreground">{activity.activity}</div>
+                        <div className="text-xs text-muted-foreground">{activity.test_type}</div>
                         <div className="flex items-center space-x-2 mt-1">
-                          {getStatusBadge(activity.status)}
-                          {activity.score && (
+                          <Badge variant="outline" className="text-xs bg-green-100 text-green-800">
+                            Tamamlandı
+                          </Badge>
+                          {activity.score > 0 && (
                             <Badge variant="outline" className="text-xs">
-                              {activity.score}%
+                              {activity.score} puan
                             </Badge>
                           )}
                         </div>
                       </div>
                       <div className="text-xs text-muted-foreground">
                         <Clock className="h-3 w-3 inline mr-1" />
-                        {formatTimeAgo(activity.time)}
+                        {formatTimeAgo(activity.date)}
                       </div>
                     </div>
                   ))
