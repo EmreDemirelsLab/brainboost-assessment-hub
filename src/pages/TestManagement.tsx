@@ -75,13 +75,23 @@ export default function TestManagement() {
 
   const fetchTests = async () => {
     try {
+      // Since there's no 'tests' table, we'll use test_oturumlari as test templates
       const { data, error } = await supabase
-        .from('tests')
-        .select('id, title, test_type, duration_minutes')
-        .eq('is_active', true);
+        .from('test_oturumlari')
+        .select('id, oturum_uuid, durum, created_at')
+        .eq('durum', 'baslatildi');
 
       if (error) throw error;
-      setTests(data || []);
+      
+      // Transform the data to match the Test interface
+      const transformedTests = data?.map(session => ({
+        id: session.id,
+        title: `Test Oturumu - ${session.oturum_uuid.substring(0, 8)}`,
+        test_type: 'genel',
+        duration_minutes: 60 // Default duration
+      })) || [];
+      
+      setTests(transformedTests);
     } catch (error) {
       console.error('Error fetching tests:', error);
     }
@@ -137,15 +147,15 @@ export default function TestManagement() {
 
       // Create test results for selected students
       const testResults = selectedStudents.map(studentId => ({
-        test_id: selectedTest,
-        student_id: studentId,
-        conducted_by: currentUser.id,
-        start_time: new Date().toISOString(),
-        status: 'assigned'
+        oturum_id: selectedTest,
+        kullanici_id: currentUser.id,
+        test_turu: 'atanmis',
+        durum: 'baslanmadi',
+        baslangic_tarihi: new Date().toISOString()
       }));
 
       const { error } = await supabase
-        .from('test_results')
+        .from('test_sonuclari')
         .insert(testResults);
 
       if (error) throw error;
