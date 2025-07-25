@@ -1978,37 +1978,31 @@
 
            // 11. Ana test
            startMainTest() {
-               testState.mainIndex = 0;
+               try {
+                   testState.cleanup();
+                   showScreen('mainTestScreen');
+                   
+                                  testState.mainIndex = 0;
                testState.mainAnswers = [];
                testState.mainTimeLeft = CONFIG.MAIN_TIME_LIMIT;
                testState.mainStartTime = Date.now();
                testState.reactionTimes = [];
-               testState.sectionStartTimes = {};
-               testState.sectionEndTimes = {};
-               testState.incompleteAtQuestion = null;
-               
-               // İlk bölümü ayarla
-               testState.currentSection = getCurrentSection(0);
-               testState.sectionStartTimes['section1'] = Date.now();
-               
-               // 🎯 ANA TEST BAŞLADI LOGLAMA
-               console.log('🎯 DİKKAT TESTİ BAŞLADI:');
-               console.log('📊 TEST PARAMETRELERİ:', {
-                   toplamSoru: TEST_DATA.mainQuestions.length,
-                   testSuresi: `${CONFIG.MAIN_TIME_LIMIT / 1000} saniye`,
-                   bolumSayisi: 3,
-                   bolumleriGoster: {
-                       '1.BÖLÜM': `Soru ${TEST_STRUCTURE.sections.section1.start + 1}-${TEST_STRUCTURE.sections.section1.end + 1}`,
-                       '2.BÖLÜM': `Soru ${TEST_STRUCTURE.sections.section2.start + 1}-${TEST_STRUCTURE.sections.section2.end + 1}`,
-                       '3.BÖLÜM': `Soru ${TEST_STRUCTURE.sections.section3.start + 1}-${TEST_STRUCTURE.sections.section3.end + 1}`
-                   },
-                   soruTipleri: ['Sayı (s)', 'Harf (h)', 'Karma (s/h)'],
-                   baslangicZamani: new Date().toLocaleTimeString('tr-TR')
-               });
-               
-               console.log('🚀 İlk bölüm başlatılıyor...');
-
-               this.showMainQuestion();
+                   
+                   // Test durumu işaretle
+                   localStorage.setItem('attentionTestStatus', 'in_progress');
+                   localStorage.setItem('attentionTestStartTime', testState.mainStartTime.toString());
+                   
+                   // İlk bölümü başlat
+                   testState.currentSection = getCurrentSection(0);
+                   testState.sectionStartTimes['section1'] = Date.now();
+                   console.log('🏁 1. BÖLÜM başladı');
+                   
+                   this.startMainTimer();
+                   this.startPeriodicSave(); // Periyodik kayıt başlat
+                   this.showMainQuestion();
+               } catch (e) {
+                   handleError(`Ana test başlatma hatası: ${e.message}`, false);
+               }
            },
 
            // Periyodik ara kayıt sistemi
@@ -2097,16 +2091,7 @@
                    const currentSection = getCurrentSection(testState.mainIndex);
                    const questionType = getQuestionType(testState.mainIndex);
                    
-                   // 📋 SORU GÖSTERİM LOGLAMA
-                   console.log(`📋 SORU GÖSTERİLİYOR - ${testState.mainIndex + 1}/${TEST_DATA.mainQuestions.length}:`, {
-                       soruNo: testState.mainIndex + 1,
-                       bolum: currentSection ? currentSection.name : 'Bilinmeyen',
-                       soruTipi: questionType === 's' ? 'Sayı' : questionType === 'h' ? 'Harf' : 'Karma (s/h)',
-                       soruSecenekleri: question.question.join(' | '),
-                       dogruCevap: question.target,
-                       kalanSure: `${Math.round(testState.mainTimeLeft / 1000)}s`,
-                       gosterimZamani: new Date().toLocaleTimeString('tr-TR')
-                   });
+                   console.log(`📋 Soru ${testState.mainIndex + 1}/${TEST_DATA.mainQuestions.length} gösteriliyor`);
                    
                    const display = safeGetElement('mainDisplay');
                    
@@ -2790,54 +2775,6 @@
        window.retryExampleFromFail = function() {
            DikkatTest.retryExampleFromFail();
        };
-
-       // DOM yüklendiğinde başlat
-       document.addEventListener('DOMContentLoaded', function() {
-           try {
-               // Ses desteği kontrolü
-               if (typeof Audio === 'undefined') {
-                   throw new Error('Bu tarayıcı ses dosyalarını desteklemiyor');
-               }
-
-               // Local Storage desteği kontrolü
-               if (typeof Storage === 'undefined') {
-                   console.warn('Local Storage desteklenmiyor - veriler kaydedilmeyecek');
-               }
-
-               // 🚀 SİSTEM BAŞLATMA LOGLARI
-               console.log('🚀 DİKKAT TESTİ SİSTEMİ BAŞLATILIYOR...');
-               console.log('⚙️ SİSTEM PARAMETRELERİ:', {
-                   testVersion: 'Dikkat Testi v2.0',
-                   toplamSoru: TEST_DATA.mainQuestions.length,
-                   ornekSoru: TEST_DATA.practiceQuestions.length,
-                   bolumSayisi: Object.keys(TEST_STRUCTURE.sections).length,
-                   soruTipleri: ['Sayı (s)', 'Harf (h)', 'Karma (s/h)'],
-                   maksimumSure: `${CONFIG.MAIN_TIME_LIMIT / 1000} saniye`,
-                   ornekSure: `${CONFIG.PRACTICE_TIME_LIMIT / 1000} saniye`,
-                   sesDesteği: typeof Audio !== 'undefined' ? '✅ Var' : '❌ Yok',
-                   localStorageDesteği: typeof Storage !== 'undefined' ? '✅ Var' : '❌ Yok',
-                   ekranBoyutu: `${window.innerWidth}x${window.innerHeight}`,
-                   userAgent: navigator.userAgent.includes('Mobile') ? 'Mobil' : 'Masaüstü',
-                   baslangicZamani: new Date().toLocaleTimeString('tr-TR')
-               });
-               
-               console.log('📋 TEST YAPISI:');
-               Object.entries(TEST_STRUCTURE.sections).forEach(([key, section]) => {
-                   console.log(`  ${section.name}:`, {
-                       baslangicSorusu: section.start + 1,
-                       bitisSorusu: section.end + 1,
-                       soruSayisi: section.end - section.start + 1
-                   });
-               });
-               
-               console.log('🔧 SİSTEM HAZIR - Test başlatılabilir!');
-
-               // Test kontrolü
-               DikkatTest.initialize();
-           } catch (e) {
-               handleError(`Sistem başlatma hatası: ${e.message}`, true);
-           }
-       });
 
    </script>
 </body>
