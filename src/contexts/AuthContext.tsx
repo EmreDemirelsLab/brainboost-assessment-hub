@@ -3,6 +3,14 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types/auth';
 import { toast } from 'sonner';
+import { 
+  validateEmail, 
+  validatePassword, 
+  sanitizeInput, 
+  authRateLimiter, 
+  validateSession,
+  logSecurityEvent 
+} from '@/lib/security';
 
 export interface AuthUser {
   id: string;
@@ -137,17 +145,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string): Promise<{ error?: string }> => {
     try {
+      // Input validation and sanitization
+      const cleanEmail = sanitizeInput(email?.toLowerCase() || '');
+      
+      if (!validateEmail(cleanEmail)) {
+        logSecurityEvent({
+          action: 'invalid_login_email',
+          details: { email: cleanEmail },
+          severity: 'medium'
+        });
+        return { error: 'Geçerli bir e-posta adresi girin.' };
+      }
+
+      if (!password || password.length < 6) {
+        return { error: 'Şifre en az 6 karakter olmalıdır.' };
+      }
+
+      // Rate limiting
+      if (!authRateLimiter.canAttempt(cleanEmail)) {
+        const remainingTime = Math.ceil(authRateLimiter.getRemainingTime(cleanEmail) / (1000 * 60));
+        logSecurityEvent({
+          action: 'rate_limit_exceeded',
+          details: { email: cleanEmail },
+          severity: 'high'
+        });
+        return { error: `Çok fazla deneme yapıldı. ${remainingTime} dakika sonra tekrar deneyin.` };
+      }
+
       const { error } = await supabase.auth.signInWithPassword({
-        email,
+        email: cleanEmail,
         password,
       });
 
       if (error) {
+        logSecurityEvent({
+          action: 'login_failed',
+          details: { email: cleanEmail, error: error.message },
+          severity: 'medium'
+        });
         return { error: error.message };
       }
 
+      logSecurityEvent({
+        action: 'login_success',
+        details: { email: cleanEmail },
+        severity: 'low'
+      });
+
       return {};
     } catch (error) {
+      logSecurityEvent({
+        action: 'login_error',
+        details: { error: String(error) },
+        severity: 'high'
+      });
       return { error: 'Giriş yapılırken beklenmeyen bir hata oluştu.' };
     }
   };
@@ -160,29 +211,74 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     roles: UserRole[] = ['user']
   ): Promise<{ error?: string }> => {
     try {
+      // Input validation and sanitization
+      const cleanEmail = sanitizeInput(email?.toLowerCase() || '');
+      const cleanFirstName = sanitizeInput(firstName || '');
+      const cleanLastName = sanitizeInput(lastName || '');
+      
+      if (!validateEmail(cleanEmail)) {
+        return { error: 'Geçerli bir e-posta adresi girin.' };
+      }
+
+      const passwordValidation = validatePassword(password);
+      if (!passwordValidation.isValid) {
+        return { error: passwordValidation.errors.join(', ') };
+      }
+
+      if (!cleanFirstName || cleanFirstName.length < 2) {
+        return { error: 'Ad en az 2 karakter olmalıdır.' };
+      }
+
+      if (!cleanLastName || cleanLastName.length < 2) {
+        return { error: 'Soyad en az 2 karakter olmalıdır.' };
+      }
+
+      // Rate limiting for user creation
+      if (!authRateLimiter.canAttempt(`signup_${cleanEmail}`)) {
+        logSecurityEvent({
+          action: 'signup_rate_limit_exceeded',
+          details: { email: cleanEmail },
+          severity: 'high'
+        });
+        return { error: 'Çok fazla kayıt denemesi yapıldı. Lütfen daha sonra tekrar deneyin.' };
+      }
+
       const redirectUrl = `${window.location.origin}/`;
       
       const { error } = await supabase.auth.signUp({
-        email,
+        email: cleanEmail,
         password,
         options: {
           emailRedirectTo: redirectUrl,
           data: {
-            first_name: firstName,
-            last_name: lastName,
+            first_name: cleanFirstName,
+            last_name: cleanLastName,
           }
         }
       });
 
       if (error) {
+        logSecurityEvent({
+          action: 'signup_failed',
+          details: { email: cleanEmail, error: error.message },
+          severity: 'medium'
+        });
         return { error: error.message };
       }
 
-      // TODO: After user is created, assign roles via admin function
-      // This will require additional API call to assign specific roles
+      logSecurityEvent({
+        action: 'signup_success',
+        details: { email: cleanEmail },
+        severity: 'low'
+      });
 
       return {};
     } catch (error) {
+      logSecurityEvent({
+        action: 'signup_error',
+        details: { error: String(error) },
+        severity: 'high'
+      });
       return { error: 'Kullanıcı oluşturulurken beklenmeyen bir hata oluştu.' };
     }
   };
@@ -202,18 +298,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const resetPassword = async (email: string): Promise<{ error?: string }> => {
     try {
+      // Input validation and sanitization
+      const cleanEmail = sanitizeInput(email?.toLowerCase() || '');
+      
+      if (!validateEmail(cleanEmail)) {
+        return { error: 'Geçerli bir e-posta adresi girin.' };
+      }
+
+      // Rate limiting for password reset
+      if (!authRateLimiter.canAttempt(`reset_${cleanEmail}`)) {
+        logSecurityEvent({
+          action: 'password_reset_rate_limit_exceeded',
+          details: { email: cleanEmail },
+          severity: 'medium'
+        });
+        return { error: 'Çok fazla şifre sıfırlama denemesi yapıldı. Lütfen daha sonra tekrar deneyin.' };
+      }
+
       const redirectUrl = `${window.location.origin}/`;
       
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
         redirectTo: redirectUrl,
       });
 
       if (error) {
+        logSecurityEvent({
+          action: 'password_reset_failed',
+          details: { email: cleanEmail, error: error.message },
+          severity: 'medium'
+        });
         return { error: error.message };
       }
 
+      logSecurityEvent({
+        action: 'password_reset_requested',
+        details: { email: cleanEmail },
+        severity: 'low'
+      });
+
       return {};
     } catch (error) {
+      logSecurityEvent({
+        action: 'password_reset_error',
+        details: { error: String(error) },
+        severity: 'high'
+      });
       return { error: 'Şifre sıfırlama e-postası gönderilirken bir hata oluştu.' };
     }
   };
