@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          operationName?: string
-          query?: string
-          variables?: Json
-          extensions?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       akil_mantik_testi_detaylari: {
@@ -926,7 +901,7 @@ export type Database = {
             foreignKeyName: "test_oturumlari_kullanici_id_fkey"
             columns: ["kullanici_id"]
             isOneToOne: false
-            referencedRelation: "kullanicilar"
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -1015,7 +990,7 @@ export type Database = {
             foreignKeyName: "test_sonuclari_kullanici_id_fkey"
             columns: ["kullanici_id"]
             isOneToOne: false
-            referencedRelation: "kullanicilar"
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
           {
@@ -1058,6 +1033,7 @@ export type Database = {
       }
       users: {
         Row: {
+          ad_soyad: string | null
           auth_user_id: string
           avatar_url: string | null
           created_at: string
@@ -1065,11 +1041,13 @@ export type Database = {
           first_name: string
           id: string
           is_active: boolean | null
+          kullanici_kodu: string | null
           last_name: string
           phone: string | null
           updated_at: string
         }
         Insert: {
+          ad_soyad?: string | null
           auth_user_id: string
           avatar_url?: string | null
           created_at?: string
@@ -1077,11 +1055,13 @@ export type Database = {
           first_name: string
           id?: string
           is_active?: boolean | null
+          kullanici_kodu?: string | null
           last_name: string
           phone?: string | null
           updated_at?: string
         }
         Update: {
+          ad_soyad?: string | null
           auth_user_id?: string
           avatar_url?: string | null
           created_at?: string
@@ -1089,6 +1069,7 @@ export type Database = {
           first_name?: string
           id?: string
           is_active?: boolean | null
+          kullanici_kodu?: string | null
           last_name?: string
           phone?: string | null
           updated_at?: string
@@ -1239,9 +1220,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       user_role: ["admin", "trainer", "representative", "user"],
