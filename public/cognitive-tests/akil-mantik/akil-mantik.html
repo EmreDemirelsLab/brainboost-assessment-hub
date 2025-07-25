@@ -2301,15 +2301,9 @@
         // ==================== VERİTABANI KAYIT ====================
         async function saveTestResults(results) {
             try {
-                const urlParams = new URLSearchParams(window.location.search);
                 
                 const payload = {
                     testType: 'Akil_Mantik_Testi',
-                    learnworlds_user_id: urlParams.get('user_id'),
-                    learnworlds_user_email: urlParams.get('user_email'),
-                    learnworlds_user_name: urlParams.get('user_name'),
-                    course_id: urlParams.get('course_id'),
-                    lesson_id: urlParams.get('lesson_id'),
                     
                     // Test zamanları
                     test_start_time: testState.testStartTime,
@@ -2349,7 +2343,6 @@
                 // Veritabanı kayıt logu
                 console.log(`\n💾 ================= VERİTABANI KAYIT =================`);
                 console.log(`📊 Payload Boyutu: ${JSON.stringify(payload).length} karakter`);
-                console.log(`👤 Kullanıcı: ${payload.learnworlds_user_email || 'Bilinmiyor'}`);
                 console.log(`📋 Test Türü: ${payload.testType}`);
                 console.log(`📅 Kayıt Zamanı: ${new Date().toLocaleString('tr-TR')}`);
                 
