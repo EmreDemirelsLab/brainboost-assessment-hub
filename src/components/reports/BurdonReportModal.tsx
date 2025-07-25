@@ -73,7 +73,7 @@ export function BurdonReportModal({ resultId, open, onClose }: BurdonReportModal
         conducted_by_name: conductorName
       };
 
-      setResult(formattedResult as BurdonTestResult);
+      setResult(formattedResult as unknown as BurdonTestResult);
       console.log('Result fetched successfully:', formattedResult);
     } catch (error) {
       console.error('Error fetching result:', error);

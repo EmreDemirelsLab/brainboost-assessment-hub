@@ -10,15 +10,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Play, Download, Users, Clock, Search, Filter, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-interface Test {
+interface TestSession {
   id: string;
-  title: string;
-  description: string | null;
-  test_type: string;
-  duration_minutes: number | null;
-  is_active: boolean;
+  kullanici_id: string;
+  oturum_uuid: string;
+  durum: string;
+  baslangic_tarihi: string;
   created_at: string;
-  instructions: string | null;
 }
 
 interface Student {
@@ -30,35 +28,35 @@ interface Student {
 }
 
 export default function ReadingTests() {
-  const [tests, setTests] = useState<Test[]>([]);
+  const [testSessions, setTestSessions] = useState<TestSession[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [selectedTest, setSelectedTest] = useState<Test | null>(null);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedSession, setSelectedSession] = useState<TestSession | null>(null);
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchTests();
+    fetchTestSessions();
     fetchStudents();
   }, []);
 
-  const fetchTests = async () => {
+  const fetchTestSessions = async () => {
     try {
-      const { data, error } = await supabase
-        .from('tests')
+      const { data } = await supabase
+        .from('test_oturumlari')
         .select('*')
-        .eq('is_active', true)
         .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setTests(data || []);
+    
+      if (data) {
+        setTestSessions(data);
+      }
     } catch (error) {
-      console.error('Error fetching tests:', error);
+      console.error('Error fetching test sessions:', error);
       toast({
         title: "Hata",
-        description: "Testler yüklenirken bir hata oluştu.",
+        description: "Test oturumları yüklenirken bir hata oluştu.",
         variant: "destructive",
       });
     }
@@ -89,7 +87,7 @@ export default function ReadingTests() {
     }
   };
 
-  const handleStartTest = async (test: Test) => {
+  const handleStartTest = async (session: TestSession) => {
     if (selectedStudents.length === 0) {
       toast({
         title: "Uyarı",
@@ -115,25 +113,25 @@ export default function ReadingTests() {
 
       // Create test results for selected students
       const testResults = selectedStudents.map(studentId => ({
-        test_id: test.id,
-        student_id: studentId,
-        conducted_by: currentUser.id,
-        start_time: new Date().toISOString(),
-        status: 'in_progress'
+        oturum_id: session.id,
+        kullanici_id: currentUser.id,
+        test_turu: 'okuma',
+        durum: 'devam_ediyor',
+        baslangic_tarihi: new Date().toISOString()
       }));
 
       const { error } = await supabase
-        .from('test_results')
+        .from('test_sonuclari')
         .insert(testResults);
 
       if (error) throw error;
 
       toast({
         title: "Başarılı",
-        description: `${test.title} testi ${selectedStudents.length} öğrenci için başlatıldı.`,
+        description: `Okuma testi ${selectedStudents.length} öğrenci için başlatıldı.`,
       });
 
-      setSelectedTest(null);
+      setSelectedSession(null);
       setSelectedStudents([]);
     } catch (error) {
       console.error('Error starting test:', error);
@@ -145,16 +143,16 @@ export default function ReadingTests() {
     }
   };
 
-  const handleDownloadResults = async (test: Test) => {
+  const handleDownloadResults = async (session: TestSession) => {
     try {
       const { data, error } = await supabase
-        .from('test_results')
+        .from('test_sonuclari')
         .select(`
           *,
-          students(*, users(first_name, last_name)),
-          tests(title)
+          test_oturumlari(*)
         `)
-        .eq('test_id', test.id);
+        .eq('oturum_id', session.id)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
@@ -162,7 +160,7 @@ export default function ReadingTests() {
       // For now, just show a success message
       toast({
         title: "Başarılı",
-        description: `${test.title} sonuçları indiriliyor...`,
+        description: `Test sonuçları indiriliyor...`,
       });
     } catch (error) {
       console.error('Error downloading results:', error);
@@ -174,19 +172,18 @@ export default function ReadingTests() {
     }
   };
 
-  const filteredTests = tests.filter(test => {
-    const matchesSearch = test.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         test.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = typeFilter === "all" || test.test_type === typeFilter;
-    return matchesSearch && matchesType;
+  const filteredSessions = testSessions.filter(session => {
+    const matchesSearch = session.oturum_uuid.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === "all" || session.durum === statusFilter;
+    return matchesSearch && matchesStatus;
   });
 
-  const testTypes = [...new Set(tests.map(t => t.test_type))];
+  const statusOptions = [...new Set(testSessions.map(s => s.durum))];
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg">Testler yükleniyor...</div>
+        <div className="text-lg">Test oturumları yükleniyor...</div>
       </div>
     );
   }
@@ -206,7 +203,7 @@ export default function ReadingTests() {
         <CardHeader>
           <CardTitle>Test Filtreleri</CardTitle>
           <CardDescription>
-            Testleri arayabilir ve türe göre filtreleyebilirsiniz.
+            Test oturumlarını arayabilir ve duruma göre filtreleyebilirsiniz.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -215,23 +212,23 @@ export default function ReadingTests() {
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Test başlığı veya açıklama ara..."
+                  placeholder="Oturum UUID ara..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
                 />
               </div>
             </div>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-48">
                 <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Test türü seçin" />
+                <SelectValue placeholder="Durum seçin" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tüm Türler</SelectItem>
-                {testTypes.map(type => (
-                  <SelectItem key={type} value={type}>
-                    {type}
+                <SelectItem value="all">Tüm Durumlar</SelectItem>
+                {statusOptions.map(status => (
+                  <SelectItem key={status} value={status}>
+                    {status}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -242,58 +239,41 @@ export default function ReadingTests() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Mevcut Testler</CardTitle>
+          <CardTitle>Test Oturumları</CardTitle>
           <CardDescription>
-            Toplam {filteredTests.length} test bulundu.
+            Toplam {filteredSessions.length} oturum bulundu.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {filteredTests.length === 0 ? (
+          {filteredSessions.length === 0 ? (
             <div className="text-center py-8">
               <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">Henüz test bulunmuyor.</p>
+              <p className="text-muted-foreground">Henüz test oturumu bulunmuyor.</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Test Adı</TableHead>
-                  <TableHead>Tür</TableHead>
-                  <TableHead>Süre</TableHead>
+                  <TableHead>Oturum ID</TableHead>
                   <TableHead>Durum</TableHead>
+                  <TableHead>Başlangıç</TableHead>
                   <TableHead>İşlemler</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredTests.map((test) => (
-                  <TableRow key={test.id}>
+                {filteredSessions.map((session) => (
+                  <TableRow key={session.id}>
                     <TableCell>
-                      <div>
-                        <div className="font-medium">{test.title}</div>
-                        {test.description && (
-                          <div className="text-sm text-muted-foreground">
-                            {test.description.substring(0, 100)}...
-                          </div>
-                        )}
+                      <div className="font-medium">{session.oturum_uuid}</div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{session.durum}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        {new Date(session.baslangic_tarihi).toLocaleDateString('tr-TR')}
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{test.test_type}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      {test.duration_minutes ? (
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          {test.duration_minutes} dk
-                        </div>
-                      ) : (
-                        'Sınırsız'
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={test.is_active ? "default" : "secondary"}>
-                        {test.is_active ? "Aktif" : "Pasif"}
-                      </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
@@ -302,17 +282,17 @@ export default function ReadingTests() {
                             <Button 
                               variant="outline" 
                               size="sm"
-                              onClick={() => setSelectedTest(test)}
+                              onClick={() => setSelectedSession(session)}
                             >
                               <Play className="h-4 w-4 mr-2" />
-                              Başlat
+                              Test Başlat
                             </Button>
                           </DialogTrigger>
                           <DialogContent className="max-w-2xl">
                             <DialogHeader>
-                              <DialogTitle>Test Başlat: {selectedTest?.title}</DialogTitle>
+                              <DialogTitle>Test Başlat: {selectedSession?.oturum_uuid}</DialogTitle>
                               <DialogDescription>
-                                Bu testi hangi öğrenciler için başlatmak istiyorsunuz?
+                                Bu test oturumu için hangi öğrenciler katılacak?
                               </DialogDescription>
                             </DialogHeader>
                             <div className="space-y-4">
@@ -343,14 +323,14 @@ export default function ReadingTests() {
                                 <Button
                                   variant="outline"
                                   onClick={() => {
-                                    setSelectedTest(null);
+                                    setSelectedSession(null);
                                     setSelectedStudents([]);
                                   }}
                                 >
                                   İptal
                                 </Button>
                                 <Button
-                                  onClick={() => selectedTest && handleStartTest(selectedTest)}
+                                  onClick={() => selectedSession && handleStartTest(selectedSession)}
                                   disabled={selectedStudents.length === 0}
                                 >
                                   <Users className="h-4 w-4 mr-2" />
@@ -364,7 +344,7 @@ export default function ReadingTests() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleDownloadResults(test)}
+                          onClick={() => handleDownloadResults(session)}
                         >
                           <Download className="h-4 w-4 mr-2" />
                           Sonuçları İndir
