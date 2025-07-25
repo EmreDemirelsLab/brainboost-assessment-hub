@@ -1,13 +1,15 @@
 import { supabase } from '../integrations/supabase/client';
-import { TestTuru } from '@/types/database';
+import { ScoreService } from './scoreService';
 
 class TestService {
+  private scoreService = new ScoreService();
+
   async createTestSession(kullaniciId: string): Promise<any> {
     console.log('🔍 createTestSession çağrıldı:', kullaniciId);
     
     try {
       // Kullanıcının users tablosunda olup olmadığını kontrol et
-      const { data: existingUser, error: userCheckError } = await (supabase as any)
+      const { data: existingUser, error: userCheckError } = await supabase
         .from('users')
         .select('id')
         .eq('id', kullaniciId)
@@ -28,7 +30,7 @@ class TestService {
 
       // Aktif oturum kontrol et
       console.log('🔎 Aktif oturum kontrol ediliyor...');
-      const { data: existingSessions, error: checkError } = await (supabase as any)
+      const { data: existingSessions, error: checkError } = await supabase
         .from('test_oturumlari')
         .select('*')
         .eq('kullanici_id', kullaniciId)
@@ -40,7 +42,7 @@ class TestService {
       // Eski oturumları temizle
       if (existingSessions && existingSessions.length > 0) {
         console.log('🧹 Eski oturumlar temizleniyor...');
-        const { error: cleanupError } = await (supabase as any)
+        const { error: cleanupError } = await supabase
           .from('test_oturumlari')
           .update({ durum: 'terk_edildi' })
           .eq('kullanici_id', kullaniciId)
@@ -53,7 +55,7 @@ class TestService {
       const uniqueUUID = crypto.randomUUID();
       console.log('🆕 Yeni oturum oluşturuluyor...', { kullaniciId, uniqueUUID });
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('test_oturumlari')
         .insert({
           kullanici_id: kullaniciId,
@@ -79,7 +81,7 @@ class TestService {
   async saveTestResult(testData: any): Promise<{ data: any | null; error: any }> {
     try {
       // Önce aynı oturum + test türü kombinasyonu var mı kontrol et
-      const { data: existingResult, error: checkError } = await (supabase as any)
+      const { data: existingResult, error: checkError } = await supabase
         .from('test_sonuclari')
         .select('*')
         .eq('oturum_id', testData.oturum_id)
@@ -89,7 +91,7 @@ class TestService {
       if (existingResult && !checkError) {
         // Mevcut kayıt varsa, güncelle
         console.log('🔄 Mevcut test sonucu güncelleniyor:', existingResult.id);
-        const { data, error } = await (supabase as any)
+        const { data, error } = await supabase
           .from('test_sonuclari')
           .update(testData)
           .eq('id', existingResult.id)
@@ -100,7 +102,7 @@ class TestService {
       } else {
         // Mevcut kayıt yoksa, yeni kayıt ekle
         console.log('🆕 Yeni test sonucu ekleniyor');
-        const { data, error } = await (supabase as any)
+        const { data, error } = await supabase
           .from('test_sonuclari')
           .insert(testData)
           .select()
@@ -125,7 +127,7 @@ class TestService {
       const testSonucId = responses[0]?.test_sonuc_id;
       if (testSonucId) {
         console.log('🧹 Mevcut soru cevapları temizleniyor:', testSonucId);
-        await (supabase as any)
+        await supabase
           .from('soru_cevaplari')
           .delete()
           .eq('test_sonuc_id', testSonucId);
@@ -133,7 +135,7 @@ class TestService {
 
       // Yeni cevapları ekle
       console.log('🆕 Yeni soru cevapları ekleniyor:', responses.length);
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('soru_cevaplari')
         .insert(responses)
         .select();
@@ -146,27 +148,33 @@ class TestService {
   }
 
   // Test detaylarını kaydet (upsert - insert or update)
-  async saveTestDetails(testTuru: TestTuru, testSonucId: string, detaylar: any): Promise<{ data: any; error: any }> {
+  async saveTestDetails(testTuru: string, testSonucId: string, detaylar: any): Promise<{ data: any; error: any }> {
     try {
       const tableName = this.getDetailTableName(testTuru);
       
-      // Önce aynı test_sonuc_id ile kayıt var mı kontrol et
-      const { data: existingDetail, error: checkError } = await (supabase as any)
-        .from(tableName)
+      // Tablo ismi geçerli değilse hata döndür
+      if (!this.isValidTableName(tableName)) {
+        return { data: null, error: { message: 'Geçersiz test türü' } };
+      }
+      
+      // Önce aynı test_sonuc_id ile kayıt var mı kontrol et - any kullanarak type safety'yi bypass et
+      const checkQuery = (supabase as any).from(tableName);
+      const { data: existingDetail, error: checkError } = await checkQuery
         .select('*')
         .eq('test_sonuc_id', testSonucId)
         .maybeSingle();
 
       const detailData = {
         test_sonuc_id: testSonucId,
+        kullanici_id: detaylar.kullanici_id,
         ...detaylar
       };
 
       if (existingDetail && !checkError) {
         // Mevcut kayıt varsa, güncelle
         console.log('🔄 Mevcut test detayı güncelleniyor:', existingDetail.id);
-        const { data, error } = await (supabase as any)
-          .from(tableName)
+        const updateQuery = (supabase as any).from(tableName);
+        const { data, error } = await updateQuery
           .update(detailData)
           .eq('id', existingDetail.id)
           .select()
@@ -176,8 +184,8 @@ class TestService {
       } else {
         // Mevcut kayıt yoksa, yeni kayıt ekle
         console.log('🆕 Yeni test detayı ekleniyor');
-        const { data, error } = await (supabase as any)
-          .from(tableName)
+        const insertQuery = (supabase as any).from(tableName);
+        const { data, error } = await insertQuery
           .insert(detailData)
           .select()
           .single();
@@ -192,7 +200,7 @@ class TestService {
 
   // Test oturumunu güncelle
   async updateTestSession(oturumId: string, updates: any): Promise<{ data: any | null; error: any }> {
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('test_oturumlari')
       .update(updates)
       .eq('id', oturumId)
@@ -204,7 +212,7 @@ class TestService {
 
   // Kullanıcının test geçmişini getir
   async getUserTestHistory(kullaniciId: string): Promise<{ data: any[] | null; error: any }> {
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('test_oturumlari')
       .select(`
         *,
@@ -219,7 +227,7 @@ class TestService {
 
   // Test oturumu durumunu getir
   async getTestSession(oturumId: string): Promise<{ data: any | null; error: any }> {
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('test_oturumlari')
       .select('*')
       .eq('id', oturumId)
@@ -228,16 +236,82 @@ class TestService {
     return { data, error };
   }
 
+  // Burdon test sonuçlarını getir
+  async getBurdonTestResults(studentId?: string): Promise<{ data: any[] | null; error: any }> {
+    let query = supabase
+      .from('burdon_test_results')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (studentId) {
+      query = query.eq('student_id', studentId);
+    }
+
+    const { data, error } = await query;
+    return { data, error };
+  }
+
+  // Burdon test sonucu kaydet
+  async saveBurdonTestResult(resultData: any): Promise<{ data: any | null; error: any }> {
+    try {
+      const { data, error } = await supabase
+        .from('burdon_test_results')
+        .insert(resultData)
+        .select()
+        .single();
+      
+      return { data, error };
+    } catch (error) {
+      console.error('❌ saveBurdonTestResult hatası:', error);
+      return { data: null, error };
+    }
+  }
+
+  // Test oturumunu tamamla ve skorları hesapla
+  async completeTestSession(oturumId: string): Promise<{ data: any | null; error: any }> {
+    try {
+      // Test oturumunu tamamla
+      const { error: updateError } = await supabase
+        .from('test_oturumlari')
+        .update({ 
+          durum: 'tamamlandi',
+          bitis_tarihi: new Date().toISOString()
+        })
+        .eq('id', oturumId);
+
+      if (updateError) throw updateError;
+
+      // Bilişsel skorları hesapla
+      const scoreResult = await this.scoreService.calculateCognitiveScores(oturumId);
+      
+      return { data: scoreResult.data, error: scoreResult.error };
+    } catch (error) {
+      console.error('❌ completeTestSession hatası:', error);
+      return { data: null, error };
+    }
+  }
+
   // Yardımcı fonksiyonlar
-  private getDetailTableName(testTuru: TestTuru): string {
-    const tableMap = {
+  private getDetailTableName(testTuru: string): string {
+    const tableMap: Record<string, string> = {
       'dikkat': 'dikkat_testi_detaylari',
       'akil_mantik': 'akil_mantik_testi_detaylari',
       'hafiza': 'hafiza_testi_detaylari',
       'puzzle': 'puzzle_testi_detaylari',
       'stroop': 'stroop_testi_detaylari'
     };
-    return tableMap[testTuru];
+    return tableMap[testTuru] || 'dikkat_testi_detaylari';
+  }
+
+  private isValidTableName(tableName: string): boolean {
+    const validTables = [
+      'dikkat_testi_detaylari',
+      'akil_mantik_testi_detaylari',
+      'hafiza_testi_detaylari',
+      'puzzle_testi_detaylari',
+      'stroop_testi_detaylari'
+    ];
+    return validTables.includes(tableName);
   }
 
   private getDeviceInfo(): string {
@@ -265,4 +339,4 @@ class TestService {
   }
 }
 
-export const testService = new TestService(); 
+export const testService = new TestService();

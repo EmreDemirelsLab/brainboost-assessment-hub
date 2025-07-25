@@ -70,10 +70,30 @@ export function BurdonReportModal({ resultId, open, onClose }: BurdonReportModal
       const formattedResult = {
         ...resultData,
         student_name: studentName,
-        conducted_by_name: conductorName
+        conducted_by_name: conductorName,
+        // Supabase veritabanındaki sütunlara göre default değerler
+        total_correct: 0,
+        total_missed: 0,
+        total_wrong: 0,
+        total_score: 0,
+        attention_ratio: 0,
+        section1_correct: 0,
+        section1_missed: 0,
+        section1_wrong: 0,
+        section1_score: 0,
+        section2_correct: 0,
+        section2_missed: 0,
+        section2_wrong: 0,
+        section2_score: 0,
+        section3_correct: 0,
+        section3_missed: 0,
+        section3_wrong: 0,
+        section3_score: 0,
+        detailed_results: null,
+        notes: null
       };
 
-      setResult(formattedResult as unknown as BurdonTestResult);
+      setResult(formattedResult as BurdonTestResult);
       console.log('Result fetched successfully:', formattedResult);
     } catch (error) {
       console.error('Error fetching result:', error);
