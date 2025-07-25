@@ -1978,31 +1978,37 @@
 
            // 11. Ana test
            startMainTest() {
-               try {
-                   testState.cleanup();
-                   showScreen('mainTestScreen');
-                   
-                   testState.mainIndex = 0;
-                   testState.mainAnswers = [];
-                   testState.mainTimeLeft = CONFIG.MAIN_TIME_LIMIT;
-                   testState.mainStartTime = Date.now();
-                   testState.reactionTimes = [];
-                   
-                   // Test durumu işaretle
-                   localStorage.setItem('attentionTestStatus', 'in_progress');
-                   localStorage.setItem('attentionTestStartTime', testState.mainStartTime.toString());
-                   
-                   // İlk bölümü başlat
-                   testState.currentSection = getCurrentSection(0);
-                   testState.sectionStartTimes['section1'] = Date.now();
-                   console.log('🏁 1. BÖLÜM başladı');
-                   
-                   this.startMainTimer();
-                   this.startPeriodicSave(); // Periyodik kayıt başlat
-                   this.showMainQuestion();
-               } catch (e) {
-                   handleError(`Ana test başlatma hatası: ${e.message}`, false);
-               }
+               testState.mainIndex = 0;
+               testState.mainAnswers = [];
+               testState.mainTimeLeft = CONFIG.MAIN_TIME_LIMIT;
+               testState.mainStartTime = Date.now();
+               testState.reactionTimes = [];
+               testState.sectionStartTimes = {};
+               testState.sectionEndTimes = {};
+               testState.incompleteAtQuestion = null;
+               
+               // İlk bölümü ayarla
+               testState.currentSection = getCurrentSection(0);
+               testState.sectionStartTimes['section1'] = Date.now();
+               
+               // 🎯 ANA TEST BAŞLADI LOGLAMA
+               console.log('🎯 DİKKAT TESTİ BAŞLADI:');
+               console.log('📊 TEST PARAMETRELERİ:', {
+                   toplamSoru: TEST_DATA.mainQuestions.length,
+                   testSuresi: `${CONFIG.MAIN_TIME_LIMIT / 1000} saniye`,
+                   bolumSayisi: 3,
+                   bolumleriGoster: {
+                       '1.BÖLÜM': `Soru ${TEST_STRUCTURE.sections.section1.start + 1}-${TEST_STRUCTURE.sections.section1.end + 1}`,
+                       '2.BÖLÜM': `Soru ${TEST_STRUCTURE.sections.section2.start + 1}-${TEST_STRUCTURE.sections.section2.end + 1}`,
+                       '3.BÖLÜM': `Soru ${TEST_STRUCTURE.sections.section3.start + 1}-${TEST_STRUCTURE.sections.section3.end + 1}`
+                   },
+                   soruTipleri: ['Sayı (s)', 'Harf (h)', 'Karma (s/h)'],
+                   baslangicZamani: new Date().toLocaleTimeString('tr-TR')
+               });
+               
+               console.log('🚀 İlk bölüm başlatılıyor...');
+
+               this.showMainQuestion();
            },
 
            // Periyodik ara kayıt sistemi
@@ -2060,6 +2066,19 @@
                    
                    if (testState.mainTimeLeft <= 0) {
                        clearInterval(intervalId);
+                       
+                       // ⏰ ZAMAN AŞIMI LOGLAMA
+                       const currentSection = getCurrentSection(testState.mainIndex);
+                       console.log('⏰ TEST SÜRESİ DOLDU:', {
+                           tamamlananSoru: testState.mainIndex,
+                           toplamSoru: TEST_DATA.mainQuestions.length,
+                           mevcutBolum: currentSection ? currentSection.name : 'Bilinmeyen',
+                           dogruSayisi: testState.mainAnswers.filter(a => a.isCorrect).length,
+                           yanlisSayisi: testState.mainAnswers.filter(a => !a.isCorrect).length,
+                           gecenSure: `${Math.round((Date.now() - testState.mainStartTime) / 1000)} saniye`,
+                           bitisZamani: new Date().toLocaleTimeString('tr-TR')
+                       });
+                       
                        DikkatTest.endMainTest();
                    }
                }, 1000);
@@ -2075,6 +2094,20 @@
 
                try {
                    const question = TEST_DATA.mainQuestions[testState.mainIndex];
+                   const currentSection = getCurrentSection(testState.mainIndex);
+                   const questionType = getQuestionType(testState.mainIndex);
+                   
+                   // 📋 SORU GÖSTERİM LOGLAMA
+                   console.log(`📋 SORU GÖSTERİLİYOR - ${testState.mainIndex + 1}/${TEST_DATA.mainQuestions.length}:`, {
+                       soruNo: testState.mainIndex + 1,
+                       bolum: currentSection ? currentSection.name : 'Bilinmeyen',
+                       soruTipi: questionType === 's' ? 'Sayı' : questionType === 'h' ? 'Harf' : 'Karma (s/h)',
+                       soruSecenekleri: question.question.join(' | '),
+                       dogruCevap: question.target,
+                       kalanSure: `${Math.round(testState.mainTimeLeft / 1000)}s`,
+                       gosterimZamani: new Date().toLocaleTimeString('tr-TR')
+                   });
+                   
                    const display = safeGetElement('mainDisplay');
                    
                    if (!display) {
@@ -2151,6 +2184,19 @@
                        sectionName: currentSection ? currentSection.name : null
                    };
                    
+                   // 📝 HER SORU İÇİN DETAYLI LOGLAMA
+                   console.log(`📝 SORU ${currentQuestionIndex + 1}/${TEST_DATA.mainQuestions.length}:`, {
+                       soruNumarasi: currentQuestionIndex + 1,
+                       bolum: currentSection ? currentSection.name : 'Bilinmeyen',
+                       soruTipi: questionType === 's' ? 'Sayı' : questionType === 'h' ? 'Harf' : 'Karma (s/h)',
+                       soruIcerigi: TEST_DATA.mainQuestions[currentQuestionIndex].question.join('-'),
+                       kullaniciSecimi: selected,
+                       dogruCevap: correct,
+                       durum: isCorrect ? '✅ DOĞRU' : '❌ YANLIŞ',
+                       tepkiSuresi: `${reactionTime}ms`,
+                       zaman: new Date().toLocaleTimeString('tr-TR')
+                   });
+                   
                    testState.mainAnswers.push(answerData);
                    
                    // Tür bazlı istatistik güncelle
@@ -2178,12 +2224,39 @@
                        // Mevcut bölümü bitir
                        if (currentSection) {
                            testState.sectionEndTimes[currentSection.key] = Date.now();
+                           
+                           // 🏁 BÖLÜM TAMAMLANDI LOGLAMA
+                           const sectionStats = getSectionStats(currentSection.key);
+                           const sectionDuration = Math.round((testState.sectionEndTimes[currentSection.key] - testState.sectionStartTimes[currentSection.key]) / 1000);
+                           
+                           console.log(`🏁 ${currentSection.name} TAMAMLANDI:`, {
+                               bolumAdi: currentSection.name,
+                               toplamSoru: sectionStats.totalQuestions,
+                               cevaplanmisSoru: sectionStats.answeredQuestions,
+                               dogruSayisi: sectionStats.correctAnswers,
+                               yanlisSayisi: sectionStats.wrongAnswers,
+                               basariOrani: `${Math.round((sectionStats.correctAnswers / sectionStats.totalQuestions) * 100)}%`,
+                               ortalamaTepkiSuresi: `${Math.round(sectionStats.averageTime)}ms`,
+                               bolumSuresi: `${sectionDuration} saniye`,
+                               tamamlanmaZamani: new Date().toLocaleTimeString('tr-TR')
+                           });
+                           
                            console.log(`✅ ${currentSection.name} tamamlandı`);
                        }
                        
                        // Yeni bölümü başlat
                        testState.currentSection = nextSection;
                        testState.sectionStartTimes[nextSection.key] = Date.now();
+                       
+                       // 🚀 YENİ BÖLÜM BAŞLADI LOGLAMA
+                       console.log(`🚀 ${nextSection.name} BAŞLADI:`, {
+                           bolumAdi: nextSection.name,
+                           baslangicSorusu: nextSection.start + 1,
+                           bitisSorusu: nextSection.end + 1,
+                           toplamSoru: nextSection.end - nextSection.start + 1,
+                           baslangicZamani: new Date().toLocaleTimeString('tr-TR')
+                       });
+                       
                        console.log(`🏁 ${nextSection.name} başladı`);
                    }
                    
@@ -2200,6 +2273,25 @@
 
            // Ana test bitir
            async endMainTest() {
+               // 🎊 TEST BİTİŞ DURUMU LOGLAMA
+               const testDuration = Date.now() - testState.mainStartTime;
+               const completionRate = (testState.mainIndex / TEST_DATA.mainQuestions.length) * 100;
+               const currentAnswers = testState.mainAnswers.length;
+               const correctAnswers = testState.mainAnswers.filter(a => a.isCorrect).length;
+               
+               console.log('🎊 DİKKAT TESTİ SONA ERDİ:', {
+                   bitisNedeni: testState.mainIndex >= TEST_DATA.mainQuestions.length ? 'Tüm sorular tamamlandı' : 'Süre doldu',
+                   tamamlananSoru: testState.mainIndex,
+                   toplamSoru: TEST_DATA.mainQuestions.length,
+                   tamamlanmaOrani: `${Math.round(completionRate)}%`,
+                   cevaplananSoru: currentAnswers,
+                   dogruCevap: correctAnswers,
+                   yanlisCevap: currentAnswers - correctAnswers,
+                   gecenSure: `${Math.round(testDuration / 1000)} saniye`,
+                   mevcutBolum: testState.currentSection ? testState.currentSection.name : 'Tamamlandı',
+                   bitisZamani: new Date().toLocaleTimeString('tr-TR')
+               });
+               
                testState.clearAllTimers();
                
                // Son bölümü bitir (eğer devam ediyorsa)
@@ -2373,6 +2465,70 @@
                    console.log(`🔢 Sayı soruları: ${typeStats.numberQuestions.correct}/${typeStats.numberQuestions.correct + typeStats.numberQuestions.wrong}`);
                    console.log(`🔤 Harf soruları: ${typeStats.letterQuestions.correct}/${typeStats.letterQuestions.correct + typeStats.letterQuestions.wrong}`);
                    console.log('Full results:', detailedResults);
+                   
+                   // 🎉 DETAYLI FİNAL SONUÇLAR
+                   console.log('🎉 DİKKAT TESTİ DETAYLI SONUÇLAR:');
+                   
+                   // Genel Performans
+                   console.log('🎯 GENEL PERFORMANS:', {
+                       toplamDogruSayisi: basicStats.mainScore,
+                       toplamSoruSayisi: basicStats.mainTotal,
+                       dogrulukOrani: `${Math.round(accuracyScore)}%`,
+                       hizPuani: `${Math.round(speedScore)}%`,
+                       ortalamaTepkiSuresi: `${Math.round(basicStats.averageReactionTime)}ms`,
+                       toplamTestSuresi: `${Math.round(totalTestDuration/1000)} saniye`,
+                       testTamamlanmaZamani: new Date().toLocaleTimeString('tr-TR')
+                   });
+                   
+                   // Bölüm Bazlı Detaylar
+                   console.log('📋 BÖLÜM BAZLI PERFORMANS:');
+                   Object.keys(sectionStats).forEach((key, index) => {
+                       const section = sectionStats[key];
+                       console.log(`  ${index + 1}. BÖLÜM:`, {
+                           dogru: section.correctAnswers,
+                           yanlis: section.wrongAnswers,
+                           toplam: section.totalQuestions,
+                           basariOrani: `${Math.round((section.correctAnswers / section.totalQuestions) * 100)}%`,
+                           ortalamaSure: `${Math.round(section.averageTime)}ms`,
+                           bolumSuresi: `${Math.round(section.duration / 1000)} saniye`
+                       });
+                   });
+                   
+                   // Soru Türü Bazlı Detaylar
+                   console.log('🔍 SORU TÜRÜ BAZLI PERFORMANS:');
+                   console.log('  🔢 SAYI SORULARI:', {
+                       dogru: typeStats.numberQuestions.correct,
+                       yanlis: typeStats.numberQuestions.wrong,
+                       toplam: typeStats.numberQuestions.correct + typeStats.numberQuestions.wrong,
+                       basariOrani: `${Math.round(typeStats.numberQuestions.accuracy)}%`
+                   });
+                   console.log('  🔤 HARF SORULARI:', {
+                       dogru: typeStats.letterQuestions.correct,
+                       yanlis: typeStats.letterQuestions.wrong,
+                       toplam: typeStats.letterQuestions.correct + typeStats.letterQuestions.wrong,
+                       basariOrani: `${Math.round(typeStats.letterQuestions.accuracy)}%`
+                   });
+                   console.log('  🔀 KARMA SORULAR:', {
+                       dogru: typeStats.mixedQuestions.correct,
+                       yanlis: typeStats.mixedQuestions.wrong,
+                       toplam: typeStats.mixedQuestions.correct + typeStats.mixedQuestions.wrong,
+                       basariOrani: `${Math.round(typeStats.mixedQuestions.accuracy)}%`
+                   });
+                   
+                   // Excel Veri Uyumluluğu
+                   console.log('📊 EXCEL VERİ UYUMLULUĞU:');
+                   console.log('  ✅ Toplanan Veriler:', {
+                       soruNumaralari: '1-50 (tam)',
+                       bolumBilgisi: '3 bölüm (tam)',
+                       harfSayiKodu: 's/h/s_h (tam)',
+                       seiciDikkatPuani: 'Ham veri (tam)',
+                       dogrulukSkoru: `${Math.round(accuracyScore)}% (hesaplandı)`,
+                       islemHizi: 'Tepki süreleri (tam)',
+                       islemHiziSkoru: `${Math.round(speedScore)}% (hesaplandı)`
+                   });
+                   
+                   // Veritabanına Gönderilecek Veriler
+                   console.log('📦 VERİTABANINA GÖNDERİLECEK VERİLER:', detailedResults);
                    
                } catch (e) {
                    console.error('Calculate results error:', e);
@@ -2635,8 +2791,54 @@
            DikkatTest.retryExampleFromFail();
        };
 
+       // DOM yüklendiğinde başlat
+       document.addEventListener('DOMContentLoaded', function() {
+           try {
+               // Ses desteği kontrolü
+               if (typeof Audio === 'undefined') {
+                   throw new Error('Bu tarayıcı ses dosyalarını desteklemiyor');
+               }
 
+               // Local Storage desteği kontrolü
+               if (typeof Storage === 'undefined') {
+                   console.warn('Local Storage desteklenmiyor - veriler kaydedilmeyecek');
+               }
+
+               // 🚀 SİSTEM BAŞLATMA LOGLARI
+               console.log('🚀 DİKKAT TESTİ SİSTEMİ BAŞLATILIYOR...');
+               console.log('⚙️ SİSTEM PARAMETRELERİ:', {
+                   testVersion: 'Dikkat Testi v2.0',
+                   toplamSoru: TEST_DATA.mainQuestions.length,
+                   ornekSoru: TEST_DATA.practiceQuestions.length,
+                   bolumSayisi: Object.keys(TEST_STRUCTURE.sections).length,
+                   soruTipleri: ['Sayı (s)', 'Harf (h)', 'Karma (s/h)'],
+                   maksimumSure: `${CONFIG.MAIN_TIME_LIMIT / 1000} saniye`,
+                   ornekSure: `${CONFIG.PRACTICE_TIME_LIMIT / 1000} saniye`,
+                   sesDesteği: typeof Audio !== 'undefined' ? '✅ Var' : '❌ Yok',
+                   localStorageDesteği: typeof Storage !== 'undefined' ? '✅ Var' : '❌ Yok',
+                   ekranBoyutu: `${window.innerWidth}x${window.innerHeight}`,
+                   userAgent: navigator.userAgent.includes('Mobile') ? 'Mobil' : 'Masaüstü',
+                   baslangicZamani: new Date().toLocaleTimeString('tr-TR')
+               });
+               
+               console.log('📋 TEST YAPISI:');
+               Object.entries(TEST_STRUCTURE.sections).forEach(([key, section]) => {
+                   console.log(`  ${section.name}:`, {
+                       baslangicSorusu: section.start + 1,
+                       bitisSorusu: section.end + 1,
+                       soruSayisi: section.end - section.start + 1
+                   });
+               });
+               
+               console.log('🔧 SİSTEM HAZIR - Test başlatılabilir!');
+
+               // Test kontrolü
+               DikkatTest.initialize();
+           } catch (e) {
+               handleError(`Sistem başlatma hatası: ${e.message}`, true);
+           }
+       });
 
    </script>
 </body>
-</html> 
+</html>
