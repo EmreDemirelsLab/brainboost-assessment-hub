@@ -98,7 +98,7 @@ export type Database = {
             foreignKeyName: "akil_mantik_testi_detaylari_kullanici_id_fkey"
             columns: ["kullanici_id"]
             isOneToOne: false
-            referencedRelation: "kullanicilar"
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
           {
@@ -229,7 +229,7 @@ export type Database = {
             foreignKeyName: "bilissel_beceri_skorlari_kullanici_id_fkey"
             columns: ["kullanici_id"]
             isOneToOne: false
-            referencedRelation: "kullanicilar"
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
           {
@@ -376,7 +376,7 @@ export type Database = {
             foreignKeyName: "dikkat_testi_detaylari_kullanici_id_fkey"
             columns: ["kullanici_id"]
             isOneToOne: false
-            referencedRelation: "kullanicilar"
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
           {
@@ -469,7 +469,7 @@ export type Database = {
             foreignKeyName: "hafiza_testi_detaylari_kullanici_id_fkey"
             columns: ["kullanici_id"]
             isOneToOne: false
-            referencedRelation: "kullanicilar"
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
           {
@@ -520,37 +520,10 @@ export type Database = {
             foreignKeyName: "kullanici_profilleri_kullanici_id_fkey"
             columns: ["kullanici_id"]
             isOneToOne: false
-            referencedRelation: "kullanicilar"
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
-      }
-      kullanicilar: {
-        Row: {
-          ad_soyad: string | null
-          created_at: string | null
-          eposta: string
-          id: string
-          kullanici_kodu: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          ad_soyad?: string | null
-          created_at?: string | null
-          eposta: string
-          id?: string
-          kullanici_kodu?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          ad_soyad?: string | null
-          created_at?: string | null
-          eposta?: string
-          id?: string
-          kullanici_kodu?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
       }
       puzzle_testi_detaylari: {
         Row: {
@@ -633,7 +606,7 @@ export type Database = {
             foreignKeyName: "puzzle_testi_detaylari_kullanici_id_fkey"
             columns: ["kullanici_id"]
             isOneToOne: false
-            referencedRelation: "kullanicilar"
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
           {
@@ -726,7 +699,7 @@ export type Database = {
             foreignKeyName: "soru_cevaplari_kullanici_id_fkey"
             columns: ["kullanici_id"]
             isOneToOne: false
-            referencedRelation: "kullanicilar"
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
           {
@@ -826,7 +799,7 @@ export type Database = {
             foreignKeyName: "stroop_testi_detaylari_kullanici_id_fkey"
             columns: ["kullanici_id"]
             isOneToOne: false
-            referencedRelation: "kullanicilar"
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
           {
