@@ -2,6 +2,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
+import { CognitiveAssessmentTest } from "@/components/cognitive-assessment/CognitiveAssessmentTest";
 
 export default function CognitiveAssessment() {
   const { user, switchRole, logout } = useAuth();
@@ -36,9 +37,8 @@ export default function CognitiveAssessment() {
           </h1>
         </div>
 
-        <div className="text-center py-8">
-          <p className="text-gray-600">Bilişsel değerlendirme sistemi geliştiriliyor...</p>
-        </div>
+        {/* Cognitive Assessment Test */}
+        <CognitiveAssessmentTest />
       </div>
     </DashboardLayout>
   );
