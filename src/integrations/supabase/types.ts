@@ -110,53 +110,6 @@ export type Database = {
           },
         ]
       }
-      audit_logs: {
-        Row: {
-          action: string
-          created_at: string | null
-          id: string
-          ip_address: unknown | null
-          new_values: Json | null
-          old_values: Json | null
-          record_id: string | null
-          table_name: string | null
-          user_agent: string | null
-          user_id: string | null
-        }
-        Insert: {
-          action: string
-          created_at?: string | null
-          id?: string
-          ip_address?: unknown | null
-          new_values?: Json | null
-          old_values?: Json | null
-          record_id?: string | null
-          table_name?: string | null
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          action?: string
-          created_at?: string | null
-          id?: string
-          ip_address?: unknown | null
-          new_values?: Json | null
-          old_values?: Json | null
-          record_id?: string | null
-          table_name?: string | null
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "audit_logs_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       bilissel_beceri_skorlari: {
         Row: {
           beceri_profili_analizi: Json | null
@@ -237,57 +190,6 @@ export type Database = {
             columns: ["oturum_id"]
             isOneToOne: true
             referencedRelation: "test_oturumlari"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      burdon_test_results: {
-        Row: {
-          conducted_by: string | null
-          created_at: string | null
-          id: string
-          student_id: string | null
-          test_auto_completed: boolean | null
-          test_elapsed_time_seconds: number | null
-          test_end_time: string | null
-          test_start_time: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          conducted_by?: string | null
-          created_at?: string | null
-          id?: string
-          student_id?: string | null
-          test_auto_completed?: boolean | null
-          test_elapsed_time_seconds?: number | null
-          test_end_time?: string | null
-          test_start_time?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          conducted_by?: string | null
-          created_at?: string | null
-          id?: string
-          student_id?: string | null
-          test_auto_completed?: boolean | null
-          test_elapsed_time_seconds?: number | null
-          test_end_time?: string | null
-          test_start_time?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "burdon_test_results_conducted_by_fkey"
-            columns: ["conducted_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "burdon_test_results_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -807,59 +709,6 @@ export type Database = {
             columns: ["test_sonuc_id"]
             isOneToOne: false
             referencedRelation: "test_sonuclari"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      students: {
-        Row: {
-          birth_date: string | null
-          created_at: string
-          grade_level: number | null
-          id: string
-          notes: string | null
-          parent_email: string | null
-          parent_name: string | null
-          parent_phone: string | null
-          school_name: string | null
-          student_number: string | null
-          updated_at: string
-          user_id: string | null
-        }
-        Insert: {
-          birth_date?: string | null
-          created_at?: string
-          grade_level?: number | null
-          id?: string
-          notes?: string | null
-          parent_email?: string | null
-          parent_name?: string | null
-          parent_phone?: string | null
-          school_name?: string | null
-          student_number?: string | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          birth_date?: string | null
-          created_at?: string
-          grade_level?: number | null
-          id?: string
-          notes?: string | null
-          parent_email?: string | null
-          parent_name?: string | null
-          parent_phone?: string | null
-          school_name?: string | null
-          student_number?: string | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "students_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]

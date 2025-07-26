@@ -8,7 +8,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ArrowLeft, GraduationCap, Globe, Clock, Users, Play, Award } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
-import { BurdonTest } from "@/components/tests/BurdonTest";
+
 
 interface TestResult {
   testType: string;
@@ -20,7 +20,7 @@ export default function InternationalTests() {
   const { user, switchRole, logout } = useAuth();
   const [selectedGrade, setSelectedGrade] = useState("all");
   const [selectedSubject, setSelectedSubject] = useState("all");
-  const [showBurdonTest, setShowBurdonTest] = useState(false);
+  
 
   const handleRoleSwitch = (role: any) => {
     switchRole(role);
@@ -31,47 +31,15 @@ export default function InternationalTests() {
   };
 
   const handleTestStart = (testType: string) => {
-    if (testType === 'burdon') {
-      setShowBurdonTest(true);
-    } else {
-      // Diğer testler henüz aktif değil
-      alert('Bu test henüz aktif değil');
-    }
+    alert('Bu testler artık mevcut değil. Bilişsel değerlendirme testlerini kullanın.');
   };
 
-  const handleTestComplete = () => {
-    console.log('Burdon test tamamlandı');
-    setShowBurdonTest(false);
-    // Here you could show a success message or redirect
-  };
+  // Testler kaldırıldı - sadece açıklama için
+  const availableTests: any[] = [];
 
-  // Only the Burdon test is available - other tests are removed
-  const availableTests = [
-    {
-      id: 1,
-      title: "Burdon Dikkat Testi",
-      description: "Dikkat sürdürme, odaklanma ve seçici dikkat becerilerini değerlendiren uluslararası standart test",
-      grade: "Tüm Yaşlar",
-      subject: "Psikometri",
-      duration: "5 dakika",
-      participants: "Bireysel",
-      difficulty: "Orta",
-      country: "Burdon Standardı",
-      nextSession: "Her Zaman",
-      testType: "burdon",
-      isActive: true
-    }
-  ];
-
-  // Filter tests based on grade and subject
-  const filteredTests = availableTests.filter(test => {
-    const gradeMatch = selectedGrade === "all" || test.grade.includes(selectedGrade);
-    const subjectMatch = selectedSubject === "all" || test.subject === selectedSubject;
-    return gradeMatch && subjectMatch && test.isActive;
-  });
-
-  const subjects = ["Psikometri"]; // Only available subject
-  const grades = ["Tüm Yaşlar"]; // Available for all ages
+  const filteredTests = availableTests;
+  const subjects: string[] = [];
+  const grades: string[] = [];
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -154,70 +122,21 @@ export default function InternationalTests() {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {filteredTests.map((test) => (
-            <Card key={test.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-xl flex items-center gap-2">
-                      <Globe className="h-5 w-5 text-primary" />
-                      {test.title}
-                    </CardTitle>
-                    <CardDescription className="mt-2">
-                      {test.description}
-                    </CardDescription>
-                    <Badge variant="outline" className="mt-2">
-                      {test.country}
-                    </Badge>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Sınıf:</span>
-                      <div className="font-medium">{test.grade}</div>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Alan:</span>
-                      <div className="font-medium">{test.subject}</div>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Süre:</span>
-                      <div className="font-medium flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {test.duration}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Katılımcı:</span>
-                      <div className="font-medium flex items-center gap-1">
-                        <Users className="h-3 w-3" />
-                        {test.participants}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="p-3 bg-muted rounded-lg">
-                    <div className="text-sm text-muted-foreground">Sonraki Oturum</div>
-                    <div className="font-medium">{test.nextSession}</div>
-                  </div>
-                  
-                  <Button 
-                    className="w-full" 
-                    variant="default"
-                    onClick={() => handleTestStart(test.testType || '')}
-                  >
-                    <Play className="h-4 w-4 mr-2" />
-                    Teste Başla
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <Card>
+          <CardContent className="py-12">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold mb-2">Testler Kaldırıldı</h3>
+              <p className="text-muted-foreground mb-4">
+                Uluslararası testler sistemden kaldırılmıştır. Bilişsel değerlendirme testlerini kullanın.
+              </p>
+              <Button asChild>
+                <Link to="/cognitive-assessment">
+                  Bilişsel Değerlendirme Testleri
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
@@ -257,16 +176,6 @@ export default function InternationalTests() {
         </Card>
       </div>
 
-      {/* Burdon Test Modal */}
-      <Dialog open={showBurdonTest} onOpenChange={setShowBurdonTest}>
-        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto p-0">
-          <div className="sr-only">
-            <h2>Burdon Dikkat Testi</h2>
-            <p>Dikkat sürdürme ve odaklanma testini başlatın</p>
-          </div>
-          <BurdonTest onComplete={handleTestComplete} />
-        </DialogContent>
-      </Dialog>
     </DashboardLayout>
   );
 }
