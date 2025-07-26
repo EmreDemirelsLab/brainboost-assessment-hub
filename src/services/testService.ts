@@ -236,36 +236,7 @@ class TestService {
     return { data, error };
   }
 
-  // Burdon test sonuçlarını getir
-  async getBurdonTestResults(studentId?: string): Promise<{ data: any[] | null; error: any }> {
-    let query = supabase
-      .from('burdon_test_results')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (studentId) {
-      query = query.eq('student_id', studentId);
-    }
-
-    const { data, error } = await query;
-    return { data, error };
-  }
-
-  // Burdon test sonucu kaydet
-  async saveBurdonTestResult(resultData: any): Promise<{ data: any | null; error: any }> {
-    try {
-      const { data, error } = await supabase
-        .from('burdon_test_results')
-        .insert(resultData)
-        .select()
-        .single();
-      
-      return { data, error };
-    } catch (error) {
-      console.error('❌ saveBurdonTestResult hatası:', error);
-      return { data: null, error };
-    }
-  }
+  // Burdon test fonksiyonları kaldırıldı - artık desteklenmiyor
 
   // Test oturumunu tamamla ve skorları hesapla
   async completeTestSession(oturumId: string): Promise<{ data: any | null; error: any }> {
