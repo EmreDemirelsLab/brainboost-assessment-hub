@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Play, Download, Users, Clock, Search, Filter, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Test {
   id: string;
@@ -38,11 +39,12 @@ export default function ReadingTests() {
   const [selectedTest, setSelectedTest] = useState<Test | null>(null);
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchTests();
     fetchStudents();
-  }, []);
+  }, [user?.currentRole, user?.id]); // Rol değişince yeniden çek
 
   const fetchTests = async () => {
     try {
@@ -66,21 +68,75 @@ export default function ReadingTests() {
 
   const fetchStudents = async () => {
     try {
-      const { data, error } = await supabase
-        .from('students')
+      if (!user) {
+        console.error('❌ User not found');
+        return;
+      }
+
+      console.log('🔍 Reading Tests - Fetching students for role:', user.currentRole);
+      
+      // Dinamik rol kategorisi belirleme
+      const isAdminRole = user.currentRole === 'admin';
+      const isTrainerRole = ['trainer', 'beyin_antrenoru'].includes(user.currentRole);
+      const isRepresentativeRole = ['representative', 'temsilci'].includes(user.currentRole);
+      
+      // Dinamik query builder - role göre filtering
+      let query = supabase
+        .from('users')
         .select(`
-          *,
-          users(first_name, last_name)
-        `);
+          id,
+          first_name,
+          last_name,
+          email,
+          supervisor_id,
+          demographic_info
+        `)
+        .contains('roles', '["kullanici"]'); // Sadece öğrenciler - JSON string formatı
+
+      // Rol bazlı dinamik filtering
+      if (isAdminRole) {
+        console.log('👑 Admin - showing all students for reading tests');
+      } else if (isRepresentativeRole) {
+        console.log('🎯 Representative - showing students of supervised trainers for reading tests');
+        // Temsilci kendi altındaki beyin antrenörlerinin öğrencilerini görür
+        const { data: trainersData } = await supabase
+          .from('users')
+          .select('id')
+          .contains('roles', '["beyin_antrenoru"]')
+          .eq('supervisor_id', user.id);
+        
+        const trainerIds = trainersData?.map(t => t.id) || [];
+        if (trainerIds.length > 0) {
+          query = query.in('supervisor_id', trainerIds);
+        } else {
+          query = query.limit(0);
+        }
+      } else if (isTrainerRole) {
+        console.log('🎯 Trainer - showing only supervised students for reading tests');
+        query = query.eq('supervisor_id', user.id);
+      } else {
+        console.log('👤 Other role - no students for reading tests');
+        query = query.limit(0);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
 
+      // Format for compatibility with existing interface
       const formattedStudents = data?.map(student => ({
-        ...student,
-        first_name: student.users?.first_name || 'Bilinmeyen',
-        last_name: student.users?.last_name || 'Öğrenci'
+        id: student.id,
+        user_id: student.id, // Compatibility field
+        student_number: student.demographic_info?.student_number || `STU-${student.id.slice(-8)}`,
+        first_name: student.first_name,
+        last_name: student.last_name,
+        users: {
+          first_name: student.first_name,
+          last_name: student.last_name
+        }
       })) || [];
 
+      console.log('✅ Reading Tests Students loaded:', formattedStudents.length);
       setStudents(formattedStudents);
     } catch (error) {
       console.error('Error fetching students:', error);

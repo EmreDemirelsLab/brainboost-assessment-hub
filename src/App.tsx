@@ -9,7 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
 import Reports from "./pages/Reports";
-import BurdonReportDetail from "./pages/BurdonReportDetail";
+
 import ReadingTests from "./pages/ReadingTests";
 import SubjectTests from "./pages/SubjectTests";
 import CognitiveAssessment from "./pages/CognitiveAssessment";
@@ -90,11 +90,7 @@ const App = () => (
                   <Reports />
                 </ProtectedRoute>
               } />
-              <Route path="/reports/burdon/:resultId" element={
-                <ProtectedRoute>
-                  <BurdonReportDetail />
-                </ProtectedRoute>
-              } />
+
             <Route path="/reading-tests" element={
               <ProtectedRoute>
                 <ReadingTests />

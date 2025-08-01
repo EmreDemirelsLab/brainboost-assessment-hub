@@ -9,7 +9,8 @@ import {
   Settings,
   HelpCircle,
   Users,
-  UserPlus
+  UserPlus,
+  UserCheck
 } from "lucide-react";
 import { UserRole } from "@/types/auth";
 import { cn } from "@/lib/utils";
@@ -23,25 +24,25 @@ const mainMenuItems = [
     icon: Brain,
     label: "Bilişsel Beceri\nDeğerlendirme",
     href: "/cognitive-assessment",
-    roles: ["admin", "trainer", "representative", "user"] as UserRole[]
+    roles: ["admin", "trainer", "beyin_antrenoru", "representative", "temsilci", "user", "kullanici"] as UserRole[]
   },
   {
     icon: BookOpen,
     label: "Etkin ve\nAnlayarak Okuma",
     href: "/reading-exercises",
-    roles: ["admin", "trainer", "representative", "user"] as UserRole[]
+    roles: ["admin", "trainer", "beyin_antrenoru", "representative", "temsilci", "user", "kullanici"] as UserRole[]
   },
   {
     icon: GraduationCap,
     label: "Uluslararası\nAlan Testleri",
     href: "/international-tests",
-    roles: ["admin", "trainer", "representative", "user"] as UserRole[]
+    roles: ["admin", "trainer", "beyin_antrenoru", "representative", "temsilci", "user", "kullanici"] as UserRole[]
   },
   {
     icon: FileText,
     label: "Formlar",
     href: "/forms",
-    roles: ["admin", "trainer", "representative", "user"] as UserRole[]
+    roles: ["admin", "trainer", "beyin_antrenoru", "representative", "temsilci", "user", "kullanici"] as UserRole[]
   }
 ];
 
@@ -50,25 +51,25 @@ const managementItems = [
     icon: Users,
     label: "Öğrenciler",
     href: "/students",
-    roles: ["admin", "trainer"] as UserRole[]
+    roles: ["admin", "trainer", "beyin_antrenoru"] as UserRole[]
   },
   {
-    icon: UserPlus,
-    label: "Kullanıcı Ekle",
+    icon: UserCheck,
+    label: "Kullanıcılar",
     href: "/add-user",
-    roles: ["admin"] as UserRole[]
+    roles: ["admin", "temsilci"] as UserRole[]
   },
   {
     icon: FileText,
     label: "Test Tanımla",
     href: "/test-management",
-    roles: ["admin", "trainer"] as UserRole[]
+    roles: ["admin", "temsilci", "beyin_antrenoru"] as UserRole[]
   },
   {
     icon: BarChart3,
     label: "Raporlar",
     href: "/reports",
-    roles: ["admin", "trainer"] as UserRole[]
+    roles: ["admin", "temsilci", "beyin_antrenoru"] as UserRole[]
   }
 ];
 
@@ -77,13 +78,13 @@ const quickAccessItems = [
     icon: Settings,
     label: "Ayarlar",
     href: "/settings",
-    roles: ["admin", "trainer", "representative", "user"] as UserRole[]
+    roles: ["admin", "trainer", "beyin_antrenoru", "representative", "temsilci", "user", "kullanici"] as UserRole[]
   },
   {
     icon: HelpCircle,
     label: "Yardım",
     href: "/help",
-    roles: ["admin", "trainer", "representative", "user"] as UserRole[]
+    roles: ["admin", "trainer", "beyin_antrenoru", "representative", "temsilci", "user", "kullanici"] as UserRole[]
   }
 ];
 

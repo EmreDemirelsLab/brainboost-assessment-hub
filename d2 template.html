@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D2 Dikkat Testi Raporu</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 40px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #1e3a8a;
+            text-align: center;
+            font-size: 36px;
+            margin-bottom: 30px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .info-item {
+            margin-bottom: 15px;
+        }
+        
+        .info-label {
+            color: #dc2626;
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+        
+        .info-value {
+            font-size: 16px;
+            color: #333;
+        }
+        
+        .performance-table {
+            background-color: #1e3a8a;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .score-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        
+        .score-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+            width: 50px;
+        }
+        
+        .score-table .header-row {
+            background-color: #dc2626;
+            color: white;
+        }
+        
+        .chart-container {
+            margin: 30px 0;
+            height: 300px;
+            position: relative;
+        }
+        
+        .section-header {
+            color: #1e3a8a;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 30px 0 20px 0;
+        }
+        
+        .content-section {
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .metrics-table {
+            width: 100%;
+            margin: 20px 0;
+            border-collapse: collapse;
+        }
+        
+        .metrics-table td {
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .metrics-table .metric-label {
+            background-color: #fecaca;
+            font-weight: bold;
+            width: 100px;
+            text-align: center;
+        }
+        
+        .metrics-table .metric-value {
+            background-color: #ddd6fe;
+            text-align: center;
+            width: 100px;
+        }
+        
+        .metrics-table .metric-desc {
+            background-color: #e0e7ff;
+        }
+        
+        .observations-box {
+            background-color: #e0e7ff;
+            padding: 30px;
+            border-radius: 8px;
+            margin-top: 30px;
+            min-height: 150px;
+        }
+        
+        .logo {
+            text-align: center;
+            margin-top: 40px;
+        }
+        
+        .logo span {
+            font-size: 28px;
+            font-weight: bold;
+        }
+        
+        .logo .for {
+            color: #3b82f6;
+        }
+        
+        .logo .test {
+            color: #333;
+        }
+        
+        .logo .check {
+            color: #10b981;
+        }
+        
+        ul {
+            margin-left: 20px;
+        }
+        
+        canvas {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>D2 Dikkat Testi Raporu</h1>
+        
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Ad Soyad</div>
+                <div class="info-value" id="user-name">Yükleniyor...</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Yaş</div>
+                <div class="info-value" id="user-age">Yükleniyor...</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Değerlendirme Tarihi</div>
+                <div class="info-value" id="test-date">Yükleniyor...</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Cinsiyet</div>
+                <div class="info-value" id="user-gender">Yükleniyor...</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Doğum Tarihi</div>
+                <div class="info-value" id="user-birthdate">Yükleniyor...</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Uygulayan</div>
+                <div class="info-value" id="conductor-name">Yükleniyor...</div>
+            </div>
+        </div>
+        
+        <div class="performance-table">Psikomotor Performans Tablosu</div>
+        
+        <table class="score-table">
+            <tr class="header-row">
+                <td>Sıra</td>
+                <td>1</td>
+                <td>2</td>
+                <td>3</td>
+                <td>4</td>
+                <td>5</td>
+                <td>6</td>
+                <td>7</td>
+                <td>8</td>
+                <td>9</td>
+                <td>10</td>
+                <td>11</td>
+                <td>12</td>
+                <td>13</td>
+                <td>14</td>
+            </tr>
+            <tr id="performance-scores">
+                <td class="header-row">Puan</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+            </tr>
+        </table>
+        
+        <div class="chart-container">
+            <canvas id="performanceChart"></canvas>
+        </div>
+        
+        <div class="section-header">D2 Testinin Amacı</div>
+        <div class="content-section">
+            D2 Dikkat Testi bireyin seçici dikkat, sürdürülebilir dikkat ve işleme hızı gibi bilişsel becerileri değerlendirmek amacıyla uygulanır.
+        </div>
+        
+        <div class="section-header">Hedeflenen Kullanım Alanları</div>
+        <div class="content-section">
+            <ul>
+                <li>9 yaş ve üzeri bireylerde öğrenme sürecini zorlaştıran dikkat ve odaklanma problemlerini tanımak</li>
+                <li>Zihinsel performansı etkileyen dikkat ve odaklanma becerilerini değerlendirmek</li>
+                <li>Bilişsel becerileri geliştirme programlarında eğitim öncesi ve sonrasında gelişimi izlemek</li>
+            </ul>
+        </div>
+        
+        <div class="section-header">Önemli Notlar</div>
+        <div class="content-section">
+            <ul>
+                <li>Rapor bireyin dikkat ve odaklanma becerilerindeki güçlü ve desteklenmesi gereken yönleri belirlemek içindir. Tanı koymak için değildir.</li>
+                <li>Test sonuçları sadece test anındaki durumu yansıtır. Uyku, stres, heyecan gibi değişkenler bireyin performansını etkileyebilir.</li>
+            </ul>
+        </div>
+        
+        <div class="logo">
+            <span class="for">for</span><span class="test">TEST</span><span class="check">✓</span>
+        </div>
+        
+        <!-- Sayfa 2 -->
+        <div style="page-break-before: always; margin-top: 50px;">
+            <h1>D2 Dikkat Testi Raporu</h1>
+            
+            <div class="section-header">Ölçülen Bilişsel Alanlar</div>
+            <div class="content-section">
+                <strong>Seçici Dikkat:</strong> Hedef veya göreve odaklanma, uyaranları yok sayma<br>
+                <strong>Psikomotor Hız (İşlem Hızı):</strong> Bilgiyi hızlıca algılayıp doğru şekilde tepki verebilme hızı<br>
+                <strong>Sürdürülebilir Dikkat:</strong> Dikkati belirli bir süre aynı hedef üzerinde dağılmadan devam ettirebilme<br>
+                <strong>Tutarlılık:</strong> Farklı satırlardaki performans dalgalanma oranı<br>
+                <strong>Hata Eğilimi:</strong> Atlama ve yanlış işaretleme davranışları<br>
+                <strong>Odaklanma:</strong> Konsantrasyon Performansı (CP)
+            </div>
+            
+            <table class="metrics-table">
+                <tr>
+                    <td class="metric-label">Puan Türü</td>
+                    <td class="metric-value">Değer</td>
+                    <td class="metric-desc">Açıklama</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">TN</td>
+                    <td class="metric-value" id="tn-value">-</td>
+                    <td class="metric-desc">Toplam İşaretleme</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">E1</td>
+                    <td class="metric-value" id="e1-value">-</td>
+                    <td class="metric-desc">Yanlış İşaretleme</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">E2</td>
+                    <td class="metric-value" id="e2-value">-</td>
+                    <td class="metric-desc">Boş Bırakılan</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">TN-E</td>
+                    <td class="metric-value" id="tne-value">-</td>
+                    <td class="metric-desc">Net İşaretleme</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">CP</td>
+                    <td class="metric-value" id="cp-value">-</td>
+                    <td class="metric-desc">Konsantrasyon Performansı</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">%Hata</td>
+                    <td class="metric-value" id="error-percentage">-</td>
+                    <td class="metric-desc">Toplam Hata Oranı</td>
+                </tr>
+                <tr>
+                    <td class="metric-label">SP</td>
+                    <td class="metric-value" id="sp-value">-</td>
+                    <td class="metric-desc">Norm Karşılığı</td>
+                </tr>
+            </table>
+            
+            <div class="section-header">Yorum</div>
+            <div class="content-section" id="comments-section">
+                <div id="psikomotor-comment"><strong>Psikomotor Hız:</strong> Yükleniyor...</div><br>
+                <div id="secci-dikkat-comment"><strong>Seçici Dikkat:</strong> Yükleniyor...</div><br>
+                <div id="hata-egilimi-comment"><strong>Hata Eğilimi:</strong> Yükleniyor...</div><br>
+                <div id="tutarlilik-comment"><strong>Tutarlılık:</strong> Yükleniyor...</div><br>
+                <div id="dikkat-dalgalanma-comment"><strong>Dikkat Dalgalanması:</strong> Yükleniyor...</div>
+            </div>
+            
+            <div class="section-header">Beyin Antrenörü Gözlem ve Görüşleri</div>
+            <div class="observations-box">
+                <!-- Bu alan boş bırakılmış -->
+            </div>
+            
+            <div class="logo">
+                <span class="for">for</span><span class="test">TEST</span><span class="check">✓</span>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // ===============================================
+        // D2 TEST YORUM KRİTERLERİ (Excel Tablolarından)
+        // ===============================================
+        
+        // TN (Toplam İşaretleme) Yorum Kriterleri
+        const TN_CRITERIA = [
+            { min: 0, max: 154, category: 'TN_ÇOK_DÜŞÜK', comment: 'Psikomotor hızında belirgin yavaşlık gözlenmiştir. İşlem hızını geliştirmeye yönelik dikkat ve odaklanma çalışmaları ile desteklenmelidir.' },
+            { min: 155, max: 201, category: 'TN_DÜŞÜK', comment: 'Psikomotor hızında yavaşlık gözlenmiştir. İşlem hızını artırmaya yönelik dikkat ve odaklanma becerileri geliştirilebilir.' },
+            { min: 202, max: 248, category: 'TN_DÜŞÜK', comment: 'Psikomotor hızında yavaşlık gözlenmiştir. İşlem hızını artırmaya yönelik dikkat ve odaklanma becerileri geliştirilebilir.' },
+            { min: 249, max: 295, category: 'TN_ORTA', comment: 'Psikomotor hızı genel olarak yeterlidir. Bazı anlarda dikkat yoğunluğu değişkenlik gösterebilir. İşlem hızını artırmaya yönelik dikkat ve odaklanma becerileri geliştirilebilir.' },
+            { min: 296, max: 342, category: 'TN_ORTA', comment: 'Psikomotor hızı genel olarak yeterlidir. Bazı anlarda dikkat yoğunluğu değişkenlik gösterebilir. İşlem hızını artırmaya yönelik dikkat ve odaklanma becerileri geliştirilebilir.' },
+            { min: 343, max: 389, category: 'TN_NORMAL', comment: 'Psikomotor hızı normaldir. Görevi uygun sürede ve dikkatini koruyarak tamamlamıştır. Hz ve dikkat dengesini sağlayabilmiştir. İşlem hızını artırmaya yönelik dikkat ve odaklanma becerileri geliştirilebilir.' },
+            { min: 390, max: 436, category: 'TN_NORMAL', comment: 'Psikomotor hızı normaldir. Görevi uygun sürede ve dikkatini koruyarak tamamlamıştır. Hz ve dikkat dengesini sağlayabilmiştir. İşlem hızını artırmaya yönelik dikkat ve odaklanma becerileri geliştirilebilir.' },
+            { min: 437, max: 483, category: 'TN_İYİ', comment: 'Psikomotor hızı iyidir. Bileyi hızlı anlayıp görevi biçimde uygulayabilmektedir. Dikkat ve odaklanma becerileri geliştirilmelidir. İşlem hızı daha da artırılabilir.' },
+            { min: 484, max: 530, category: 'TN_İYİ', comment: 'Psikomotor hızı iyidir. Bileyi hızlı anlayıp görevi biçimde uygulayabilmektedir. Dikkat ve odaklanma becerileri geliştirilmelidir. İşlem hızı daha da artırılabilir.' },
+            { min: 531, max: 577, category: 'TN_ÇOK_İYİ', comment: 'Psikomotor hızı çok iyidir. Görevi hızlı bir şekilde tamamlamıştır. Uygulama becerisi oldukça gelişmiştir.' },
+            { min: 578, max: 9999, category: 'TN_ÇOK_İYİ', comment: 'Psikomotor hızı çok iyidir. Görevi hızlı bir şekilde tamamlamıştır. Uygulama becerisi oldukça gelişmiştir.' }
+        ];
+
+        // TN-E (Net İşaretleme) Yorum Kriterleri
+        const TN_E_CRITERIA = [
+            { min: 0, max: 150, category: 'TN_E_ÇOK_DÜŞÜK', comment: 'Dikkatini toplayamta zorlandığı gözlenmişitir. Dikkat ve odaklanma çalışmaları ile bilişsel gelişim desteklenmelidir.' },
+            { min: 151, max: 200, category: 'TN_E_DÜŞÜK', comment: 'Dikkatini uzun süre sürdüremediği ve görevde doğru şekilde yapamakta zorlandığı gözlenmişitir. Yapılandırılmış dikkat ve odaklanma çalışmaları ile bilişsel gelişim desteklenmelidir.' },
+            { min: 201, max: 250, category: 'TN_E_VASAT', comment: 'Dikkatini genel olarak sürdürebilmiş ve odaklanma becerisi kullanabilmiştir. Bilişsel becerileri güçlendirilebilir daha da geliştirilebilir.' },
+            { min: 251, max: 300, category: 'TN_E_ORTA', comment: 'Dikkatini görev sırasında sürdürebilmiş ve odaklanma becerilerini kullanabilmiştir. Bilişsel becerileri güçlendirilebilir.' },
+            { min: 301, max: 350, category: 'TN_E_İYİ', comment: 'Dikkatini görev sırasında sürdürebilmiş, odaklanma becerilerini etkili şekilde kullanabilmiştir. Bilişsel becerileri güçlendirilmelidir daha da geliştirilir.' },
+            { min: 351, max: 9999, category: 'TN_E_ÇOK_İYİ', comment: 'Dikkatini görev sırasında sürdürebilmiş, odaklanma becerilerini etkili şekilde kullanabilmiştir.' }
+        ];
+
+        // E% (Hata Oranı) Yorum Kriterleri
+        const ERROR_CRITERIA = [
+            { min: 0.0, max: 2.5, category: 'E_1', comment: 'Hata oranı düşüktür. Dikkatini sürümdede belirgin güçlük yaşamaktadır; bu durum öğrenme sürecini olumsuz etkileyebilir.' },
+            { min: 2.6, max: 5.0, category: 'E_2', comment: 'Hata oranı artış göstermiştir. Zaman zaman dikkat hataları yapabilmektedir.' },
+            { min: 5.1, max: 10.0, category: 'E_3', comment: 'Dikkat hataları belirginleşmiştir. Odaklanmada zorlanabilir.' },
+            { min: 10.1, max: 20.0, category: 'E_4', comment: 'Dikkat salnmını yoktur. Performans tutarlıdır.' },
+            { min: 20.1, max: 100.0, category: 'E_5', comment: 'Hata oranı yüksektir. Dikkatini sürdürmdde belirgin güçlük yaşatmaktadır; bu durum öğrenme sürecini olumsuz etkileyebilir.' }
+        ];
+
+        // FR (Dalgalanma Oranı) Yorum Kriterleri
+        const FLUCTUATION_CRITERIA = [
+            { min: 0, max: 6, category: 'FR_1', comment: 'Dikkat salınımı yoktur. Performans tutarlıdır.' },
+            { min: 7, max: 10, category: 'FR_2', comment: 'Dikkat düzeyinde dalgalanmalar gözlenmiştir. İşlem hızında zihinsel sürelikte dalgalanma görülmektedir.' },
+            { min: 11, max: 15, category: 'FR_3', comment: 'Dikkat salnmı genel olarak yeterlidir. Bazı anlarda dikkat yoğunluğu değişkenlik gösterebilir. İşlem hızında zihinsel sürelikte dalgalanma görülmektedir.' },
+            { min: 16, max: 999, category: 'FR_4', comment: 'Dikkat salınmı yüksektir. Dikkatini sürümdede belirgin güçlük yaşamaktadır. İşlem hızını artırmaya yönelik dikkat ve odaklanma becerilereri geliştirilebiilir.' }
+        ];
+
+        // Supabase Configuration - Ana uygulamadan veri al
+        let supabaseClient = null;
+        
+        // Ana uygulamadan Supabase instance'ını al
+        const getSupabaseClient = () => {
+            // Eğer parent window varsa oradan al
+            if (window.opener && window.opener.supabase) {
+                console.log('✅ Parent window Supabase client bulundu');
+                return window.opener.supabase;
+            }
+            
+            // LocalStorage'dan config al
+            try {
+                const storedUrl = localStorage.getItem('sb-url');
+                const storedKey = localStorage.getItem('sb-anon-key');
+                
+                if (storedUrl && storedKey) {
+                    console.log('✅ localStorage Supabase config bulundu:', { 
+                        url: storedUrl.substring(0, 30) + '...', 
+                        key: storedKey.substring(0, 50) + '...' 
+                    });
+                    return supabase.createClient(storedUrl, storedKey);
+                }
+            } catch (error) {
+                console.warn('⚠️ localStorage config okunamadı:', error);
+            }
+            
+            // Son çare: Production Supabase values
+            const SUPABASE_URL = 'https://gamjzzomkosvqhficabt.supabase.co';
+            const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhbWp6em9ta29zdnFoZmljYWJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI4ODc3MDAsImV4cCI6MjA2ODQ2MzcwMH0.r8KkywdhNSP1hxzSAlKo8SB5jOEb0KQRUBfZ9Va0p9I';
+            
+            console.log('⚠️ Fallback Supabase config kullanılıyor');
+            return supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        };
+
+        // Supabase client'ı initialize et
+        supabaseClient = getSupabaseClient();
+
+        // Global variables
+        let testData = null;
+        let userData = null;
+        let conductorData = null;
+
+        // ===============================================
+        // DATABASE VERİ ÇEKME FONKSİYONLARI
+        // ===============================================
+
+        // Kullanıcı bilgilerini çek
+        async function fetchUserData(userId) {
+            try {
+                console.log('👤 Kullanıcı bilgileri çekiliyor:', userId);
+                const { data, error } = await supabaseClient
+                    .from('users')
+                    .select('*')
+                    .eq('id', userId)
+                    .single();
+                
+                if (error) {
+                    console.error('❌ Kullanıcı bilgileri hatası:', error);
+                    throw error;
+                }
+                console.log('✅ Kullanıcı bilgileri alındı:', data);
+                return data;
+            } catch (error) {
+                console.error('❌ Kullanıcı bilgileri alınamadı:', error);
+                return null;
+            }
+        }
+
+        // Test yapan kişinin bilgilerini çek
+        async function fetchConductorData(conductorId) {
+            try {
+                console.log('👨‍🏫 Test yapan kişi bilgileri çekiliyor:', conductorId);
+                const { data, error } = await supabaseClient
+                    .from('users')
+                    .select('first_name, last_name')
+                    .eq('id', conductorId)
+                    .single();
+                
+                if (error) {
+                    console.error('❌ Test yapan kişi hatası:', error);
+                    throw error;
+                }
+                console.log('✅ Test yapan kişi bilgileri alındı:', data);
+                return data;
+            } catch (error) {
+                console.error('❌ Test yapan kişi bilgileri alınamadı:', error);
+                return null;
+            }
+        }
+
+        // D2 test sonuçlarını çek
+        async function fetchD2TestResults(testId) {
+            try {
+                console.log('📊 D2 test sonuçları çekiliyor:', testId);
+                const { data, error } = await supabaseClient
+                    .from('d2_test_results')
+                    .select('*')
+                    .eq('id', testId)
+                    .single();
+                
+                if (error) {
+                    console.error('❌ D2 test sonuçları hatası:', error);
+                    throw error;
+                }
+                console.log('✅ D2 test sonuçları alındı:', data);
+                return data;
+            } catch (error) {
+                console.error('❌ D2 test sonuçları alınamadı:', error);
+                return null;
+            }
+        }
+
+        // En son D2 test sonucunu çek (kullanıcı ID'ye göre)
+        async function fetchLatestD2TestByUser(userId) {
+            try {
+                console.log('📊 En son D2 test sonucu çekiliyor:', userId);
+                const { data, error } = await supabaseClient
+                    .from('d2_test_results')
+                    .select('*')
+                    .eq('student_id', userId)
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .single();
+                
+                if (error) {
+                    console.error('❌ En son D2 test sonucu hatası:', error);
+                    throw error;
+                }
+                console.log('✅ En son D2 test sonucu alındı:', data);
+                return data;
+            } catch (error) {
+                console.error('❌ En son D2 test sonucu alınamadı:', error);
+                return null;
+            }
+        }
+
+        // ===============================================
+        // YORUM ÜRETİMİ FONKSİYONLARI
+        // ===============================================
+
+        // TN değerine göre yorum üret
+        function generateTNComment(tnValue) {
+            const criteria = TN_CRITERIA.find(c => tnValue >= c.min && tnValue <= c.max);
+            return criteria ? criteria.comment : 'Değer aralık dışında.';
+        }
+
+        // TN-E değerine göre yorum üret
+        function generateTNEComment(tneValue) {
+            const criteria = TN_E_CRITERIA.find(c => tneValue >= c.min && tneValue <= c.max);
+            return criteria ? criteria.comment : 'Değer aralık dışında.';
+        }
+
+        // Hata oranına göre yorum üret
+        function generateErrorComment(errorPercentage) {
+            const criteria = ERROR_CRITERIA.find(c => errorPercentage >= c.min && errorPercentage <= c.max);
+            return criteria ? criteria.comment : 'Değer aralık dışında.';
+        }
+
+        // Dalgalanma oranına göre yorum üret (Tutarlılık)
+        function generateFluctuationComment(frValue) {
+            const criteria = FLUCTUATION_CRITERIA.find(c => frValue >= c.min && frValue <= c.max);
+            return criteria ? criteria.comment : 'Değer aralık dışında.';
+        }
+
+        // Kapsamlı yorum üret
+        function generateComprehensiveComment(testData) {
+            const tnComment = generateTNComment(testData.total_items_processed);
+            const tneComment = generateTNEComment(testData.total_net_performance);
+            const errorPercentage = ((testData.commission_errors + testData.omission_errors) / testData.total_items_processed) * 100;
+            const errorComment = generateErrorComment(errorPercentage);
+            const fluctuationComment = generateFluctuationComment(testData.fluctuation_rate);
+
+            return {
+                psikomotorHiz: tnComment,
+                secciDikkat: tneComment,
+                hataEgilimi: errorComment,
+                tutarlilik: fluctuationComment,
+                dikkatDalgalanmasi: `Boş bırakma oranı: %${((testData.omission_errors / testData.total_items_processed) * 100).toFixed(2)}. ${errorComment}`
+            };
+        }
+
+        // ===============================================
+        // YARDIMCI FONKSİYONLAR
+        // ===============================================
+
+        // Yaş hesaplama fonksiyonu
+        function calculateAge(birthDate) {
+            const birth = new Date(birthDate);
+            const now = new Date();
+            
+            let years = now.getFullYear() - birth.getFullYear();
+            let months = now.getMonth() - birth.getMonth();
+            let days = now.getDate() - birth.getDate();
+            
+            if (days < 0) {
+                months--;
+                days += new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+            }
+            
+            if (months < 0) {
+                years--;
+                months += 12;
+            }
+            
+            return `${years} Yıl ${months} Ay ${days} Gün`;
+        }
+
+        // Tarih formatla
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('tr-TR');
+        }
+
+        // Cinsiyet formatla
+        function formatGender(gender) {
+            const genderMap = {
+                'male': 'Erkek',
+                'female': 'Kadın',
+                'other': 'Diğer'
+            };
+            return genderMap[gender] || gender || 'Belirtilmemiş';
+        }
+
+        // ===============================================
+        // VERİ DOLDURMA FONKSİYONLARI
+        // ===============================================
+
+        // Kullanıcı bilgilerini DOM'a doldur
+        function populateUserData(userData, conductorData, testData) {
+            // Kullanıcı bilgileri
+            if (userData) {
+                document.getElementById('user-name').textContent = 
+                    `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || 'Bilinmiyor';
+                
+                if (userData.birth_date) {
+                    document.getElementById('user-age').textContent = calculateAge(userData.birth_date);
+                    document.getElementById('user-birthdate').textContent = formatDate(userData.birth_date);
+                } else {
+                    document.getElementById('user-age').textContent = 'Bilinmiyor';
+                    document.getElementById('user-birthdate').textContent = 'Bilinmiyor';
+                }
+
+                document.getElementById('user-gender').textContent = formatGender(userData.gender);
+            }
+
+            // Test yapan kişi
+            if (conductorData) {
+                document.getElementById('conductor-name').textContent = 
+                    `${conductorData.first_name || ''} ${conductorData.last_name || ''}`.trim() || 'Bilinmiyor';
+            }
+
+            // Test tarihi
+            if (testData && testData.test_start_time) {
+                document.getElementById('test-date').textContent = formatDate(testData.test_start_time);
+            }
+        }
+
+        // Test metriklerini DOM'a doldur
+        function populateTestMetrics(testData) {
+            if (!testData) return;
+
+            document.getElementById('tn-value').textContent = testData.total_items_processed || 0;
+            document.getElementById('e1-value').textContent = testData.commission_errors || 0;
+            document.getElementById('e2-value').textContent = testData.omission_errors || 0;
+            document.getElementById('tne-value').textContent = testData.total_net_performance || 0;
+            document.getElementById('cp-value').textContent = testData.concentration_performance || 0;
+            
+            // Hata yüzdesi hesapla
+            const errorPercentage = testData.total_items_processed > 0 
+                ? (((testData.commission_errors + testData.omission_errors) / testData.total_items_processed) * 100).toFixed(2)
+                : 0;
+            document.getElementById('error-percentage').textContent = `%${errorPercentage}`;
+            
+            // SP (İşlem hızı) - processing_speed kullan
+            document.getElementById('sp-value').textContent = testData.processing_speed || 0;
+        }
+
+        // Yorumları DOM'a doldur
+        function populateComments(testData) {
+            if (!testData) return;
+
+            const comments = generateComprehensiveComment(testData);
+            
+            document.getElementById('psikomotor-comment').innerHTML = 
+                `<strong>Psikomotor Hız:</strong> ${comments.psikomotorHiz}`;
+            document.getElementById('secci-dikkat-comment').innerHTML = 
+                `<strong>Seçici Dikkat:</strong> ${comments.secciDikkat}`;
+            document.getElementById('hata-egilimi-comment').innerHTML = 
+                `<strong>Hata Eğilimi:</strong> ${comments.hataEgilimi}`;
+            document.getElementById('tutarlilik-comment').innerHTML = 
+                `<strong>Tutarlılık:</strong> ${comments.tutarlilik}`;
+            document.getElementById('dikkat-dalgalanma-comment').innerHTML = 
+                `<strong>Dikkat Dalgalanması:</strong> ${comments.dikkatDalgalanmasi}`;
+        }
+
+        // Performans tablosunu doldur
+        function populatePerformanceTable(testData) {
+            if (!testData || !testData.line_results) return;
+
+            const performanceRow = document.getElementById('performance-scores');
+            const cells = performanceRow.querySelectorAll('td');
+            
+            // İlk cell "Puan" başlığı, ondan sonrakiler performans değerleri
+            const lineResults = Array.isArray(testData.line_results) ? testData.line_results : [];
+            
+            for (let i = 1; i < cells.length && i <= 14; i++) {
+                if (lineResults[i-1] && lineResults[i-1].correct !== undefined) {
+                    cells[i].textContent = lineResults[i-1].correct || 0;
+                } else {
+                    cells[i].textContent = '0';
+                }
+            }
+        }
+
+        // Chart'ı güncelle
+        function updateChart(testData) {
+            if (!testData || !testData.line_results) return;
+
+            const lineResults = Array.isArray(testData.line_results) ? testData.line_results : [];
+            const performanceData = [];
+            
+            for (let i = 0; i < 14; i++) {
+                if (lineResults[i] && lineResults[i].correct !== undefined) {
+                    performanceData.push(lineResults[i].correct || 0);
+                } else {
+                    performanceData.push(0);
+                }
+            }
+
+            // Chart verilerini güncelle
+            chart.data.datasets[0].data = performanceData;
+            chart.update();
+        }
+
+        // ===============================================
+        // ANA İNİT FONKSİYONU
+        // ===============================================
+
+        // Sayfa yüklendiğinde çalışacak ana fonksiyon
+        async function initializeD2Report() {
+            try {
+                console.log('🚀 D2 raporu initialize ediliyor...');
+                
+                // URL parametrelerinden test ID'sini al
+                const urlParams = new URLSearchParams(window.location.search);
+                const testId = urlParams.get('testId');
+                const userId = urlParams.get('userId');
+
+                console.log('📋 URL Parametreleri:', { testId, userId });
+
+                if (!testId && !userId) {
+                    console.error('❌ Test ID veya User ID parametresi bulunamadı');
+                    showError('URL parametresi eksik. testId veya userId gerekli.');
+                    return;
+                }
+
+                // Supabase client kontrolü
+                if (!supabaseClient) {
+                    console.error('❌ Supabase client başlatılamadı');
+                    showError('Database bağlantısı kurulamadı.');
+                    return;
+                }
+
+                let testData;
+                
+                // Test ID varsa direkt çek, yoksa kullanıcının en son testini çek
+                if (testId) {
+                    console.log('🔍 Test ID ile veri çekiliyor:', testId);
+                    testData = await fetchD2TestResults(testId);
+                } else if (userId) {
+                    console.log('🔍 User ID ile en son test çekiliyor:', userId);
+                    testData = await fetchLatestD2TestByUser(userId);
+                }
+
+                if (!testData) {
+                    console.error('❌ Test verileri alınamadı');
+                    showError('Test verileri bulunamadı.');
+                    return;
+                }
+
+                console.log('✅ Test verileri başarıyla alındı:', testData);
+
+                // Kullanıcı ve test yapan kişi bilgilerini çek
+                console.log('👤 Kullanıcı bilgileri çekiliyor...');
+                const userData = await fetchUserData(testData.student_id);
+                const conductorData = await fetchConductorData(testData.conducted_by);
+
+                // Global değişkenlere ata
+                window.testData = testData;
+                window.userData = userData;
+                window.conductorData = conductorData;
+
+                // DOM elementlerini doldur
+                console.log('🎨 DOM elemanları doldurluyor...');
+                populateUserData(userData, conductorData, testData);
+                populateTestMetrics(testData);
+                populateComments(testData);
+                populatePerformanceTable(testData);
+                updateChart(testData);
+
+                console.log('🎉 D2 raporu başarıyla yüklendi!');
+
+            } catch (error) {
+                console.error('❌ D2 raporu yüklenirken hata oluştu:', error);
+                showError(`Rapor yüklenirken hata: ${error.message}`);
+            }
+        }
+
+        // Hata mesajı gösterme fonksiyonu
+        function showError(message) {
+            // Tüm "Yükleniyor..." yazılarını hata mesajı ile değiştir
+            const loadingElements = document.querySelectorAll('[id*="user-"], [id*="test-"], [id*="conductor-"], [id*="tn-"], [id*="e1-"], [id*="e2-"], [id*="cp-"], [id*="sp-"], [id*="tne-"], [id*="error-"]');
+            loadingElements.forEach(element => {
+                if (element.textContent === 'Yükleniyor...' || element.textContent === '-') {
+                    element.textContent = 'Hata!';
+                    element.style.color = '#dc2626';
+                }
+            });
+
+            // Yorum bölümlerini güncelle
+            const commentElements = document.querySelectorAll('[id*="comment"]');
+            commentElements.forEach(element => {
+                if (element.innerHTML.includes('Yükleniyor...')) {
+                    element.innerHTML = `<strong style="color: #dc2626;">Hata:</strong> ${message}`;
+                }
+            });
+
+            // Console'a detaylı hata bilgisi yaz
+            console.error('🚨 D2 Template Hatası:', message);
+        }
+
+        // Production'dan Supabase config yükleme (alternatif yöntem)
+        async function loadSupabaseConfig() {
+            try {
+                console.log('🔧 Supabase config yükleniyor...');
+                
+                // Ana uygulamadan window.supabase al
+                if (window.opener && window.opener.supabase) {
+                    console.log('✅ Ana uygulamadan Supabase alındı');
+                    supabaseClient = window.opener.supabase;
+                    return true;
+                }
+
+                // localStorage'dan bilgileri çek (main app tarafından set edilmişse)
+                const sbUrl = localStorage.getItem('sb-url');
+                const sbKey = localStorage.getItem('sb-anon-key');
+                
+                if (sbUrl && sbKey) {
+                    console.log('✅ localStorage Supabase config kullanılıyor');
+                    supabaseClient = supabase.createClient(sbUrl, sbKey);
+                    return true;
+                }
+
+                // Config API endpoint'i dene
+                try {
+                    const response = await fetch('/api/supabase-config');
+                    if (response.ok) {
+                        const config = await response.json();
+                        console.log('✅ API'den Supabase config alındı');
+                        supabaseClient = supabase.createClient(config.url, config.key);
+                        return true;
+                    }
+                } catch (apiError) {
+                    console.warn('⚠️ Config API çalışmıyor:', apiError.message);
+                }
+
+                console.warn('⚠️ Supabase config bulunamadı, client zaten initialize edildi');
+                return false;
+            } catch (error) {
+                console.warn('⚠️ Supabase config yüklenemedi:', error);
+                return false;
+            }
+        }
+
+        // Grafik oluşturma
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14'],
+                datasets: [{
+                    label: 'Performans',
+                    data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // Başlangıçta sıfır
+                    borderColor: '#dc2626',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#dc2626',
+                    pointRadius: 5,
+                    tension: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 30 // Dinamik olarak ayarlanabilir
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+
+        // ===============================================
+        // SAYFA YÜKLENDİĞİNDE ÇALIŞACAK KODLAR
+        // ===============================================
+
+        // DOM içeriği yüklendiğinde init fonksiyonunu çalıştır
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('📄 D2 Rapor sayfası yüklendi');
+            
+            try {
+                // Önce Supabase config'ini kontrol et
+                console.log('🔍 Supabase client durumu:', supabaseClient ? 'Mevcut' : 'Boş');
+                
+                // Config yüklemeyi dene
+                await loadSupabaseConfig();
+                
+                // Son kontrol
+                if (!supabaseClient) {
+                    console.error('❌ Supabase client hala yok, initialization durduruldu');
+                    showError('Database bağlantısı kurulamadı. Lütfen ana uygulamadan açın.');
+                    return;
+                }
+                
+                // Raporu initialize et
+                await initializeD2Report();
+                
+            } catch (error) {
+                console.error('❌ Initialization hatası:', error);
+                showError(`Başlatma hatası: ${error.message}`);
+            }
+        });
+
+        // Test amaçlı window objelerine erişim
+        window.D2_TEST_FUNCTIONS = {
+            initializeD2Report,
+            fetchD2TestResults,
+            fetchUserData,
+            generateComprehensiveComment,
+            populateUserData,
+            populateTestMetrics,
+            populateComments,
+            updateChart
+        };
+
+    </script>
+</body>
+</html>

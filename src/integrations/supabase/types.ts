@@ -12,101 +12,255 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          operationName?: string
+          query?: string
+          variables?: Json
+          extensions?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
+      attention_test_results: {
+        Row: {
+          accuracy_percentage: number | null
+          average_reaction_time: number | null
+          completion_status: string | null
+          conducted_by: string
+          created_at: string | null
+          detailed_answers: Json | null
+          id: string
+          letter_questions_accuracy: number | null
+          letter_questions_correct: number | null
+          letter_questions_total: number | null
+          mixed_questions_accuracy: number | null
+          mixed_questions_correct: number | null
+          mixed_questions_total: number | null
+          notes: string | null
+          number_questions_accuracy: number | null
+          number_questions_correct: number | null
+          number_questions_total: number | null
+          reaction_times: Json | null
+          section1_accuracy: number | null
+          section1_correct: number | null
+          section1_total: number | null
+          section2_accuracy: number | null
+          section2_correct: number | null
+          section2_total: number | null
+          section3_accuracy: number | null
+          section3_correct: number | null
+          section3_total: number | null
+          speed_score: number | null
+          student_id: string
+          test_duration_seconds: number | null
+          test_end_time: string | null
+          test_start_time: string
+          total_correct_answers: number | null
+          total_questions_attempted: number | null
+          updated_at: string | null
+          wrong_answers: Json | null
+        }
+        Insert: {
+          accuracy_percentage?: number | null
+          average_reaction_time?: number | null
+          completion_status?: string | null
+          conducted_by: string
+          created_at?: string | null
+          detailed_answers?: Json | null
+          id?: string
+          letter_questions_accuracy?: number | null
+          letter_questions_correct?: number | null
+          letter_questions_total?: number | null
+          mixed_questions_accuracy?: number | null
+          mixed_questions_correct?: number | null
+          mixed_questions_total?: number | null
+          notes?: string | null
+          number_questions_accuracy?: number | null
+          number_questions_correct?: number | null
+          number_questions_total?: number | null
+          reaction_times?: Json | null
+          section1_accuracy?: number | null
+          section1_correct?: number | null
+          section1_total?: number | null
+          section2_accuracy?: number | null
+          section2_correct?: number | null
+          section2_total?: number | null
+          section3_accuracy?: number | null
+          section3_correct?: number | null
+          section3_total?: number | null
+          speed_score?: number | null
+          student_id: string
+          test_duration_seconds?: number | null
+          test_end_time?: string | null
+          test_start_time: string
+          total_correct_answers?: number | null
+          total_questions_attempted?: number | null
+          updated_at?: string | null
+          wrong_answers?: Json | null
+        }
+        Update: {
+          accuracy_percentage?: number | null
+          average_reaction_time?: number | null
+          completion_status?: string | null
+          conducted_by?: string
+          created_at?: string | null
+          detailed_answers?: Json | null
+          id?: string
+          letter_questions_accuracy?: number | null
+          letter_questions_correct?: number | null
+          letter_questions_total?: number | null
+          mixed_questions_accuracy?: number | null
+          mixed_questions_correct?: number | null
+          mixed_questions_total?: number | null
+          notes?: string | null
+          number_questions_accuracy?: number | null
+          number_questions_correct?: number | null
+          number_questions_total?: number | null
+          reaction_times?: Json | null
+          section1_accuracy?: number | null
+          section1_correct?: number | null
+          section1_total?: number | null
+          section2_accuracy?: number | null
+          section2_correct?: number | null
+          section2_total?: number | null
+          section3_accuracy?: number | null
+          section3_correct?: number | null
+          section3_total?: number | null
+          speed_score?: number | null
+          student_id?: string
+          test_duration_seconds?: number | null
+          test_end_time?: string | null
+          test_start_time?: string
+          total_correct_answers?: number | null
+          total_questions_attempted?: number | null
+          updated_at?: string | null
+          wrong_answers?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attention_test_results_conducted_by_fkey"
+            columns: ["conducted_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attention_test_results_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       burdon_test_results: {
         Row: {
-          attention_ratio: number
+          attention_ratio: number | null
+          completion_status: string | null
           conducted_by: string
           created_at: string
           detailed_results: Json | null
           id: string
           notes: string | null
-          section1_correct: number
-          section1_missed: number
-          section1_score: number
-          section1_wrong: number
-          section2_correct: number
-          section2_missed: number
-          section2_score: number
-          section2_wrong: number
-          section3_correct: number
-          section3_missed: number
-          section3_score: number
-          section3_wrong: number
-          student_id: string | null
-          test_auto_completed: boolean | null
-          test_elapsed_time_seconds: number
+          section1_correct: number | null
+          section1_missed: number | null
+          section1_score: number | null
+          section1_wrong: number | null
+          section2_correct: number | null
+          section2_missed: number | null
+          section2_score: number | null
+          section2_wrong: number | null
+          section3_correct: number | null
+          section3_missed: number | null
+          section3_score: number | null
+          section3_wrong: number | null
+          student_id: string
+          test_duration_seconds: number | null
           test_end_time: string | null
           test_start_time: string
-          total_correct: number
-          total_missed: number
-          total_score: number
-          total_wrong: number
+          total_correct: number | null
+          total_missed: number | null
+          total_score: number | null
+          total_wrong: number | null
           updated_at: string
-          user_id: string
         }
         Insert: {
-          attention_ratio?: number
+          attention_ratio?: number | null
+          completion_status?: string | null
           conducted_by: string
           created_at?: string
           detailed_results?: Json | null
           id?: string
           notes?: string | null
-          section1_correct?: number
-          section1_missed?: number
-          section1_score?: number
-          section1_wrong?: number
-          section2_correct?: number
-          section2_missed?: number
-          section2_score?: number
-          section2_wrong?: number
-          section3_correct?: number
-          section3_missed?: number
-          section3_score?: number
-          section3_wrong?: number
-          student_id?: string | null
-          test_auto_completed?: boolean | null
-          test_elapsed_time_seconds: number
+          section1_correct?: number | null
+          section1_missed?: number | null
+          section1_score?: number | null
+          section1_wrong?: number | null
+          section2_correct?: number | null
+          section2_missed?: number | null
+          section2_score?: number | null
+          section2_wrong?: number | null
+          section3_correct?: number | null
+          section3_missed?: number | null
+          section3_score?: number | null
+          section3_wrong?: number | null
+          student_id: string
+          test_duration_seconds?: number | null
           test_end_time?: string | null
           test_start_time: string
-          total_correct?: number
-          total_missed?: number
-          total_score?: number
-          total_wrong?: number
+          total_correct?: number | null
+          total_missed?: number | null
+          total_score?: number | null
+          total_wrong?: number | null
           updated_at?: string
-          user_id: string
         }
         Update: {
-          attention_ratio?: number
+          attention_ratio?: number | null
+          completion_status?: string | null
           conducted_by?: string
           created_at?: string
           detailed_results?: Json | null
           id?: string
           notes?: string | null
-          section1_correct?: number
-          section1_missed?: number
-          section1_score?: number
-          section1_wrong?: number
-          section2_correct?: number
-          section2_missed?: number
-          section2_score?: number
-          section2_wrong?: number
-          section3_correct?: number
-          section3_missed?: number
-          section3_score?: number
-          section3_wrong?: number
-          student_id?: string | null
-          test_auto_completed?: boolean | null
-          test_elapsed_time_seconds?: number
+          section1_correct?: number | null
+          section1_missed?: number | null
+          section1_score?: number | null
+          section1_wrong?: number | null
+          section2_correct?: number | null
+          section2_missed?: number | null
+          section2_score?: number | null
+          section2_wrong?: number | null
+          section3_correct?: number | null
+          section3_missed?: number | null
+          section3_score?: number | null
+          section3_wrong?: number | null
+          student_id?: string
+          test_duration_seconds?: number | null
           test_end_time?: string | null
           test_start_time?: string
-          total_correct?: number
-          total_missed?: number
-          total_score?: number
-          total_wrong?: number
+          total_correct?: number | null
+          total_missed?: number | null
+          total_score?: number | null
+          total_wrong?: number | null
           updated_at?: string
-          user_id?: string
         }
         Relationships: [
           {
@@ -120,420 +274,323 @@ export type Database = {
             foreignKeyName: "burdon_test_results_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
-            referencedRelation: "students"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "burdon_test_results_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
       }
-      cognitive_assessment_results: {
+      d2_test_results: {
         Row: {
-          akil_mantik_test_completed_at: string | null
-          akil_mantik_test_results: Json | null
-          akil_mantik_test_score: number | null
-          cognitive_assessment_summary: Json | null
+          attention_stability: number | null
+          commission_errors: number | null
+          completion_status: string | null
+          concentration_performance: number | null
           conducted_by: string
+          correct_selections: number | null
           created_at: string
-          current_test_step: number | null
-          dikkat_test_completed_at: string | null
-          dikkat_test_results: Json | null
-          dikkat_test_score: number | null
-          hafiza_test_completed_at: string | null
-          hafiza_test_results: Json | null
-          hafiza_test_score: number | null
+          detailed_results: Json | null
+          fluctuation_rate: number | null
           id: string
+          line_results: Json | null
           notes: string | null
-          overall_cognitive_score: number | null
-          puzzle_test_completed_at: string | null
-          puzzle_test_results: Json | null
-          puzzle_test_score: number | null
-          stroop_test_completed_at: string | null
-          stroop_test_results: Json | null
-          stroop_test_score: number | null
-          student_id: string | null
+          omission_errors: number | null
+          processing_speed: number | null
+          student_id: string
+          test_duration_seconds: number | null
           test_end_time: string | null
           test_start_time: string
-          test_status: string | null
-          total_test_duration_seconds: number | null
+          total_errors: number | null
+          total_items_processed: number | null
+          total_net_performance: number | null
+          total_score: number | null
           updated_at: string
-          user_id: string
         }
         Insert: {
-          akil_mantik_test_completed_at?: string | null
-          akil_mantik_test_results?: Json | null
-          akil_mantik_test_score?: number | null
-          cognitive_assessment_summary?: Json | null
+          attention_stability?: number | null
+          commission_errors?: number | null
+          completion_status?: string | null
+          concentration_performance?: number | null
           conducted_by: string
+          correct_selections?: number | null
           created_at?: string
-          current_test_step?: number | null
-          dikkat_test_completed_at?: string | null
-          dikkat_test_results?: Json | null
-          dikkat_test_score?: number | null
-          hafiza_test_completed_at?: string | null
-          hafiza_test_results?: Json | null
-          hafiza_test_score?: number | null
+          detailed_results?: Json | null
+          fluctuation_rate?: number | null
           id?: string
+          line_results?: Json | null
           notes?: string | null
-          overall_cognitive_score?: number | null
-          puzzle_test_completed_at?: string | null
-          puzzle_test_results?: Json | null
-          puzzle_test_score?: number | null
-          stroop_test_completed_at?: string | null
-          stroop_test_results?: Json | null
-          stroop_test_score?: number | null
-          student_id?: string | null
+          omission_errors?: number | null
+          processing_speed?: number | null
+          student_id: string
+          test_duration_seconds?: number | null
+          test_end_time?: string | null
+          test_start_time: string
+          total_errors?: number | null
+          total_items_processed?: number | null
+          total_net_performance?: number | null
+          total_score?: number | null
+          updated_at?: string
+        }
+        Update: {
+          attention_stability?: number | null
+          commission_errors?: number | null
+          completion_status?: string | null
+          concentration_performance?: number | null
+          conducted_by?: string
+          correct_selections?: number | null
+          created_at?: string
+          detailed_results?: Json | null
+          fluctuation_rate?: number | null
+          id?: string
+          line_results?: Json | null
+          notes?: string | null
+          omission_errors?: number | null
+          processing_speed?: number | null
+          student_id?: string
+          test_duration_seconds?: number | null
           test_end_time?: string | null
           test_start_time?: string
-          test_status?: string | null
-          total_test_duration_seconds?: number | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          akil_mantik_test_completed_at?: string | null
-          akil_mantik_test_results?: Json | null
-          akil_mantik_test_score?: number | null
-          cognitive_assessment_summary?: Json | null
-          conducted_by?: string
-          created_at?: string
-          current_test_step?: number | null
-          dikkat_test_completed_at?: string | null
-          dikkat_test_results?: Json | null
-          dikkat_test_score?: number | null
-          hafiza_test_completed_at?: string | null
-          hafiza_test_results?: Json | null
-          hafiza_test_score?: number | null
-          id?: string
-          notes?: string | null
-          overall_cognitive_score?: number | null
-          puzzle_test_completed_at?: string | null
-          puzzle_test_results?: Json | null
-          puzzle_test_score?: number | null
-          stroop_test_completed_at?: string | null
-          stroop_test_results?: Json | null
-          stroop_test_score?: number | null
-          student_id?: string | null
-          test_end_time?: string | null
-          test_start_time?: string
-          test_status?: string | null
-          total_test_duration_seconds?: number | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      exercises: {
-        Row: {
-          created_at: string
-          created_by: string
-          description: string | null
-          difficulty_level: number | null
-          exercise_data: Json | null
-          exercise_type: string
-          id: string
-          instructions: string | null
-          is_active: boolean | null
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          created_by: string
-          description?: string | null
-          difficulty_level?: number | null
-          exercise_data?: Json | null
-          exercise_type: string
-          id?: string
-          instructions?: string | null
-          is_active?: boolean | null
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string
-          description?: string | null
-          difficulty_level?: number | null
-          exercise_data?: Json | null
-          exercise_type?: string
-          id?: string
-          instructions?: string | null
-          is_active?: boolean | null
-          title?: string
+          total_errors?: number | null
+          total_items_processed?: number | null
+          total_net_performance?: number | null
+          total_score?: number | null
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "exercises_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      reports: {
-        Row: {
-          content_data: Json | null
-          created_at: string
-          created_by: string
-          file_url: string | null
-          generated_at: string | null
-          id: string
-          is_published: boolean | null
-          report_type: string
-          student_id: string
-          template_data: Json | null
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          content_data?: Json | null
-          created_at?: string
-          created_by: string
-          file_url?: string | null
-          generated_at?: string | null
-          id?: string
-          is_published?: boolean | null
-          report_type: string
-          student_id: string
-          template_data?: Json | null
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          content_data?: Json | null
-          created_at?: string
-          created_by?: string
-          file_url?: string | null
-          generated_at?: string | null
-          id?: string
-          is_published?: boolean | null
-          report_type?: string
-          student_id?: string
-          template_data?: Json | null
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "reports_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "reports_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "students"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      students: {
-        Row: {
-          birth_date: string | null
-          created_at: string
-          grade_level: number | null
-          id: string
-          notes: string | null
-          parent_email: string | null
-          parent_name: string | null
-          parent_phone: string | null
-          school_name: string | null
-          student_number: string | null
-          updated_at: string
-          user_id: string | null
-        }
-        Insert: {
-          birth_date?: string | null
-          created_at?: string
-          grade_level?: number | null
-          id?: string
-          notes?: string | null
-          parent_email?: string | null
-          parent_name?: string | null
-          parent_phone?: string | null
-          school_name?: string | null
-          student_number?: string | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          birth_date?: string | null
-          created_at?: string
-          grade_level?: number | null
-          id?: string
-          notes?: string | null
-          parent_email?: string | null
-          parent_name?: string | null
-          parent_phone?: string | null
-          school_name?: string | null
-          student_number?: string | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "students_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      test_results: {
-        Row: {
-          conducted_by: string
-          created_at: string
-          end_time: string | null
-          id: string
-          max_score: number | null
-          notes: string | null
-          percentage: number | null
-          results_data: Json | null
-          score: number | null
-          start_time: string
-          status: string | null
-          student_id: string
-          test_id: string
-          updated_at: string
-        }
-        Insert: {
-          conducted_by: string
-          created_at?: string
-          end_time?: string | null
-          id?: string
-          max_score?: number | null
-          notes?: string | null
-          percentage?: number | null
-          results_data?: Json | null
-          score?: number | null
-          start_time: string
-          status?: string | null
-          student_id: string
-          test_id: string
-          updated_at?: string
-        }
-        Update: {
-          conducted_by?: string
-          created_at?: string
-          end_time?: string | null
-          id?: string
-          max_score?: number | null
-          notes?: string | null
-          percentage?: number | null
-          results_data?: Json | null
-          score?: number | null
-          start_time?: string
-          status?: string | null
-          student_id?: string
-          test_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "test_results_conducted_by_fkey"
+            foreignKeyName: "d2_test_results_conducted_by_fkey"
             columns: ["conducted_by"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "test_results_student_id_fkey"
+            foreignKeyName: "d2_test_results_student_id_fkey"
             columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "students"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "test_results_test_id_fkey"
-            columns: ["test_id"]
-            isOneToOne: false
-            referencedRelation: "tests"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      tests: {
-        Row: {
-          created_at: string
-          created_by: string
-          description: string | null
-          duration_minutes: number | null
-          id: string
-          instructions: string | null
-          is_active: boolean | null
-          test_type: string
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          created_by: string
-          description?: string | null
-          duration_minutes?: number | null
-          id?: string
-          instructions?: string | null
-          is_active?: boolean | null
-          test_type: string
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string
-          description?: string | null
-          duration_minutes?: number | null
-          id?: string
-          instructions?: string | null
-          is_active?: boolean | null
-          test_type?: string
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "tests_created_by_fkey"
-            columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
       }
-      user_roles: {
+      memory_test_results: {
         Row: {
-          created_at: string
+          accuracy_percentage: number | null
+          average_response_time: number | null
+          browser_info: string | null
+          completion_status: string | null
+          conducted_by: string
+          correct_answers: number
+          created_at: string | null
+          detailed_answers: Json | null
+          device_info: string | null
+          example_attempts: number | null
+          example_correct_count: number | null
+          example_success_rate: number | null
           id: string
-          role: Database["public"]["Enums"]["user_role"]
-          user_id: string
+          ip_address: unknown | null
+          last_answered_question: number | null
+          missed_answers: number
+          notes: string | null
+          question_response_times: Json | null
+          remaining_questions: number | null
+          remaining_time_seconds: number | null
+          set_analysis: Json | null
+          set1_accuracy: number | null
+          set1_completion_time_seconds: number | null
+          set1_correct: number | null
+          set1_missed: number | null
+          set1_wrong: number | null
+          set2_accuracy: number | null
+          set2_completion_time_seconds: number | null
+          set2_correct: number | null
+          set2_missed: number | null
+          set2_wrong: number | null
+          set3_accuracy: number | null
+          set3_completion_time_seconds: number | null
+          set3_correct: number | null
+          set3_missed: number | null
+          set3_wrong: number | null
+          set4_accuracy: number | null
+          set4_completion_time_seconds: number | null
+          set4_correct: number | null
+          set4_missed: number | null
+          set4_wrong: number | null
+          skill_breakdown: Json | null
+          skill_isler_hafiza_accuracy: number | null
+          skill_isler_hafiza_correct: number | null
+          skill_isler_hafiza_total: number | null
+          skill_kisa_sureli_gorsel_accuracy: number | null
+          skill_kisa_sureli_gorsel_correct: number | null
+          skill_kisa_sureli_gorsel_total: number | null
+          skill_kisa_sureli_isitsel_accuracy: number | null
+          skill_kisa_sureli_isitsel_correct: number | null
+          skill_kisa_sureli_isitsel_total: number | null
+          skill_uzun_sureli_gorsel_accuracy: number | null
+          skill_uzun_sureli_gorsel_correct: number | null
+          skill_uzun_sureli_gorsel_total: number | null
+          skill_uzun_sureli_isitsel_accuracy: number | null
+          skill_uzun_sureli_isitsel_correct: number | null
+          skill_uzun_sureli_isitsel_total: number | null
+          speed_score: number | null
+          student_id: string
+          test_duration_seconds: number | null
+          test_end_time: string | null
+          test_start_time: string
+          total_questions: number
+          total_response_time: number | null
+          updated_at: string | null
+          wrong_answer_choices: Json | null
+          wrong_answers: number
         }
         Insert: {
-          created_at?: string
+          accuracy_percentage?: number | null
+          average_response_time?: number | null
+          browser_info?: string | null
+          completion_status?: string | null
+          conducted_by: string
+          correct_answers?: number
+          created_at?: string | null
+          detailed_answers?: Json | null
+          device_info?: string | null
+          example_attempts?: number | null
+          example_correct_count?: number | null
+          example_success_rate?: number | null
           id?: string
-          role: Database["public"]["Enums"]["user_role"]
-          user_id: string
+          ip_address?: unknown | null
+          last_answered_question?: number | null
+          missed_answers?: number
+          notes?: string | null
+          question_response_times?: Json | null
+          remaining_questions?: number | null
+          remaining_time_seconds?: number | null
+          set_analysis?: Json | null
+          set1_accuracy?: number | null
+          set1_completion_time_seconds?: number | null
+          set1_correct?: number | null
+          set1_missed?: number | null
+          set1_wrong?: number | null
+          set2_accuracy?: number | null
+          set2_completion_time_seconds?: number | null
+          set2_correct?: number | null
+          set2_missed?: number | null
+          set2_wrong?: number | null
+          set3_accuracy?: number | null
+          set3_completion_time_seconds?: number | null
+          set3_correct?: number | null
+          set3_missed?: number | null
+          set3_wrong?: number | null
+          set4_accuracy?: number | null
+          set4_completion_time_seconds?: number | null
+          set4_correct?: number | null
+          set4_missed?: number | null
+          set4_wrong?: number | null
+          skill_breakdown?: Json | null
+          skill_isler_hafiza_accuracy?: number | null
+          skill_isler_hafiza_correct?: number | null
+          skill_isler_hafiza_total?: number | null
+          skill_kisa_sureli_gorsel_accuracy?: number | null
+          skill_kisa_sureli_gorsel_correct?: number | null
+          skill_kisa_sureli_gorsel_total?: number | null
+          skill_kisa_sureli_isitsel_accuracy?: number | null
+          skill_kisa_sureli_isitsel_correct?: number | null
+          skill_kisa_sureli_isitsel_total?: number | null
+          skill_uzun_sureli_gorsel_accuracy?: number | null
+          skill_uzun_sureli_gorsel_correct?: number | null
+          skill_uzun_sureli_gorsel_total?: number | null
+          skill_uzun_sureli_isitsel_accuracy?: number | null
+          skill_uzun_sureli_isitsel_correct?: number | null
+          skill_uzun_sureli_isitsel_total?: number | null
+          speed_score?: number | null
+          student_id: string
+          test_duration_seconds?: number | null
+          test_end_time?: string | null
+          test_start_time: string
+          total_questions?: number
+          total_response_time?: number | null
+          updated_at?: string | null
+          wrong_answer_choices?: Json | null
+          wrong_answers?: number
         }
         Update: {
-          created_at?: string
+          accuracy_percentage?: number | null
+          average_response_time?: number | null
+          browser_info?: string | null
+          completion_status?: string | null
+          conducted_by?: string
+          correct_answers?: number
+          created_at?: string | null
+          detailed_answers?: Json | null
+          device_info?: string | null
+          example_attempts?: number | null
+          example_correct_count?: number | null
+          example_success_rate?: number | null
           id?: string
-          role?: Database["public"]["Enums"]["user_role"]
-          user_id?: string
+          ip_address?: unknown | null
+          last_answered_question?: number | null
+          missed_answers?: number
+          notes?: string | null
+          question_response_times?: Json | null
+          remaining_questions?: number | null
+          remaining_time_seconds?: number | null
+          set_analysis?: Json | null
+          set1_accuracy?: number | null
+          set1_completion_time_seconds?: number | null
+          set1_correct?: number | null
+          set1_missed?: number | null
+          set1_wrong?: number | null
+          set2_accuracy?: number | null
+          set2_completion_time_seconds?: number | null
+          set2_correct?: number | null
+          set2_missed?: number | null
+          set2_wrong?: number | null
+          set3_accuracy?: number | null
+          set3_completion_time_seconds?: number | null
+          set3_correct?: number | null
+          set3_missed?: number | null
+          set3_wrong?: number | null
+          set4_accuracy?: number | null
+          set4_completion_time_seconds?: number | null
+          set4_correct?: number | null
+          set4_missed?: number | null
+          set4_wrong?: number | null
+          skill_breakdown?: Json | null
+          skill_isler_hafiza_accuracy?: number | null
+          skill_isler_hafiza_correct?: number | null
+          skill_isler_hafiza_total?: number | null
+          skill_kisa_sureli_gorsel_accuracy?: number | null
+          skill_kisa_sureli_gorsel_correct?: number | null
+          skill_kisa_sureli_gorsel_total?: number | null
+          skill_kisa_sureli_isitsel_accuracy?: number | null
+          skill_kisa_sureli_isitsel_correct?: number | null
+          skill_kisa_sureli_isitsel_total?: number | null
+          skill_uzun_sureli_gorsel_accuracy?: number | null
+          skill_uzun_sureli_gorsel_correct?: number | null
+          skill_uzun_sureli_gorsel_total?: number | null
+          skill_uzun_sureli_isitsel_accuracy?: number | null
+          skill_uzun_sureli_isitsel_correct?: number | null
+          skill_uzun_sureli_isitsel_total?: number | null
+          speed_score?: number | null
+          student_id?: string
+          test_duration_seconds?: number | null
+          test_end_time?: string | null
+          test_start_time?: string
+          total_questions?: number
+          total_response_time?: number | null
+          updated_at?: string | null
+          wrong_answer_choices?: Json | null
+          wrong_answers?: number
         }
         Relationships: [
           {
-            foreignKeyName: "user_roles_user_id_fkey"
-            columns: ["user_id"]
+            foreignKeyName: "memory_test_results_conducted_by_fkey"
+            columns: ["conducted_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memory_test_results_student_id_fkey"
+            columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
@@ -545,54 +602,89 @@ export type Database = {
           auth_user_id: string
           avatar_url: string | null
           created_at: string
+          demographic_info: Json | null
           email: string
           first_name: string
           id: string
           is_active: boolean | null
           last_name: string
           phone: string | null
+          roles: Json | null
+          supervisor_id: string | null
           updated_at: string
         }
         Insert: {
           auth_user_id: string
           avatar_url?: string | null
           created_at?: string
+          demographic_info?: Json | null
           email: string
           first_name: string
           id?: string
           is_active?: boolean | null
           last_name: string
           phone?: string | null
+          roles?: Json | null
+          supervisor_id?: string | null
           updated_at?: string
         }
         Update: {
           auth_user_id?: string
           avatar_url?: string | null
           created_at?: string
+          demographic_info?: Json | null
           email?: string
           first_name?: string
           id?: string
           is_active?: boolean | null
           last_name?: string
           phone?: string | null
+          roles?: Json | null
+          supervisor_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "users_supervisor_id_fkey"
+            columns: ["supervisor_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      get_current_user: {
-        Args: Record<PropertyKey, never>
+      create_user_with_demographics: {
+        Args: {
+          p_auth_user_id: string
+          p_email: string
+          p_first_name: string
+          p_last_name: string
+          p_phone?: string
+          p_roles?: Json
+          p_supervisor_id?: string
+          p_demographic_info?: Json
+        }
         Returns: string
       }
-      has_role: {
-        Args: {
-          user_id: string
-          required_role: Database["public"]["Enums"]["user_role"]
-        }
+      get_all_subordinates: {
+        Args: { supervisor_uuid: string }
+        Returns: {
+          id: string
+          first_name: string
+          last_name: string
+          email: string
+          roles: Json
+          supervisor_id: string
+          level: number
+        }[]
+      }
+      user_has_role: {
+        Args: { user_roles: Json; required_role: string }
         Returns: boolean
       }
     }
@@ -723,6 +815,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       user_role: ["admin", "trainer", "representative", "user"],

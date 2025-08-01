@@ -11,39 +11,38 @@ import { useToast } from "@/hooks/use-toast";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
-import { BurdonReportModal } from "@/components/reports/BurdonReportModal";
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
-import { generateBurdonHTMLReport } from "@/components/reports/BurdonPDFTemplate";
+import BurdonReportModal from "@/components/reports/BurdonReportModal";
+import D2ReportModal from "@/components/reports/D2ReportModal";
 
-export interface BurdonTestResult {
+// Burdon test results interface
+interface BurdonTestResult {
   id: string;
-  test_start_time: string;
-  test_end_time: string;
-  test_elapsed_time_seconds: number;
-  test_auto_completed: boolean;
-  total_correct: number;
-  total_missed: number;
-  total_wrong: number;
-  total_score: number;
-  attention_ratio: number;
-  section1_correct: number;
-  section1_missed: number;
-  section1_wrong: number;
-  section1_score: number;
-  section2_correct: number;
-  section2_missed: number;
-  section2_wrong: number;
-  section2_score: number;
-  section3_correct: number;
-  section3_missed: number;
-  section3_wrong: number;
-  section3_score: number;
-  detailed_results: any;
-  notes: string | null;
+  student_id: string;
   created_at: string;
   student_name?: string;
   conducted_by_name?: string;
+  [key: string]: any; // For flexibility with other properties
+}
+
+// D2 test results interface
+interface D2TestResult {
+  id: string;
+  student_id: string;
+  created_at: string;
+  student_name?: string;
+  conducted_by_name?: string;
+  attention_stability: number | null;
+  commission_errors: number | null;
+  omission_errors: number | null;
+  correct_selections: number | null;
+  total_score: number | null;
+  concentration_performance: number | null;
+  total_items_processed: number | null;
+  test_duration_seconds: number | null;
+  fluctuation_rate: number | null;
+  [key: string]: any;
 }
 
 export default function Reports() {
@@ -51,48 +50,158 @@ export default function Reports() {
   const [selectedTest, setSelectedTest] = useState<string | null>(null);
   const [students, setStudents] = useState<any[]>([]);
   const [burdonResults, setBurdonResults] = useState<BurdonTestResult[]>([]);
+  const [d2Results, setD2Results] = useState<D2TestResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedResult, setSelectedResult] = useState<BurdonTestResult | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+  const [selectedModalData, setSelectedModalData] = useState<{student: any, testResult: any} | null>(null);
+  
+  // D2 Modal states
+  const [selectedD2Result, setSelectedD2Result] = useState<D2TestResult | null>(null);
+  const [d2ModalOpen, setD2ModalOpen] = useState(false);
+  const [selectedD2ModalData, setSelectedD2ModalData] = useState<{student: any, testResult: any} | null>(null);
   const { toast } = useToast();
-  const { user, switchRole, logout } = useAuth();
+  const { user, switchRole, logout, isLoading } = useAuth();
   const navigate = useNavigate();
+
+  // Auth yüklenene kadar bekle
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Basit rol kontrolü - user varsa kontrol et
+  const canViewReports = user?.roles?.includes('admin') || 
+                         user?.roles?.includes('temsilci') || 
+                         user?.roles?.includes('beyin_antrenoru');
+
+  if (user && !canViewReports) {
+    return (
+      <DashboardLayout
+        user={user ? {
+          name: `${user.firstName} ${user.lastName}`,
+          email: user.email,
+          roles: user.roles,
+          currentRole: user.currentRole,
+        } : undefined}
+        onRoleSwitch={(role: any) => switchRole(role)}
+        onLogout={logout}
+      >
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold mb-2">Erişim Yetkisi Yok</h2>
+            <p className="text-muted-foreground">Bu sayfayı görüntüleme yetkiniz bulunmamaktadır.</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   useEffect(() => {
     fetchStudents();
-  }, []);
+  }, [user?.currentRole, user?.id]); // Rol değişince yeniden çek
 
   useEffect(() => {
     if (selectedStudent && selectedTest === 'burdon') {
       console.log('Fetching burdon results for student:', selectedStudent.id);
       setLoading(true);
       fetchBurdonResults();
+    } else if (selectedStudent && selectedTest === 'd2') {
+      console.log('Fetching D2 results for student:', selectedStudent.id);
+      setLoading(true);
+      fetchD2Results();
     }
   }, [selectedStudent, selectedTest]);
+
+  useEffect(() => {
+    if (selectedResultId && modalOpen) {
+      fetchModalData(selectedResultId);
+    }
+  }, [selectedResultId, modalOpen]);
 
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      const { data: studentsData, error } = await supabase
-        .from('students')
+      
+      if (!user) {
+        console.error('❌ User not found');
+        return;
+      }
+
+      console.log('🔍 Reports - Fetching students for role:', user.currentRole);
+      
+      // Dinamik rol kategorisi belirleme
+      const isAdminRole = user.currentRole === 'admin';
+      const isTrainerRole = ['trainer', 'beyin_antrenoru'].includes(user.currentRole);
+      const isRepresentativeRole = ['representative', 'temsilci'].includes(user.currentRole);
+      
+      // Dinamik query builder - role göre filtering
+      let query = supabase
+        .from('users')
         .select(`
           id,
-          student_number,
-          birth_date,
-          grade_level,
-          users!students_user_id_fkey(first_name, last_name, email)
+          first_name,
+          last_name,
+          email,
+          supervisor_id,
+          demographic_info,
+          created_at
         `)
-        .order('created_at', { ascending: false });
+        .contains('roles', '["kullanici"]'); // Sadece öğrenciler - JSON string formatı
+
+      // Rol bazlı dinamik filtering
+      if (isAdminRole) {
+        console.log('👑 Admin - showing all students for reports');
+      } else if (isRepresentativeRole) {
+        console.log('🎯 Representative - showing students of supervised trainers for reports');
+        // Temsilci kendi altındaki beyin antrenörlerinin öğrencilerini görür
+        const { data: trainersData } = await supabase
+          .from('users')
+          .select('id')
+          .contains('roles', '["beyin_antrenoru"]')
+          .eq('supervisor_id', user.id);
+        
+        const trainerIds = trainersData?.map(t => t.id) || [];
+        if (trainerIds.length > 0) {
+          query = query.in('supervisor_id', trainerIds);
+        } else {
+          query = query.limit(0);
+        }
+      } else if (isTrainerRole) {
+        console.log('🎯 Trainer - showing only supervised students for reports');
+        query = query.eq('supervisor_id', user.id);
+      } else {
+        console.log('👤 Other role - no students for reports');
+        query = query.limit(0);
+      }
+
+      const { data: studentsData, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      const formattedStudents = studentsData?.map(student => ({
-        ...student,
-        full_name: student.users ? `${student.users.first_name} ${student.users.last_name}` : 'Bilinmeyen Öğrenci'
-      })) || [];
+      // Format for compatibility with existing interface
+      const formattedStudents = studentsData?.map(student => {
+        const demographicInfo = student.demographic_info as any;
+        return {
+          id: student.id,
+          student_number: demographicInfo?.student_number || `STU-${student.id.slice(-8)}`,
+          birth_date: demographicInfo?.birth_date || null,
+          grade_level: demographicInfo?.grade_level || null,
+          full_name: `${student.first_name} ${student.last_name}`,
+          users: {
+            first_name: student.first_name,
+            last_name: student.last_name,
+            email: student.email
+          }
+        };
+      }) || [];
 
+      console.log('✅ Reports Students loaded:', formattedStudents.length);
       setStudents(formattedStudents);
     } catch (error) {
       console.error('Error fetching students:', error);
@@ -109,11 +218,34 @@ export default function Reports() {
   const fetchBurdonResults = async () => {
     if (!selectedStudent) return;
     try {
-      const { data: results, error: resultsError } = await supabase
+      console.log('🔍 Fetching burdon results for student:', selectedStudent.id);
+      console.log('🔍 Current user role:', user?.currentRole);
+      console.log('🔍 Current user ID:', user?.id);
+      
+      // RLS BYPASS TEST - geçici olarak admin user ile deneme
+      let query = supabase
         .from('burdon_test_results')
         .select('*')
         .eq('student_id', selectedStudent.id)
         .order('created_at', { ascending: false });
+      
+      // Debug için: RLS bypass olmadan önce de test et
+      console.log('🔧 Testing with RLS policies...');
+      const { data: results, error: resultsError } = await query;
+      
+      // Eğer results boşsa, veri var mı diye count kontrolü yap
+      if (!results || results.length === 0) {
+        console.log('🔧 No results with RLS, checking total records for this student...');
+        const { count } = await supabase
+          .from('burdon_test_results')
+          .select('*', { count: 'exact', head: true })
+          .eq('student_id', selectedStudent.id);
+        console.log('📊 Total burdon records for this student (with RLS):', count);
+      }
+
+      console.log('📊 Burdon results query response:', { results, error: resultsError });
+      console.log('📊 Results array length:', results?.length || 0);
+      console.log('📊 Error message:', resultsError?.message || 'No error');
 
       if (resultsError) throw resultsError;
 
@@ -127,13 +259,13 @@ export default function Reports() {
         // Öğrenci bilgisini al
         if (result.student_id) {
           const { data: studentData } = await supabase
-            .from('students')
-            .select('users!students_user_id_fkey(first_name, last_name)')
+            .from('users')
+            .select('first_name, last_name')
             .eq('id', result.student_id)
             .single();
           
-          if (studentData?.users) {
-            studentName = `${studentData.users.first_name} ${studentData.users.last_name}`;
+          if (studentData) {
+            studentName = `${studentData.first_name} ${studentData.last_name}`;
           }
         }
 
@@ -157,12 +289,281 @@ export default function Reports() {
         });
       }
 
+      console.log('✅ Formatted burdon results:', formattedResults);
       setBurdonResults(formattedResults);
     } catch (error) {
-      console.error('Error fetching burdon results:', error);
+      console.error('❌ Error fetching burdon results:', error);
+      console.error('❌ Error details:', JSON.stringify(error, null, 2));
       toast({
         title: "Hata",
-        description: "Burdon test sonuçları yüklenirken bir hata oluştu.",
+        description: `Burdon test sonuçları yüklenirken bir hata oluştu: ${error.message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchD2Results = async () => {
+    if (!selectedStudent) return;
+    try {
+      console.log('🔍 Fetching D2 results for student:', selectedStudent.id);
+      
+      let query = supabase
+        .from('d2_test_results')
+        .select('*')
+        .eq('student_id', selectedStudent.id)
+        .order('created_at', { ascending: false });
+      
+      console.log('🔧 Testing D2 with RLS policies...');
+      const { data: results, error: resultsError } = await query;
+      
+      // Eğer results boşsa, veri var mı diye count kontrolü yap
+      if (!results || results.length === 0) {
+        console.log('🔧 No D2 results with RLS, checking total records for this student...');
+        const { count } = await supabase
+          .from('d2_test_results')
+          .select('*', { count: 'exact', head: true })
+          .eq('student_id', selectedStudent.id);
+        console.log('📊 Total D2 records for this student (with RLS):', count);
+        
+        if (count === 0) {
+          toast({
+            title: "Bilgi",
+            description: "Bu öğrenci için henüz D2 test sonucu bulunamadı.",
+            variant: "default",
+          });
+        }
+      }
+
+      console.log('📊 D2 results query response:', { results, error: resultsError });
+      console.log('📊 D2 Results array length:', results?.length || 0);
+
+      if (resultsError) throw resultsError;
+
+      // Sonra kullanıcı ve öğrenci bilgilerini ayrı ayrı al
+      const formattedResults: D2TestResult[] = [];
+      
+      for (const result of results || []) {
+        let studentName = 'Bilinmeyen Öğrenci';
+        let conductorName = 'Bilinmeyen Kullanıcı';
+
+        // Öğrenci bilgisini al
+        if (result.student_id) {
+          const { data: studentData } = await supabase
+            .from('users')
+            .select('first_name, last_name')
+            .eq('id', result.student_id)
+            .single();
+          
+          if (studentData) {
+            studentName = `${studentData.first_name} ${studentData.last_name}`;
+          }
+        }
+
+        // Test yapan kişi bilgisini al
+        if (result.conducted_by) {
+          const { data: conductorData } = await supabase
+            .from('users')
+            .select('first_name, last_name')
+            .eq('id', result.conducted_by)
+            .single();
+          
+          if (conductorData) {
+            conductorName = `${conductorData.first_name} ${conductorData.last_name}`;
+          }
+        }
+
+        formattedResults.push({
+          ...result,
+          student_name: studentName,
+          conducted_by_name: conductorName
+        });
+      }
+
+      console.log('✅ Formatted D2 results:', formattedResults);
+      setD2Results(formattedResults);
+    } catch (error) {
+      console.error('❌ Error fetching D2 results:', error);
+      toast({
+        title: "Hata",
+        description: `D2 test sonuçları yüklenirken bir hata oluştu: ${error.message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchModalData = async (resultId: string) => {
+    try {
+      setLoading(true);
+      
+      // Burdon test sonucunu çek
+      const { data: testResult, error: testError } = await supabase
+        .from('burdon_test_results')
+        .select('*')
+        .eq('id', resultId)
+        .single();
+
+      if (testError) throw testError;
+
+      // Student bilgilerini çek
+      const { data: studentData, error: studentError } = await supabase
+        .from('users')
+        .select(`
+          id,
+          first_name,
+          last_name,
+          demographic_info
+        `)
+        .eq('id', testResult.student_id)
+        .single();
+
+      if (studentError) throw studentError;
+
+      // Supervisor/Trainer ismini çek
+      let trainerName = 'Beyin Antrenörü';
+      if (testResult.conducted_by) {
+        const { data: trainerData } = await supabase
+          .from('users')
+          .select('first_name, last_name')
+          .eq('id', testResult.conducted_by)
+          .single();
+        
+        if (trainerData) {
+          trainerName = `${trainerData.first_name} ${trainerData.last_name}`;
+        }
+      }
+
+      // Student verisini format et
+      const demographicInfo = studentData.demographic_info as any;
+      const formattedStudent = {
+        id: studentData.id,
+        full_name: `${studentData.first_name} ${studentData.last_name}`,
+        birth_date: demographicInfo?.birth_date || '1990-01-01',
+        gender: demographicInfo?.gender || 'male',
+        trainer_name: trainerName
+      };
+
+      // Test sonucunu format et
+      const formattedTestResult = {
+        id: testResult.id,
+        student_id: testResult.student_id,
+        section1_correct: testResult.section1_correct || 0,
+        section1_wrong: testResult.section1_wrong || 0,
+        section1_missed: testResult.section1_missed || 0,
+        section2_correct: testResult.section2_correct || 0,
+        section2_wrong: testResult.section2_wrong || 0,
+        section2_missed: testResult.section2_missed || 0,
+        section3_correct: testResult.section3_correct || 0,
+        section3_wrong: testResult.section3_wrong || 0,
+        section3_missed: testResult.section3_missed || 0,
+        total_correct: testResult.total_correct || 0,
+        total_wrong: testResult.total_wrong || 0,
+        total_missed: testResult.total_missed || 0,
+        performance_percentage: Math.round(((testResult.total_correct || 0) / ((testResult.total_correct || 0) + (testResult.total_missed || 0) + (testResult.total_wrong || 0))) * 100) || 0,
+        created_at: testResult.created_at
+      };
+
+      setSelectedModalData({
+        student: formattedStudent,
+        testResult: formattedTestResult
+      });
+
+    } catch (error) {
+      console.error('Error fetching modal data:', error);
+      toast({
+        title: "Hata",
+        description: "Rapor verileri yüklenirken bir hata oluştu.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchD2ModalData = async (resultId: string) => {
+    try {
+      setLoading(true);
+      
+      // D2 test sonucunu çek
+      const { data: testResult, error: testError } = await supabase
+        .from('d2_test_results')
+        .select('*')
+        .eq('id', resultId)
+        .single();
+
+      if (testError) throw testError;
+
+      // Student bilgilerini çek
+      const { data: studentData, error: studentError } = await supabase
+        .from('users')
+        .select(`
+          id,
+          first_name,
+          last_name,
+          demographic_info
+        `)
+        .eq('id', testResult.student_id)
+        .single();
+
+      if (studentError) throw studentError;
+
+      // Supervisor/Trainer ismini çek
+      let trainerName = 'Beyin Antrenörü';
+      if (testResult.conducted_by) {
+        const { data: trainerData } = await supabase
+          .from('users')
+          .select('first_name, last_name')
+          .eq('id', testResult.conducted_by)
+          .single();
+        
+        if (trainerData) {
+          trainerName = `${trainerData.first_name} ${trainerData.last_name}`;
+        }
+      }
+
+      // Student verisini format et
+      const demographicInfo = studentData.demographic_info as any;
+      const formattedStudent = {
+        id: studentData.id,
+        full_name: `${studentData.first_name} ${studentData.last_name}`,
+        birth_date: demographicInfo?.birth_date || '1990-01-01',
+        gender: demographicInfo?.gender || 'male',
+        trainer_name: trainerName
+      };
+
+      // D2 test sonucunu format et
+      const formattedTestResult = {
+        id: testResult.id,
+        student_id: testResult.student_id,
+        created_at: testResult.created_at,
+        attention_stability: testResult.attention_stability || 0,
+        commission_errors: testResult.commission_errors || 0,
+        omission_errors: testResult.omission_errors || 0,
+        correct_selections: testResult.correct_selections || 0,
+        total_score: testResult.total_score || 0,
+        concentration_performance: testResult.concentration_performance || 0,
+        total_items_processed: testResult.total_items_processed || 0,
+        test_duration_seconds: testResult.test_duration_seconds || 0,
+        fluctuation_rate: testResult.fluctuation_rate || 0,
+        total_net_performance: testResult.total_net_performance || 0,
+        processing_speed: testResult.processing_speed || 0,
+        total_errors: testResult.total_errors || 0,
+        line_results: testResult.line_results || []
+      };
+
+      setSelectedD2ModalData({
+        student: formattedStudent,
+        testResult: formattedTestResult
+      });
+
+    } catch (error) {
+      console.error('Error fetching D2 modal data:', error);
+      toast({
+        title: "Hata",
+        description: "D2 rapor verileri yüklenirken bir hata oluştu.",
         variant: "destructive",
       });
     } finally {
@@ -696,7 +1097,12 @@ export default function Reports() {
                 <FileSpreadsheet className="h-4 w-4 mr-2" />
                 Excel İndir
               </Button>
-              <Button onClick={() => exportToPDF(selectedResult)}>
+              <Button onClick={() => {
+                if (selectedResult) {
+                  setSelectedResultId(selectedResult.id);
+                  setModalOpen(true);
+                }
+              }}>
                 <FileText className="h-4 w-4 mr-2" />
                 PDF İndir
               </Button>
@@ -883,6 +1289,8 @@ export default function Reports() {
                         <CardDescription>
                           {student.student_number && `Öğrenci No: ${student.student_number}`}
                           {student.grade_level && ` • ${student.grade_level}. Sınıf`}
+                          <br />
+                          <span className="text-xs text-muted-foreground">📧 {student.users?.email}</span>
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
@@ -950,13 +1358,35 @@ export default function Reports() {
                 </Button>
               </CardContent>
             </Card>
+
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => {
+              console.log('D2 card clicked for student:', selectedStudent.id);
+              setSelectedTest('d2');
+            }}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Search className="h-5 w-5" />
+                  D2 Konsantrasyon Testi
+                </CardTitle>
+                <CardDescription>
+                  D2 konsantrasyon testi sonuçlarını görüntüleyin ve analiz edin.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="outline" className="w-full">
+                  Raporları Görüntüle
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </DashboardLayout>
     );
   }
 
-  return (
+  // Burdon test seçildiyse
+  if (selectedTest === 'burdon') {
+    return (
     <DashboardLayout
       user={user ? {
         name: `${user.firstName} ${user.lastName}`,
@@ -1063,7 +1493,10 @@ export default function Reports() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => exportToPDF(result)}
+                            onClick={() => {
+                              setSelectedResultId(result.id);
+                              setModalOpen(true);
+                            }}
                           >
                             <FileText className="h-4 w-4 mr-2" />
                             PDF
@@ -1086,14 +1519,278 @@ export default function Reports() {
           </CardContent>
         </Card>
 
-        <BurdonReportModal 
-          resultId={selectedResultId}
-          open={modalOpen}
-          onClose={() => {
-            setModalOpen(false);
-            setSelectedResultId(null);
-          }}
-        />
+        {selectedModalData && (
+          <BurdonReportModal 
+            isOpen={modalOpen}
+            onClose={() => {
+              setModalOpen(false);
+              setSelectedResultId(null);
+              setSelectedModalData(null);
+            }}
+            student={selectedModalData.student}
+            testResult={selectedModalData.testResult}
+          />
+        )}
+      </div>
+    </DashboardLayout>
+    );
+  }
+
+  // D2 test seçildiyse
+  if (selectedTest === 'd2') {
+    const filteredD2Results = d2Results.filter(result => {
+      const searchLower = searchTerm.toLowerCase();
+      return result.student_name?.toLowerCase().includes(searchLower) ||
+             result.conducted_by_name?.toLowerCase().includes(searchLower) ||
+             result.id.toLowerCase().includes(searchLower);
+    });
+
+    return (
+      <DashboardLayout
+        user={user ? {
+          name: `${user.firstName} ${user.lastName}`,
+          email: user.email,
+          roles: user.roles,
+          currentRole: user.currentRole,
+        } : undefined}
+        onRoleSwitch={handleRoleSwitch}
+        onLogout={handleLogout}
+      >
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button variant="outline" onClick={() => setSelectedTest(null)}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Test Seçimi
+              </Button>
+              <div>
+                <h1 className="text-3xl font-bold">{selectedStudent.full_name} - D2 Test Raporları</h1>
+                <p className="text-muted-foreground">
+                  D2 konsantrasyon testi sonuçlarını görüntüleyebilir ve indirebilirsiniz.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>D2 Test Sonuçları</CardTitle>
+              <CardDescription>
+                {selectedStudent.full_name} öğrencisine ait D2 test sonuçları
+              </CardDescription>
+              <div className="mt-3 p-3 bg-muted rounded-md">
+                <div className="text-xs text-muted-foreground font-mono grid grid-cols-4 gap-4">
+                  <div><strong>D:</strong> Doğru işaretlemeler</div>
+                  <div><strong>E1:</strong> Komisyon hataları</div>
+                  <div><strong>E2:</strong> Atlama hataları</div>
+                  <div><strong>E:</strong> Toplam hata (E1+E2)</div>
+                  <div><strong>CP:</strong> Konsantrasyon (D-E1)</div>
+                  <div><strong>TN:</strong> İşlenen madde</div>
+                  <div><strong>FR:</strong> Dalgalanma oranı</div>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Arama yapın..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 w-64"
+                    />
+                  </div>
+                </div>
+                <Badge variant="outline">
+                  Toplam: {filteredD2Results.length} sonuç
+                </Badge>
+              </div>
+
+              {filteredD2Results.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">D2 test sonucu bulunamadı.</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Test Tarihi</TableHead>
+                      <TableHead className="text-center">D</TableHead>
+                      <TableHead className="text-center">E1</TableHead>
+                      <TableHead className="text-center">E2</TableHead>
+                      <TableHead className="text-center">E</TableHead>
+                      <TableHead className="text-center">CP</TableHead>
+                      <TableHead className="text-center">TN</TableHead>
+                      <TableHead className="text-center">FR</TableHead>
+                      <TableHead>Test Yapan</TableHead>
+                      <TableHead>İşlemler</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredD2Results.map((result) => {
+                      // D2 formülleri hesapla
+                      const D = result.correct_selections || 0;
+                      const E1 = result.commission_errors || 0;
+                      const E2 = result.omission_errors || 0;
+                      const E = E1 + E2; // Toplam hata
+                      const CP = result.concentration_performance || (D - E1); // Konsantrasyon Performansı
+                      const TN = result.total_items_processed || 0;
+                      const FR = result.fluctuation_rate || 0; // Dalgalanma oranı
+
+                      return (
+                        <TableRow key={result.id}>
+                          <TableCell>
+                            {new Date(result.created_at).toLocaleDateString('tr-TR')}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="font-mono text-sm font-medium">{D}</div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="font-mono text-sm font-medium text-red-600">{E1}</div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="font-mono text-sm font-medium text-red-600">{E2}</div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="font-mono text-sm font-medium text-gray-600">{E}</div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="font-mono text-sm font-medium text-blue-600">
+                              {typeof CP === 'number' ? CP.toFixed(1) : CP}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="font-mono text-sm font-medium">{TN}</div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="font-mono text-sm font-medium text-orange-600">
+                              {typeof FR === 'number' ? FR.toFixed(1) : FR}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">
+                              <div className="font-medium">{result.conducted_by_name}</div>
+                            </div>
+                          </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                // D2 modal'ı aç - Detay
+                                await fetchD2ModalData(result.id);
+                                setD2ModalOpen(true);
+                              }}
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              Detay
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                // D2 modal'ı aç ve print et
+                                await fetchD2ModalData(result.id);
+                                setD2ModalOpen(true);
+                                // Modal açıldıktan sonra print fonksiyonunu çağır
+                                setTimeout(() => {
+                                  // D2ReportModal içindeki handlePrint fonksiyonunu çağırmak için
+                                  // modal'ın print butonuna click event'i gönder
+                                  const printBtn = document.querySelector('.d2-report-modal .export-btn:not(.secondary)') as HTMLButtonElement;
+                                  if (printBtn) printBtn.click();
+                                }, 1000);
+                              }}
+                            >
+                              <FileText className="h-4 w-4 mr-2" />
+                              PDF
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                // D2 formüllerini tekrar hesapla
+                                const csvD = result.correct_selections || 0;
+                                const csvE1 = result.commission_errors || 0;
+                                const csvE2 = result.omission_errors || 0;
+                                const csvE = csvE1 + csvE2;
+                                const csvCP = result.concentration_performance || (csvD - csvE1);
+                                const csvTN = result.total_items_processed || 0;
+                                const csvFR = result.fluctuation_rate || 0;
+
+                                const csvContent = [
+                                  ['D2 Test Formülleri', 'Değer'],
+                                  ['Test Tarihi', new Date(result.created_at).toLocaleDateString('tr-TR')],
+                                  ['Öğrenci', result.student_name || 'Bilinmeyen'],
+                                  ['Test Yapan', result.conducted_by_name || 'Bilinmeyen'],
+                                  ['D', csvD],
+                                  ['E1', csvE1],
+                                  ['E2', csvE2],
+                                  ['E', csvE],
+                                  ['CP', typeof csvCP === 'number' ? csvCP.toFixed(1) : csvCP],
+                                  ['TN', csvTN],
+                                  ['FR', typeof csvFR === 'number' ? csvFR.toFixed(1) : csvFR],
+                                  ['Test Süresi (saniye)', result.test_duration_seconds || 0]
+                                ].map(row => row.join(',')).join('\n');
+                                
+                                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                                const link = document.createElement('a');
+                                const url = URL.createObjectURL(blob);
+                                link.setAttribute('href', url);
+                                link.setAttribute('download', `D2_test_${result.student_name}_${new Date(result.created_at).toLocaleDateString('tr-TR')}.csv`);
+                                link.style.visibility = 'hidden';
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                              }}
+                            >
+                              <FileSpreadsheet className="h-4 w-4 mr-2" />
+                              CSV
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* D2 Report Modal */}
+          {selectedD2ModalData && (
+            <D2ReportModal 
+              isOpen={d2ModalOpen}
+              onClose={() => {
+                setD2ModalOpen(false);
+                setSelectedD2ModalData(null);
+              }}
+              student={selectedD2ModalData.student}
+              testResult={selectedD2ModalData.testResult}
+            />
+          )}
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Fallback return
+  return (
+    <DashboardLayout
+      user={user ? {
+        name: `${user.firstName} ${user.lastName}`,
+        email: user.email,
+        roles: user.roles,
+        currentRole: user.currentRole,
+      } : undefined}
+      onRoleSwitch={handleRoleSwitch}
+      onLogout={handleLogout}
+    >
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">Lütfen bir test seçin.</p>
       </div>
     </DashboardLayout>
   );

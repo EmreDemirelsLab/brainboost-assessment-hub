@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Burdon Dikkat Testi Raporu</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            line-height: 1.4;
+        }
+
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            position: relative;
+            background: 
+                radial-gradient(circle at 15% 25%, rgba(139, 79, 179, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 85% 75%, rgba(255, 140, 66, 0.06) 0%, transparent 35%),
+                radial-gradient(circle at 50% 50%, rgba(139, 79, 179, 0.04) 0%, transparent 60%),
+                url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%238B4FB3' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='1.5'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
+                linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+            padding: 30px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            page-break-after: always;
+        }
+
+        .page:last-child {
+            page-break-after: auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .title {
+            font-size: 36px;
+            font-weight: bold;
+            color: #8B4FB3;
+            margin-bottom: 30px;
+            position: relative;
+            padding-bottom: 15px;
+        }
+
+        .title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #8B4FB3, transparent);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .info-item {
+            text-align: left;
+            background: #F8F9FA;
+            padding: 8px 10px;
+            border-radius: 4px;
+            border-left: 3px solid #FF8C42;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+        }
+
+        .info-item:hover {
+            box-shadow: 0 4px 12px rgba(255, 140, 66, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .info-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #FF8C42;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-value {
+            font-size: 16px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .gauge-container {
+            text-align: center;
+            margin: 25px 0;
+            padding: 15px;
+        }
+
+        .gauge {
+            width: 280px;
+            height: 140px;
+            margin: 0 auto 20px;
+            position: relative;
+        }
+
+        .gauge-bg {
+            width: 280px;
+            height: 140px;
+            border-radius: 140px 140px 0 0;
+            position: relative;
+            background: conic-gradient(
+                from 180deg at 50% 100%,
+                #FFF3E0 0deg,
+                #FFE0B2 30deg,
+                #FFCC80 60deg,
+                #FFB74D 90deg,
+                #FFA726 120deg,
+                #FF9800 150deg,
+                #F57C00 180deg
+            );
+            box-shadow: 
+                0 4px 20px rgba(245, 124, 0, 0.2),
+                inset 0 2px 4px rgba(255, 255, 255, 0.3);
+        }
+
+
+
+        .gauge-inner {
+            width: 80px;
+            height: 40px;
+            background: #ffffff;
+            border-radius: 40px 40px 0 0;
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 
+                inset 0 2px 6px rgba(0,0,0,0.1);
+            z-index: 20;
+        }
+
+        .gauge-needle {
+            width: 4px;
+            height: 105px;
+            background: linear-gradient(to top, #2c3e50, #34495e, #5d6d7e);
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform-origin: bottom center;
+            transform: translateX(-50%) rotate(-90deg);
+            transition: transform 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            border-radius: 2px 2px 0 0;
+            box-shadow: 
+                0 0 15px rgba(255, 255, 255, 0.6),
+                0 0 30px rgba(255, 255, 255, 0.3),
+                0 2px 8px rgba(44, 62, 80, 0.4),
+                0 1px 3px rgba(0, 0, 0, 0.2);
+            z-index: 30;
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.4));
+        }
+
+        .gauge-needle::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-bottom: 12px solid #2c3e50;
+            filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.5)) drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        }
+
+        .gauge-needle::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 110px;
+            background: radial-gradient(
+                ellipse,
+                rgba(255, 255, 255, 0.2) 0%,
+                rgba(255, 255, 255, 0.05) 60%,
+                transparent 80%
+            );
+            border-radius: 4px;
+            z-index: -1;
+            filter: blur(4px);
+        }
+
+        .gauge-center {
+            width: 16px;
+            height: 16px;
+            background: radial-gradient(circle, #ffffff, #ecf0f1);
+            border: 3px solid #2c3e50;
+            border-radius: 50%;
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 
+                0 4px 12px rgba(44, 62, 80, 0.3),
+                inset 0 1px 3px rgba(255, 255, 255, 0.5);
+            z-index: 35;
+        }
+
+        .gauge-center::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 6px;
+            height: 6px;
+            background: #8B4FB3;
+            border-radius: 50%;
+            box-shadow: 0 1px 2px rgba(139, 79, 179, 0.4);
+        }
+
+        .gauge-percentage {
+            position: absolute;
+            top: 45%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 32px;
+            font-weight: 700;
+            color: #2c3e50;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            text-shadow: 
+                0 0 20px rgba(255, 255, 255, 0.8),
+                0 0 40px rgba(255, 255, 255, 0.6),
+                0 2px 8px rgba(44, 62, 80, 0.3);
+            z-index: 25;
+            letter-spacing: 1px;
+            filter: drop-shadow(0 4px 12px rgba(255, 255, 255, 0.4));
+        }
+
+        .gauge-percentage::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120%;
+            height: 120%;
+            background: radial-gradient(
+                ellipse,
+                rgba(255, 255, 255, 0.3) 0%,
+                rgba(255, 255, 255, 0.1) 40%,
+                transparent 70%
+            );
+            border-radius: 50%;
+            z-index: -1;
+            filter: blur(8px);
+        }
+
+        .gauge-labels {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .gauge-labels span {
+            position: absolute;
+            color: #8B4FB3;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .gauge-labels span:first-child {
+            left: -30px;
+            bottom: 0px;
+        }
+
+        .gauge-labels span:last-child {
+            right: -40px;
+            bottom: 0px;
+        }
+
+        .gauge-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-top: 20px;
+            text-align: center;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        .section {
+            margin: 20px 0;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #8B4FB3;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: #8B4FB3;
+            border-radius: 2px;
+        }
+
+        .section-content {
+            font-size: 15px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .usage-areas {
+            margin: 15px 0;
+        }
+
+        .usage-item {
+            margin: 8px 0;
+            padding-left: 15px;
+            font-size: 15px;
+            line-height: 1.6;
+            position: relative;
+        }
+
+        .usage-item::before {
+            content: "•";
+            color: #8B4FB3;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+
+        .cognitive-areas {
+            margin: 20px 0;
+        }
+
+        .cognitive-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .cognitive-item {
+            background: white;
+            padding: 12px 15px;
+            border-radius: 6px;
+            border: 1px solid #E5E7EB;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+
+        .cognitive-item:hover {
+            border-color: #8B4FB3;
+            box-shadow: 0 4px 12px rgba(139, 79, 179, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .cognitive-label {
+            font-weight: 700;
+            color: #8B4FB3;
+            margin-bottom: 5px;
+            font-size: 15px;
+        }
+
+        .cognitive-desc {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .notes {
+            background: #FEF3C7;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #F59E0B;
+            margin: 20px 0;
+        }
+
+        .notes-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #8B4FB3;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .notes-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: #8B4FB3;
+            border-radius: 2px;
+        }
+
+        .notes-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .notes-item {
+            margin: 8px 0;
+            padding-left: 18px;
+            position: relative;
+            font-size: 15px;
+            color: #333;
+            line-height: 1.5;
+        }
+
+        .notes-item::before {
+            content: '⚠️';
+            position: absolute;
+            left: 0;
+            top: 0;
+            font-size: 14px;
+        }
+
+        .logo {
+            text-align: center;
+            margin-top: 25px;
+        }
+
+        .logo-img {
+            height: 30px;
+            max-width: 150px;
+            object-fit: contain;
+        }
+
+        /* İkinci sayfa stilleri */
+        .table-container {
+            margin: 40px 0;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 40px;
+        }
+
+        .data-table th,
+        .data-table td {
+            border: 2px solid #8B4FB3;
+            padding: 15px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        .data-table th {
+            background-color: #E6D7F0;
+            font-weight: bold;
+            color: #8B4FB3;
+        }
+
+        .data-table td {
+            background-color: #F8F4FC;
+            color: #333;
+        }
+
+        .chart-container {
+            text-align: center;
+            margin: 40px 0;
+        }
+
+        .bar-chart {
+            display: flex;
+            justify-content: space-around;
+            align-items: end;
+            height: 300px;
+            margin: 40px 0;
+            border-bottom: 2px solid #ddd;
+            position: relative;
+        }
+
+        .bar {
+            width: 80px;
+            background-color: #FF8C42;
+            border-radius: 4px 4px 0 0;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: end;
+            align-items: center;
+            transition: height 1s ease-in-out;
+        }
+
+        .bar-89 { height: 240px; }
+        .bar-72 { height: 194px; }
+        .bar-64 { height: 172px; }
+
+        .bar-value {
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .bar-label {
+            position: absolute;
+            bottom: -30px;
+            font-weight: bold;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .chart-grid {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+
+        .grid-line {
+            width: 100%;
+            height: 1px;
+            background: #ddd;
+            position: absolute;
+            border-style: dotted;
+            border-width: 1px 0 0 0;
+            border-color: #999;
+        }
+
+        .grid-20 { bottom: 20%; }
+        .grid-40 { bottom: 40%; }
+        .grid-60 { bottom: 60%; }
+        .grid-80 { bottom: 80%; }
+        .grid-100 { bottom: 100%; }
+
+        .y-axis {
+            position: absolute;
+            left: -30px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .interpretation {
+            background: #F0F9FF;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #0EA5E9;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(14, 165, 233, 0.1);
+        }
+
+        .brain-training {
+            margin: 25px 0;
+        }
+
+        .training-box {
+            background: #F0FDF4;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #22C55E;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9CA3AF;
+            font-style: italic;
+            text-align: center;
+        }
+
+        .training-box::before {
+            content: 'Bu bölüm beyin antrenörü tarafından doldurulacaktır.';
+        }
+
+        /* PDF Export Button */
+        .export-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #8B4FB3, #A855F7);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(139, 79, 179, 0.3);
+            z-index: 1000;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(139, 79, 179, 0.4);
+        }
+
+        .no-print {
+            display: block;
+        }
+
+        /* PDF Print Styles */
+        @page {
+            margin: 20mm;
+            size: A4;
+        }
+
+        .page-break {
+            page-break-before: always;
+        }
+
+        .page-break-avoid {
+            page-break-inside: avoid;
+        }
+
+        @media print {
+            body {
+                background: white;
+                font-size: 12pt;
+                line-height: 1.4;
+                margin: 0;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            .page {
+                box-shadow: none;
+                margin: 0;
+                width: 100% !important;
+                min-height: auto;
+                padding: 15mm !important;
+                page-break-after: always;
+                background: white !important;
+            }
+            
+            .page:last-child {
+                page-break-after: avoid;
+            }
+            
+            .no-print {
+                display: none !important;
+            }
+            
+            .section {
+                page-break-inside: avoid;
+                margin: 15px 0;
+            }
+            
+            .cognitive-grid {
+                page-break-inside: avoid;
+            }
+            
+            .notes {
+                page-break-inside: avoid;
+            }
+            
+            .gauge-container {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="export-btn no-print" onclick="window.print()">📄 PDF Olarak İndir</button>
+    
+    <!-- Birinci Sayfa -->
+    <div class="page">
+        <div class="header">
+            <h1 class="title">Burdon Dikkat Testi Raporu</h1>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Ad Soyad</div>
+                <div class="info-value" id="student-name">Ece Yeşim Cinemre</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Yaş</div>
+                <div class="info-value" id="student-age">31 Yıl 7 Ay 11 Gün</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Değerlendirme Tarihi</div>
+                <div class="info-value" id="evaluation-date">11/07/2025</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Cinsiyet</div>
+                <div class="info-value" id="student-gender">Kadın</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Doğum Tarihi</div>
+                <div class="info-value" id="birth-date">16/12/1994</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Uygulayan</div>
+                <div class="info-value" id="practitioner">Funda Demirel</div>
+            </div>
+        </div>
+
+        <div class="gauge-container page-break-avoid">
+            <div class="gauge">
+                <div class="gauge-bg">
+                    <div class="gauge-inner"></div>
+                    <div class="gauge-needle" id="gauge-needle"></div>
+                    <div class="gauge-center"></div>
+                    <div class="gauge-percentage" id="gauge-percentage">0%</div>
+                </div>
+                <div class="gauge-labels">
+                    <span>0</span>
+                    <span>100</span>
+                </div>
+            </div>
+            <div class="gauge-title">Genel Dikkat Performans Yüzdesi</div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">Burdon Dikkat Testinin Amacı</h2>
+            <div class="section-content">
+                Burdon Dikkat Testi, bireyin dikkatini bir görev üzerinde ne kadar süreyle ve ne kadar doğru sürdürebilğidini ölçmek amacıyla kullanılır. Bu testte yapılan doğru ve hatalı işaretlemeler, odaklanma kalitesi ve dikkati sürdürebilme becerisi hakkında bilgi verir.
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">Hedeflenen Kullanım Alanları</h2>
+            <div class="usage-areas">
+                <div class="usage-item">Okuma-yazma becerisi kazanmış bireylerde dikkat ve odaklanma becerilerini değerlendirmek</div>
+                <div class="usage-item">Seçici dikkat, dikkat süresi ve görsel dikkatin sürekliliğini ölçmek</div>
+                <div class="usage-item">Bilişsel beceri geliştirme programlarında uygulama öncesi ve sonrası dikkat performansındaki değişimi izlemek</div>
+            </div>
+        </div>
+
+        <div class="section page-break-avoid">
+            <h2 class="section-title">Ölçülen Bilişsel Alanlar</h2>
+            <div class="cognitive-areas">
+                <div class="cognitive-grid">
+                    <div class="cognitive-item">
+                        <div class="cognitive-label">Seçici Dikkat:</div>
+                        <div class="cognitive-desc">Hedefe veya göreve odaklanma, uyaranları yok sayma</div>
+                    </div>
+                    <div class="cognitive-item">
+                        <div class="cognitive-label">Sürdürülebilir Dikkat:</div>
+                        <div class="cognitive-desc">Dikkati belirli bir süre aynı hedef üzerinde dağılmadan devam ettirebilme</div>
+                    </div>
+                    <div class="cognitive-item">
+                        <div class="cognitive-label">Odaklanma:</div>
+                        <div class="cognitive-desc">Görsel olarak dikkat dağıtıcı birçok uyaran arasında yalnızca hedefe yönelme ve bu odakta kalabilme</div>
+                    </div>
+                    <div class="cognitive-item">
+                        <div class="cognitive-label">Psikomotor Hızı (İşlem Hızı):</div>
+                        <div class="cognitive-desc">Bilgiyi hızlıca algılayıp doğru şekilde tepki verebilme hızı</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="notes page-break-avoid">
+            <h3 class="notes-title">Önemli Notlar</h3>
+            <ul class="notes-list">
+                <li class="notes-item">Rapor bireyin dikkat ve odaklanma becerilerindeki güçlü ve desteklenmesi gereken yönleri belirlemek içindir. Tanı koymak için değildir.</li>
+                <li class="notes-item">Test sonuçları sadece test anındaki durumu yansıtır. Uyku, stres, heyecan gibi değişkenler bireyin performansını etkileyebilir.</li>
+            </ul>
+        </div>
+
+        <div class="logo">
+            <img src="/assets/images/logo.png" alt="ForTest Logo" class="logo-img" />
+        </div>
+    </div>
+
+    <!-- İkinci Sayfa -->
+    <div class="page page-break">
+        <div class="header">
+            <h1 class="title">Burdon Dikkat Testi Raporu</h1>
+        </div>
+
+        <div class="table-container page-break-avoid">
+            <h2 class="section-title">Ham Puan Veri Tablosu</h2>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Doğru İşaretleme</th>
+                        <th>Yanlış İşaretleme</th>
+                        <th>Boş Bırakılan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Başta</strong></td>
+                        <td id="section1-correct">38</td>
+                        <td id="section1-wrong">5</td>
+                        <td id="section1-missed">10</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Ortada</strong></td>
+                        <td id="section2-correct">42</td>
+                        <td id="section2-wrong">3</td>
+                        <td id="section2-missed">6</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Sonda</strong></td>
+                        <td id="section3-correct">48</td>
+                        <td id="section3-wrong">1</td>
+                        <td id="section3-missed">2</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="chart-container">
+            <div class="bar-chart">
+                <div class="y-axis">
+                    <span>100</span>
+                    <span>80</span>
+                    <span>60</span>
+                    <span>40</span>
+                    <span>20</span>
+                    <span>0</span>
+                </div>
+                <div class="chart-grid">
+                    <div class="grid-line grid-20"></div>
+                    <div class="grid-line grid-40"></div>
+                    <div class="grid-line grid-60"></div>
+                    <div class="grid-line grid-80"></div>
+                    <div class="grid-line grid-100"></div>
+                </div>
+                <div class="bar" id="bar-section1" style="height: 240px;">
+                    <div class="bar-value" id="bar-value1">89</div>
+                    <div class="bar-label">Başta</div>
+                </div>
+                <div class="bar" id="bar-section2" style="height: 194px;">
+                    <div class="bar-value" id="bar-value2">72</div>
+                    <div class="bar-label">Ortada</div>
+                </div>
+                <div class="bar" id="bar-section3" style="height: 172px;">
+                    <div class="bar-value" id="bar-value3">64</div>
+                    <div class="bar-label">Sonda</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section page-break-avoid">
+            <h2 class="section-title">Yorum</h2>
+            <div class="interpretation">
+                <div class="section-content" id="dynamic-comment">
+                    Dikkatini sürdürmekte güçlük yaşayabileceği gözlenmektedir. Dikkat ve odaklanma becerilerinin gelişimi için aşamalı, hedefe yönelik ve yapılandırılmış çalışmalar önerilmektedir.
+                </div>
+            </div>
+        </div>
+
+        <div class="brain-training page-break-avoid">
+            <h2 class="section-title">Beyin Antrenörü Gözlem ve Görüşleri</h2>
+            <div class="training-box"></div>
+        </div>
+
+        <div class="logo">
+            <img src="/assets/images/logo.png" alt="ForTest Logo" class="logo-img" />
+        </div>
+    </div>
+
+    <script>
+        // Modern Gauge Animation - Sadece İbre Hareket Eder
+        function updateGauge(percentage) {
+            const needle = document.getElementById('gauge-needle');
+            const percentageText = document.getElementById('gauge-percentage');
+            
+            // Needle rotation: 0% = -90deg (left), 100% = 90deg (right)
+            const rotation = -90 + (percentage / 100) * 180;
+            
+            // Start from 0%
+            percentageText.textContent = '0%';
+            
+            // Animate needle with smooth bounce effect
+            setTimeout(() => {
+                needle.style.transform = `translateX(-50%) rotate(${rotation}deg)`;
+            }, 600);
+            
+            // Animate percentage counter with smooth increment
+            let currentPercentage = 0;
+            const totalTime = 2500; // 2.5 seconds total
+            const incrementTime = Math.max(12, totalTime / percentage);
+            
+            const counter = setInterval(() => {
+                if (currentPercentage < percentage) {
+                    currentPercentage++;
+                    percentageText.textContent = `${currentPercentage}%`;
+                } else {
+                    clearInterval(counter);
+                    percentageText.textContent = `${percentage}%`;
+                }
+            }, incrementTime);
+        }
+
+        // Dinamik Yorum Sistemi
+        function generateComment(percentage) {
+            if (percentage >= 85) {
+                return "Dikkatini görev süresince etkili şekilde sürdürebilmiş, odaklanma becerisini işlevsel biçimde kullanabilmiştir.";
+            } else if (percentage >= 70) {
+                return "Dikkatini büyük oranda sürdürebilmiştir. Dikkat ve odaklanma becerileri güçlendirilerek daha da geliştirilebilir.";
+            } else if (percentage >= 50) {
+                return "Dikkatini genel olarak sürdürebilmiştir. Dikkat ve odaklanma süresini destekleyici egzersizlerle çalıştırılır.";
+            } else if (percentage >= 35) {
+                return "Dikkatini sürdürmekte zaman zaman zorlanabildiği görülmektedir. Dikkat ve odaklanma becerileri yapılandırılmış uygulamalarla geliştirilebilir.";
+            } else if (percentage >= 20) {
+                return "Dikkatini sürdürmekte güçlük yaşayabildiği gözlenmektedir. Dikkat ve odaklanma becerilerinin gelişimi için aşamalı, hedefe yönelik ve yapılandırılmış çalışmalar önerilmektedir.";
+            } else {
+                return "Dikkatini yönlendirmekte zorlandığı görülmektedir. Yapılandırılmış bilişsel destek programları ile dikkat ve odaklanma becerileri geliştirilebilir.";
+            }
+        }
+
+        // Bar Chart Animation
+        function updateBarChart(section1, section2, section3) {
+            const maxValue = Math.max(section1, section2, section3);
+            const maxHeight = 240;
+
+            // Calculate heights
+            const height1 = (section1 / maxValue) * maxHeight;
+            const height2 = (section2 / maxValue) * maxHeight;
+            const height3 = (section3 / maxValue) * maxHeight;
+
+            // Update bars with animation
+            setTimeout(() => {
+                document.getElementById('bar-section1').style.height = height1 + 'px';
+                document.getElementById('bar-value1').textContent = section1;
+            }, 1000);
+
+            setTimeout(() => {
+                document.getElementById('bar-section2').style.height = height2 + 'px';
+                document.getElementById('bar-value2').textContent = section2;
+            }, 1200);
+
+            setTimeout(() => {
+                document.getElementById('bar-section3').style.height = height3 + 'px';
+                document.getElementById('bar-value3').textContent = section3;
+            }, 1400);
+        }
+
+        // Test Verileri Yükleme Fonksiyonu
+        function loadTestData(testData) {
+            // Kişisel Bilgileri Güncelle
+            if (testData.student_name) document.getElementById('student-name').textContent = testData.student_name;
+            if (testData.student_age) document.getElementById('student-age').textContent = testData.student_age;
+            if (testData.evaluation_date) document.getElementById('evaluation-date').textContent = testData.evaluation_date;
+            if (testData.student_gender) document.getElementById('student-gender').textContent = testData.student_gender;
+            if (testData.birth_date) document.getElementById('birth-date').textContent = testData.birth_date;
+            if (testData.practitioner) document.getElementById('practitioner').textContent = testData.practitioner;
+
+            // Performans Yüzdesini Hesapla
+            const totalCorrect = testData.section1_correct + testData.section2_correct + testData.section3_correct;
+            const totalItems = totalCorrect + testData.total_missed + testData.total_wrong;
+            const percentage = Math.round((totalCorrect / totalItems) * 100);
+
+            // Gauge'ı Güncelle
+            updateGauge(percentage);
+
+            // Tablo Verilerini Güncelle
+            document.getElementById('section1-correct').textContent = testData.section1_correct;
+            document.getElementById('section1-wrong').textContent = testData.section1_wrong;
+            document.getElementById('section1-missed').textContent = testData.section1_missed;
+            
+            document.getElementById('section2-correct').textContent = testData.section2_correct;
+            document.getElementById('section2-wrong').textContent = testData.section2_wrong;
+            document.getElementById('section2-missed').textContent = testData.section2_missed;
+            
+            document.getElementById('section3-correct').textContent = testData.section3_correct;
+            document.getElementById('section3-wrong').textContent = testData.section3_wrong;
+            document.getElementById('section3-missed').textContent = testData.section3_missed;
+
+            // Bar Chart'ı Güncelle
+            updateBarChart(testData.section1_correct, testData.section2_correct, testData.section3_correct);
+
+            // Dinamik Yorumu Güncelle
+            document.getElementById('dynamic-comment').textContent = generateComment(percentage);
+        }
+
+        // Örnek Veri ile Test
+        document.addEventListener('DOMContentLoaded', function() {
+            // Örnek test verisi
+            const sampleData = {
+                student_name: "Ece Yeşim Cinemre",
+                student_age: "31 Yıl 7 Ay 11 Gün",
+                evaluation_date: "11/07/2025",
+                student_gender: "Kadın",
+                birth_date: "16/12/1994",
+                practitioner: "Funda Demirel",
+                section1_correct: 38,
+                section1_wrong: 5,
+                section1_missed: 10,
+                section2_correct: 42,
+                section2_wrong: 3,
+                section2_missed: 6,
+                section3_correct: 48,
+                section3_wrong: 1,
+                section3_missed: 2,
+                total_missed: 18,
+                total_wrong: 9
+            };
+
+            // Verileri yükle
+            setTimeout(() => {
+                loadTestData(sampleData);
+            }, 1000);
+        });
+
+        // Global function for external use
+        window.loadBurdonTestData = loadTestData;
+    </script>
+</body>
+</html>

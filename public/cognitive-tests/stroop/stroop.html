@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ForTest Stroop Testi</title>
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <style>
@@ -1167,6 +1169,7 @@
                     startTime: performance.now(),
                     responded: false,
                     responseTime: null,
+                    uyaran_suresi_ms: timing,    // ✅ Kelime gösterim süresi eklendi
                     stageNum: stageNum,
                     wordIndex: wordIndex
                 };
@@ -1374,64 +1377,231 @@
             saveTestResults();
         }
 
-        // ==================== VERİTABANI KAYIT ====================
-        async function saveTestResults() {
+        // ==================== SUPABASE VERİTABANI KAYIT ====================
+        // Dikkat testindeki gibi tam Supabase entegrasyonu
+        
+        // Kullanıcı rolü belirleme
+        function getUserRole(roles) {
+            if (!roles || typeof roles !== 'object') return 'kullanici';
+            
+            if (roles.admin) return 'admin';
+            if (roles.temsilci) return 'temsilci';
+            if (roles.beyin_antrenoru) return 'beyin_antrenoru';
+            return 'kullanici';
+        }
+        
+        // Rol görüntü etiketi
+        function getDisplayLabel(role) {
+            const labels = {
+                'admin': 'Sistem Yöneticisi',
+                'temsilci': 'Temsilci',
+                'beyin_antrenoru': 'Beyin Antrenörü',
+                'kullanici': 'Kullanıcı'
+            };
+            return labels[role] || 'Bilinmeyen Rol';
+        }
+        
+        // Geçerli öğrenci ID bulma
+        async function findValidStroopStudentId() {
             try {
-                console.log(`💾 VERİTABANI KAYIT İŞLEMİ BAŞLADI`);
-                const results = calculateScores();
-                const urlParams = new URLSearchParams(window.location.search);
+                // 1. localStorage'dan kontrol et
+                const storedStudentId = localStorage.getItem('currentStudentId');
+                if (storedStudentId && storedStudentId !== 'null' && storedStudentId !== 'undefined') {
+                    console.log('📋 LocalStorage\'dan student ID bulundu:', storedStudentId);
+                    return storedStudentId;
+                }
                 
-                const payload = {
-                    testType: 'Stroop_Testi',
-                    learnworlds_user_id: urlParams.get('user_id'),
-                    learnworlds_user_email: urlParams.get('user_email'),
-                    learnworlds_user_name: urlParams.get('user_name'),
-                    course_id: urlParams.get('course_id'),
-                    lesson_id: urlParams.get('lesson_id'),
-                    
-                    test_start_time: state.testStartTime,
-                    test_end_time: Date.now(),
-                    test_elapsed_time_seconds: Math.round((Date.now() - state.testStartTime) / 1000),
-                    
-                    stage1_results: results.A1_BTS,
-                    stage2_results: results.A2_KTS,
-                    stage3_results: results.A3_STS,
-                    interference_effect: results.Interferans,
-                    
-                    detailed_responses: state.stageData
+                // 2. URL parametrelerinden kontrol et
+                const urlParams = new URLSearchParams(window.location.search);
+                const urlStudentId = urlParams.get('student_id');
+                if (urlStudentId) {
+                    console.log('🔗 URL\'den student ID bulundu:', urlStudentId);
+                    return urlStudentId;
+                }
+                
+                // 3. Session storage kontrolü
+                const sessionStudentId = sessionStorage.getItem('selectedStudentId');
+                if (sessionStudentId && sessionStudentId !== 'null') {
+                    console.log('🗃️ SessionStorage\'dan student ID bulundu:', sessionStudentId);
+                    return sessionStudentId;
+                }
+                
+                console.warn('⚠️ Geçerli student ID bulunamadı');
+                return null;
+                
+            } catch (error) {
+                console.error('❌ Student ID bulma hatası:', error);
+                return null;
+            }
+        }
+        
+        // Stroop test results mapping fonksiyonu
+        function mapStroopResultsToDatabase(results) {
+            console.log('🔄 Stroop test HTML → Database mapping başlatılıyor...');
+            
+            const mappedData = {
+                // ✅ TEMEL VERİLER
+                test_duration_seconds: Math.round((Date.now() - state.testStartTime) / 1000),
+                completion_status: 'completed',
+                
+                // ✅ AŞAMA SONUÇLARI (milisaniye cinsinden)
+                stage1_correct_count: (12 - (results.A1_BTS?.HataSayisi || 0)),
+                stage1_total_time_ms: (results.A1_BTS?.BolumSuresi_saniye || 0) * 1000,
+                stage1_average_time_ms: results.A1_BTS?.OrtalamaSure_ms || 0,
+                stage1_accuracy: parseFloat(results.A1_BTS?.Dogruluk || 0),
+                
+                stage2_correct_count: (23 - (results.A2_KTS?.HataSayisi || 0)),
+                stage2_total_time_ms: (results.A2_KTS?.BolumSuresi_saniye || 0) * 1000,
+                stage2_average_time_ms: results.A2_KTS?.OrtalamaSure_ms || 0,
+                stage2_accuracy: parseFloat(results.A2_KTS?.Dogruluk || 0),
+                
+                stage3_correct_count: (40 - (results.A3_STS?.HataSayisi || 0)),
+                stage3_total_time_ms: (results.A3_STS?.BolumSuresi_saniye || 0) * 1000,
+                stage3_average_time_ms: results.A3_STS?.OrtalamaSure_ms || 0,
+                stage3_accuracy: parseFloat(results.A3_STS?.Dogruluk || 0),
+                
+                // ✅ İNTERFERANS ETKİSİ
+                interference_effect_time: results.Interferans?.Fark_ms || 0,
+                interference_effect_percentage: parseFloat(results.Interferans?.Oran || 0),
+                
+                // ✅ JSONB VERİLER
+                detailed_responses: state.stageData || {},
+                stage_analysis: {
+                    stage1: results.A1_BTS || {},
+                    stage2: results.A2_KTS || {},
+                    stage3: results.A3_STS || {},
+                    interference: results.Interferans || {}
+                },
+                
+                // ✅ ZAMAN BİLGİLERİ
+                test_start_time: new Date(state.testStartTime).toISOString(),
+                test_end_time: new Date().toISOString()
+            };
+            
+            console.log('🎯 Stroop Test Database Mapping Tamamlandı:', mappedData);
+            return mappedData;
+        }
+        
+        // Supabase Production kayıt fonksiyonu
+        async function saveToStroopSupabaseProduction(mappedData) {
+            try {
+                console.log('🚀 Stroop Supabase Production kayıt başlatılıyor...');
+                
+                // Supabase client'ı başlat
+                const supabaseUrl = 'https://gamjzzomkosvqhficabt.supabase.co';
+                const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhbWp6em9ta29zdnFoZmljYWJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI4ODc3MDAsImV4cCI6MjA2ODQ2MzcwMH0.r8KkywdhNSP1hxzSAlKo8SB5jOEb0KQRUBfZ9Va0p9I';
+                
+                const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+                
+                // Authentication kontrolü
+                const { data: { user }, error: authError } = await supabase.auth.getUser();
+                
+                if (authError || !user) {
+                    console.warn('⚠️ Kullanıcı giriş yapmamış, localStorage\'a kaydediliyor');
+                    localStorage.setItem('pendingStroopResults', JSON.stringify(mappedData));
+                    return false;
+                }
+                
+                console.log('👤 Aktif kullanıcı:', user.email);
+                
+                // Kullanıcı bilgilerini al
+                const { data: userData, error: userError } = await supabase
+                    .from('users')
+                    .select('id, first_name, last_name, roles, supervisor_id')
+                    .eq('auth_user_id', user.id)
+                    .single();
+                
+                if (userError || !userData) {
+                    console.error('❌ Kullanıcı bilgileri alınamadı:', userError);
+                    localStorage.setItem('pendingStroopResults', JSON.stringify(mappedData));
+                    return false;
+                }
+                
+                // Role kontrolü
+                const userRole = getUserRole(userData.roles);
+                console.log(`👤 Kullanıcı rolü: ${userRole} (${getDisplayLabel(userRole)})`);
+                
+                if (!['admin', 'temsilci', 'beyin_antrenoru', 'kullanici'].includes(userRole)) {
+                    console.warn('⚠️ Geçersiz kullanıcı rolü - pending olarak kaydediliyor');
+                    localStorage.setItem('pendingStroopResults', JSON.stringify(mappedData));
+                    return false;
+                }
+                
+                // Student ID'yi bul
+                let studentId = await findValidStroopStudentId();
+                
+                if (!studentId) {
+                    console.error('❌ Geçerli öğrenci ID bulunamadı');
+                    return false;
+                }
+                
+                // conducted_by belirleme - Doğru mantık: supervisor varsa supervisor, yoksa kendisi
+                let conductedBy;
+                if (userData.supervisor_id) {
+                    // Kullanıcının supervisor'ı varsa, test yapan supervisor'dür
+                    conductedBy = userData.supervisor_id;
+                    console.log(`👨‍🏫 Test yapan kişi: Supervisor (ID: ${conductedBy}) - Öğrenci: ${userData.first_name} ${userData.last_name}`);
+                } else {
+                    // Supervisor yoksa (admin/trainer kendisi), kendisi yapmıştır
+                    conductedBy = userData.id;
+                    console.log(`👨‍🏫 Test yapan kişi: ${userData.first_name} ${userData.last_name} (${getDisplayLabel(userRole)}) - ID: ${conductedBy}`);
+                }
+                
+                // Final kayıt verisi
+                const finalData = {
+                    ...mappedData,
+                    student_id: studentId,
+                    conducted_by: conductedBy
                 };
                 
-                // 📦 PAYLOAD LOGLAMA
-                console.log(`📦 VERİTABANINA GÖNDERİLECEK VERİLER:`, {
-                    testTipi: payload.testType,
-                    kullanıcı: payload.learnworlds_user_name,
-                    testSüresi: payload.test_elapsed_time_seconds + ' saniye',
-                    aşama1Sonuçları: payload.stage1_results,
-                    aşama2Sonuçları: payload.stage2_results,
-                    aşama3Sonuçları: payload.stage3_results,
-                    interferansEtkisi: payload.interference_effect,
-                    detaylıTepkiSayısı: Object.keys(payload.detailed_responses).length + ' aşama'
-                });
+                console.log('📝 Supabase\'e kaydedilecek stroop test verisi:', finalData);
                 
-                const response = await fetch('/api/fortest-stroop-sonuclari', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
+                // Supabase'e kaydet - stroop_test_results tablosuna
+                const { data: insertData, error: insertError } = await supabase
+                    .from('stroop_test_results')
+                    .insert([finalData])
+                    .select();
                 
-                const result = await response.json();
+                if (insertError) {
+                    console.error('❌ Supabase stroop test kayıt hatası:', insertError);
+                    localStorage.setItem('pendingStroopResults', JSON.stringify(finalData));
+                    throw insertError;
+                }
                 
-                if (result.success) {
+                console.log('✅ Stroop test başarıyla kaydedildi:', insertData);
+                
+                // Başarılı kayıt sonrası temizlik
+                localStorage.removeItem('pendingStroopResults');
+                localStorage.removeItem('stroopTestResults');
+                
+                return true;
+                
+            } catch (error) {
+                console.error('❌ Stroop Supabase production kayıt hatası:', error);
+                return false;
+            }
+        }
+        
+        // Ana Stroop kayıt fonksiyonu
+        async function saveTestResults() {
+            try {
+                console.log(`💾 STROOP TEST SUPABASE KAYIT İŞLEMİ BAŞLADI`);
+                const results = calculateScores();
+                
+                // Verileri database formatına dönüştür
+                const mappedData = mapStroopResultsToDatabase(results);
+                
+                // Supabase Production'a kaydet
+                const success = await saveToStroopSupabaseProduction(mappedData);
+                
+                if (success) {
                     console.log('✅ VERİTABANI KAYIT BAŞARILI:', {
-                        kayıtID: result.submissionId,
                         durum: 'BAŞARILI ✅',
                         zaman: new Date().toLocaleTimeString()
                     });
                     showNotification('Test sonuçlarınız başarıyla kaydedildi!', 'success');
                 } else {
-                    throw new Error(result.message);
+                    throw new Error('Supabase kayıt başarısız');
                 }
                 
             } catch (error) {
@@ -1641,7 +1811,7 @@
         function completeTest() {
             console.log('Test tamamlandı, sıradaki teste geçiliyor...');
             
-            // Ana pencereye test tamamlandığını bildir - pencereyi kapatma
+            // Test sonuçlarını local storage'a kaydet
             try {
                 // localStorage'dan test sonuçlarını al veya fallback oluştur
                 let testResults = {};
@@ -1666,30 +1836,15 @@
                     testResults = { error: 'Sonuçlar alınamadı' };
                 }
                 
-                const messageData = {
-                    type: 'test-complete',
-                    testName: 'stroop',
-                    results: testResults,
-                    timestamp: new Date().toISOString()
-                };
+                console.log('✅ Stroop testi tamamlandı, puzzle testine geçiliyor...');
                 
-                // Ana pencereye mesaj gönder (window.opener kullan)
-                if (window.opener) {
-                    window.opener.postMessage(messageData, window.location.origin);
-                    console.log('✅ Stroop testi sonuçları ana pencereye gönderildi:', messageData);
-                }
+                // Aynı pencerede puzzle testini yükle
+                window.location.href = '../puzzle/puzzle.html';
                 
             } catch (error) {
                 console.error('❌ Test completion hatası:', error);
-                // Hata durumunda da ana pencereye hata mesajı gönder
-                if (window.opener) {
-                    window.opener.postMessage({
-                        type: 'test-complete',
-                        testName: 'stroop',
-                        results: { error: 'Test completion hatası' },
-                        timestamp: new Date().toISOString()
-                    }, window.location.origin);
-                }
+                // Hata durumunda yine de puzzle testine geç
+                window.location.href = '../puzzle/puzzle.html';
             }
         }
 

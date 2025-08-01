@@ -4851,34 +4851,15 @@
                 localStorage.setItem('puzzleTestResults', JSON.stringify(fullTestResults));
                 console.log('📦 Test sonuçları localStorage\'a kaydedildi');
                 
-                // Ana pencereye gönderilecek veri
-                let testResultsForParent = fullTestResults;
+                console.log('✅ Puzzle testi tamamlandı, akıl mantık testine geçiliyor...');
                 
-                const messageData = {
-                    type: 'test-complete',
-                    testName: 'puzzle',
-                    results: testResultsForParent,
-                    timestamp: new Date().toISOString()
-                };
+                // Aynı pencerede akıl mantık testini yükle
+                window.location.href = '../akil-mantik/akil-mantik.html';
                 
-                // Ana pencereye mesaj gönder (window.opener kullan)
-                if (window.opener) {
-                    window.opener.postMessage(messageData, window.location.origin);
-                    console.log('✅ Puzzle testi sonuçları ana pencereye gönderildi:', messageData);
-                } else {
-                    console.error('❌ window.opener mevcut değil - ana pencereye mesaj gönderilemedi');
-                }
             } catch (error) {
                 console.error('❌ Test completion hatası:', error);
-                // Hata durumunda da ana pencereye hata mesajı gönder
-                if (window.opener) {
-                    window.opener.postMessage({
-                        type: 'test-complete',
-                        testName: 'puzzle',
-                        results: { error: 'Test completion hatası' },
-                        timestamp: new Date().toISOString()
-                    }, window.location.origin);
-                }
+                // Hata durumunda yine de akıl mantık testine geç
+                window.location.href = '../akil-mantik/akil-mantik.html';
             }
         }
 

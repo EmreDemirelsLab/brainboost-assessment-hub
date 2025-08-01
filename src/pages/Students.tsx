@@ -5,61 +5,218 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Search, Users, Plus, Eye, Edit, Trash2 } from "lucide-react";
+import React from "react";
+
+// React Error Boundary Class Component
+class StudentsErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; errorCount: number }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, errorCount: 0 };
+  }
+
+  static getDerivedStateFromError(_: Error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.log('🚨 StudentsErrorBoundary caught error:', error, errorInfo);
+    this.setState(prev => ({ errorCount: prev.errorCount + 1 }));
+  }
+
+  componentDidUpdate() {
+    // Error olduktan sonra kısa süre bekleyip recovery dene
+    if (this.state.hasError) {
+      setTimeout(() => {
+        this.setState({ hasError: false });
+      }, 1000);
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <h2 className="text-xl font-semibold mb-2">Sistem Güncelleniyor</h2>
+            <p className="text-muted-foreground">Lütfen bekleyin...</p>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { CreateUserModal } from "@/components/admin/CreateUserModal";
+import { TrainerAddStudentModal } from "@/components/admin/TrainerAddStudentModal";
 
 interface Student {
   id: string;
-  user_id: string;
-  student_number: string | null;
-  birth_date: string | null;
-  grade_level: number | null;
-  school_name: string | null;
-  parent_name: string | null;
-  parent_phone: string | null;
-  parent_email: string | null;
-  notes: string | null;
+  auth_user_id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  phone?: string;
+  roles: any; // JSONB array
+  supervisor_id?: string;
+  demographic_info: any; // JSONB object - öğrenci bilgileri burada
   created_at: string;
-  first_name?: string;
-  last_name?: string;
-  email?: string;
+  is_active: boolean;
 }
 
-export default function Students() {
-  const { user, switchRole, logout } = useAuth();
+function StudentsInner() {
+  const { user, switchRole, logout, isLoading } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Auth yüklenene kadar bekle
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Basit rol kontrolü - user varsa kontrol et
+  const canViewStudents = user?.roles?.includes('admin') || 
+                          user?.roles?.includes('temsilci') || 
+                          user?.roles?.includes('beyin_antrenoru');
+
+  if (user && !canViewStudents) {
+    return (
+      <DashboardLayout
+        user={user ? {
+          name: `${user.firstName} ${user.lastName}`,
+          email: user.email,
+          roles: user.roles,
+          currentRole: user.currentRole,
+        } : undefined}
+        onRoleSwitch={(role: any) => switchRole(role)}
+        onLogout={logout}
+      >
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold mb-2">Erişim Yetkisi Yok</h2>
+            <p className="text-muted-foreground">Bu sayfayı görüntüleme yetkiniz bulunmamaktadır.</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   useEffect(() => {
-    fetchStudents();
-  }, []);
+    // AuthContext session restore sırasında race condition önlemek için guard
+    if (!user?.id || !user?.currentRole || !user?.email) {
+      console.log('⏸️ Skipping fetchStudents - user not fully loaded', {
+        hasId: !!user?.id,
+        hasRole: !!user?.currentRole,
+        hasEmail: !!user?.email
+      });
+      return;
+    }
+    
+    // Minimal delay ile fetchStudents
+    const timer = setTimeout(() => {
+      try {
+        fetchStudents();
+      } catch (error) {
+        console.error('❌ fetchStudents error:', error);
+      }
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [user?.currentRole, user?.id, user?.email]); // Email de dependency'e ekle
 
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('students')
+      
+      if (!user || !user.id || !user.currentRole || !user.email) {
+        console.log('⏸️ fetchStudents - user data incomplete:', {
+          hasUser: !!user,
+          hasId: !!user?.id,
+          hasRole: !!user?.currentRole,
+          hasEmail: !!user?.email
+        });
+        setLoading(false);
+        return;
+      }
+
+      console.log('🔍 Fetching students based on user role:', user.currentRole, 'User ID:', user.id);
+      
+      // Dinamik rol kategorisi belirleme
+      const isAdminRole = user.currentRole === 'admin';
+      const isTrainerRole = user.currentRole === 'beyin_antrenoru';
+      const isRepresentativeRole = user.currentRole === 'temsilci';
+      
+      // Dinamik query builder - role göre filtering
+      let query = supabase
+        .from('users')
         .select(`
-          *,
-          users(first_name, last_name, email)
+          id,
+          auth_user_id,
+          email,
+          first_name,
+          last_name,
+          phone,
+          roles,
+          supervisor_id,
+          demographic_info,
+          created_at,
+          is_active
         `)
-        .order('created_at', { ascending: false });
+        .contains('roles', '["kullanici"]'); // Sadece öğrenciler - JSON string formatı
 
-      if (error) throw error;
+      // Rol bazlı dinamik filtering
+      if (isAdminRole) {
+        console.log('👑 Admin user - showing all students');
+        // Admin tüm öğrencileri görür
+      } else if (isRepresentativeRole) {
+        console.log('🎯 Representative user - showing students of supervised trainers');
+        // Temsilci kendi altındaki beyin antrenörlerinin öğrencilerini görür
+        const { data: trainersData } = await supabase
+          .from('users')
+          .select('id')
+          .contains('roles', '["beyin_antrenoru"]')
+          .eq('supervisor_id', user.id);
+        
+        const trainerIds = trainersData?.map(t => t.id) || [];
+        if (trainerIds.length > 0) {
+          query = query.in('supervisor_id', trainerIds);
+        } else {
+          query = query.limit(0);
+        }
+      } else if (isTrainerRole) {
+        console.log('🎯 Trainer user - showing only supervised students');
+        // Beyin antrenörleri sadece kendi öğrencilerini görür
+        query = query.eq('supervisor_id', user.id);
+      } else {
+        console.log('👤 Other role - no students visible');
+        // Diğer roller öğrenci göremez
+        query = query.limit(0);
+      }
 
-      const formattedStudents = data?.map(student => ({
-        ...student,
-        first_name: student.users?.first_name || 'Bilinmeyen',
-        last_name: student.users?.last_name || 'Öğrenci',
-        email: student.users?.email || 'E-posta yok'
-      })) || [];
+      const { data, error } = await query.order('created_at', { ascending: false });
 
-      setStudents(formattedStudents);
+      if (error) {
+        console.error('❌ Query error:', error);
+        throw error;
+      }
+
+      console.log('✅ Students loaded:', data?.length || 0, 'for role:', user.currentRole);
+      setStudents(data || []);
     } catch (error) {
       console.error('Error fetching students:', error);
       toast({
@@ -82,11 +239,15 @@ export default function Students() {
 
   const filteredStudents = students.filter(student => {
     const searchTermLower = searchTerm.toLowerCase();
+    const demographicInfo = student.demographic_info || {};
+    const studentNumber = demographicInfo.student_number || `STU-${student.id.slice(-8)}`;
+    const schoolName = demographicInfo.school_name || '';
+    
     return (
       student.first_name?.toLowerCase().includes(searchTermLower) ||
       student.last_name?.toLowerCase().includes(searchTermLower) ||
-      student.student_number?.toLowerCase().includes(searchTermLower) ||
-      student.school_name?.toLowerCase().includes(searchTermLower)
+      studentNumber.toLowerCase().includes(searchTermLower) ||
+      schoolName.toLowerCase().includes(searchTermLower)
     );
   });
 
@@ -144,12 +305,30 @@ export default function Students() {
               </p>
             </div>
           </div>
-          <Button asChild>
-            <Link to="/add-user">
+          {/* Role göre farklı kullanıcı ekleme modali */}
+          {user?.currentRole === 'admin' ? (
+            <Button asChild>
+              <Link to="/add-user">
+                <Plus className="h-4 w-4 mr-2" />
+                Yeni Öğrenci
+              </Link>
+            </Button>
+          ) : user?.currentRole === 'beyin_antrenoru' ? (
+            <TrainerAddStudentModal
+              trigger={
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Yeni Öğrenci
+                </Button>
+              }
+              {...({ onStudentCreated: fetchStudents } as any)}
+            />
+          ) : (
+            <Button disabled>
               <Plus className="h-4 w-4 mr-2" />
               Yeni Öğrenci
-            </Link>
-          </Button>
+            </Button>
+          )}
         </div>
 
         <Card>
@@ -200,47 +379,61 @@ export default function Students() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredStudents.map((student) => (
-                    <TableRow key={student.id}>
-                      <TableCell className="font-medium">
-                        {student.student_number}
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">
-                            {student.first_name} {student.last_name}
+                  {filteredStudents.map((student) => {
+                    const demographicInfo = student.demographic_info || {};
+                    const studentNumber = demographicInfo.student_number || `STU-${student.id.slice(-8)}`;
+                    const birthDate = demographicInfo.birth_date || demographicInfo.date_of_birth;
+                    const gradeLevel = demographicInfo.grade_level;
+                    const schoolName = demographicInfo.school_name || demographicInfo.school;
+                    const parentName = demographicInfo.parent_name;
+                    const parentPhone = demographicInfo.parent_phone;
+                    const parentEmail = demographicInfo.parent_email;
+                    
+                    return (
+                      <TableRow key={student.id}>
+                        <TableCell className="font-medium">
+                          {studentNumber}
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">
+                              {student.first_name} {student.last_name}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {birthDate ? new Date(birthDate).toLocaleDateString('tr-TR') : '-'}
+                            </div>
                           </div>
-                          <div className="text-sm text-muted-foreground">
-                            {student.birth_date ? new Date(student.birth_date).toLocaleDateString('tr-TR') : 'Tarih Belirtilmemiş'}
+                        </TableCell>
+                        <TableCell>
+                          {gradeLevel ? (
+                            <Badge variant="outline">{gradeLevel}. Sınıf</Badge>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="max-w-32 truncate" title={schoolName || '-'}>
+                            {schoolName || '-'}
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{student.grade_level || 'Sınıf Belirtilmemiş'}. Sınıf</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="max-w-32 truncate" title={student.school_name || 'Okul Belirtilmemiş'}>
-                          {student.school_name || 'Okul Belirtilmemiş'}
-                        </div>
-                      </TableCell>
-                      <TableCell>{student.parent_name || 'Veli Belirtilmemiş'}</TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1 text-sm">
-                            <span className="truncate max-w-24" title={student.parent_phone || 'Telefon Belirtilmemiş'}>
-                              {student.parent_phone || 'Telefon Belirtilmemiş'}
-                            </span>
+                        </TableCell>
+                        <TableCell>{parentName || '-'}</TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1 text-sm">
+                              <span className="truncate max-w-24" title={parentPhone || '-'}>
+                                {parentPhone || '-'}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1 text-sm">
+                              <span className="truncate max-w-24" title={parentEmail || '-'}>
+                                {parentEmail || '-'}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1 text-sm">
-                            <span className="truncate max-w-24" title={student.parent_email || 'E-posta Belirtilmemiş'}>
-                              {student.parent_email || 'E-posta Belirtilmemiş'}
-                            </span>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {getStatusBadge(student.birth_date)}
-                      </TableCell>
+                        </TableCell>
+                        <TableCell>
+                          {getStatusBadge(birthDate)}
+                        </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
                           <Button variant="outline" size="sm">
@@ -255,7 +448,8 @@ export default function Students() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  );
+                  })}
                 </TableBody>
               </Table>
             )}
@@ -280,7 +474,11 @@ export default function Students() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-green-600">
-                {students.filter(s => s.birth_date && new Date(s.birth_date).getMonth() === new Date().getMonth()).length}
+                {students.filter(s => {
+                  const demographicInfo = s.demographic_info || {};
+                  const birthDate = demographicInfo.birth_date || demographicInfo.date_of_birth;
+                  return birthDate && new Date(birthDate).getMonth() === new Date().getMonth();
+                }).length}
               </div>
             </CardContent>
           </Card>
@@ -299,5 +497,14 @@ export default function Students() {
         </div>
       </div>
     </DashboardLayout>
+  );
+}
+
+// Main Export with Error Boundary
+export default function Students() {
+  return (
+    <StudentsErrorBoundary>
+      <StudentsInner />
+    </StudentsErrorBoundary>
   );
 }

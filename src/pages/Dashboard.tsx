@@ -37,7 +37,7 @@ interface RecentActivity {
 }
 
 export default function Dashboard() {
-  const { user, switchRole, logout } = useAuth();
+  const { user, switchRole, logout, isLoading } = useAuth();
   const { toast } = useToast();
   const [stats, setStats] = useState<DashboardStats>({
     activeStudents: 0,
@@ -48,67 +48,143 @@ export default function Dashboard() {
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Auth yüklenene kadar bekle
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    // Sadece admin/trainer rolü olanlar dashboard verilerini görebilir
+    if (user?.roles && !user.roles.includes('kullanici')) {
+      fetchDashboardData();
+    } else {
+      setLoading(false);
+    }
+  }, [user]);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
       
-      // Fetch active students count
-      const { data: studentsData, error: studentsError } = await supabase
-        .from('students')
+      // Fetch active students count - rol bazında filtreleme
+      let studentsQuery = supabase
+        .from('users')
         .select('id')
+        .contains('roles', '["kullanici"]');
+
+      // Temsilci sadece kendi altındaki beyin antrenörlerinin öğrencilerini görebilir
+      if (user?.roles?.includes('temsilci')) {
+        // Önce kendi altındaki beyin antrenörlerini bul
+        const { data: trainersData } = await supabase
+          .from('users')
+          .select('id')
+          .contains('roles', '["beyin_antrenoru"]')
+          .eq('supervisor_id', user.id);
+        
+        const trainerIds = trainersData?.map(t => t.id) || [];
+        if (trainerIds.length > 0) {
+          studentsQuery = studentsQuery.in('supervisor_id', trainerIds);
+        } else {
+          // Eğer hiç beyin antrenörü yoksa boş sonuç döndür
+          studentsQuery = studentsQuery.eq('id', 'no-results');
+        }
+      }
+      // Beyin antrenörü sadece kendi altındaki öğrencileri görebilir
+      else if (user?.roles?.includes('beyin_antrenoru') && !user?.roles?.includes('admin')) {
+        studentsQuery = studentsQuery.eq('supervisor_id', user.id);
+      }
+
+      const { data: studentsData, error: studentsError } = await studentsQuery
         .order('created_at', { ascending: false });
 
       if (studentsError) throw studentsError;
 
-      // Fetch completed tests this month
+      // Fetch completed tests this month - sadece kendi öğrencilerinin testleri
       const startOfMonth = new Date();
       startOfMonth.setDate(1);
       startOfMonth.setHours(0, 0, 0, 0);
 
-      const { data: testsData, error: testsError } = await supabase
-        .from('burdon_test_results')
-        .select('id, total_score, attention_ratio')
-        .gte('created_at', startOfMonth.toISOString());
+      const studentIds = studentsData?.map(s => s.id) || [];
+      let testsData = null;
+      
+      if (studentIds.length > 0) {
+        const { data: testsDataResult, error: testsError } = await supabase
+          .from('burdon_test_results')
+          .select('id, total_score, total_correct, total_wrong, total_missed, attention_ratio')
+          .in('student_id', studentIds)
+          .gte('created_at', startOfMonth.toISOString());
 
-      if (testsError) throw testsError;
+        if (testsError) throw testsError;
+        testsData = testsDataResult;
+      } else {
+        testsData = [];
+      }
 
-      // Calculate average success rate
+      // Calculate average success rate (gerçek performans yüzdesi)
       const averageScore = testsData && testsData.length > 0 
-        ? testsData.reduce((sum, test) => sum + (test.attention_ratio || 0), 0) / testsData.length
+        ? testsData.reduce((sum, test) => {
+            if (test.total_correct !== undefined && 
+                test.total_wrong !== undefined && 
+                test.total_missed !== undefined) {
+              const totalQuestions = test.total_correct + test.total_wrong + test.total_missed;
+              return totalQuestions > 0 ? sum + (test.total_correct / totalQuestions) : sum;
+            }
+            return sum + (test.attention_ratio || 0);
+          }, 0) / testsData.length
         : 0;
 
-      // Fetch recent activities (Burdon test results)
-      const { data: activitiesData, error: activitiesError } = await supabase
-        .from('burdon_test_results')
-        .select(`
-          id,
-          total_score,
-          attention_ratio,
-          created_at,
-          students!burdon_test_results_student_id_fkey(
-            users!students_user_id_fkey(first_name, last_name)
-          )
-        `)
-        .order('created_at', { ascending: false })
-        .limit(5);
+      // Fetch recent activities (Burdon test results) - sadece kendi öğrencilerinin aktiviteleri
+      let activitiesData = null;
+      
+      if (studentIds.length > 0) {
+        const { data: activitiesDataResult, error: activitiesError } = await supabase
+          .from('burdon_test_results')
+          .select(`
+            id,
+            total_score,
+            total_correct,
+            total_wrong,
+            total_missed,
+            attention_ratio,
+            created_at,
+            users!burdon_test_results_student_id_fkey(first_name, last_name)
+          `)
+          .in('student_id', studentIds)
+          .order('created_at', { ascending: false })
+          .limit(5);
 
-      if (activitiesError) throw activitiesError;
+        if (activitiesError) throw activitiesError;
+        activitiesData = activitiesDataResult;
+      } else {
+        activitiesData = [];
+      }
 
       const formattedActivities: RecentActivity[] = activitiesData?.map(activity => {
-        const studentName = activity.students?.users 
-          ? `${activity.students.users.first_name} ${activity.students.users.last_name}`
+        const studentName = activity.users 
+          ? `${activity.users.first_name} ${activity.users.last_name}`
           : 'Bilinmeyen Öğrenci';
+        
+        // Gerçek Genel Dikkat Performansı Yüzdesi hesapla
+        let realPerformancePercentage = null;
+        if (activity.total_correct !== undefined && 
+            activity.total_wrong !== undefined && 
+            activity.total_missed !== undefined) {
+          const totalQuestions = activity.total_correct + activity.total_wrong + activity.total_missed;
+          if (totalQuestions > 0) {
+            realPerformancePercentage = Math.round((activity.total_correct / totalQuestions) * 100);
+          }
+        }
         
         return {
           id: activity.id,
           student_name: studentName,
           activity: 'Burdon Dikkat Testi',
           status: 'completed',
-          score: activity.attention_ratio ? Math.round(activity.attention_ratio * 100) : null,
+          score: realPerformancePercentage,
           time: activity.created_at
         };
       }) || [];
@@ -185,12 +261,19 @@ export default function Dashboard() {
           <h1 className="text-3xl font-bold text-foreground mb-2">
             Hoş geldiniz, {user?.firstName} {user?.lastName}
           </h1>
-          <p className="text-muted-foreground">
-            ForBrain Academy yönetim paneline hoş geldiniz. Bugün öğrencilerinizin gelişimini takip edebilir ve yeni testler tanımlayabilirsiniz.
-          </p>
+          {user?.roles?.includes('kullanici') ? (
+            <p className="text-muted-foreground">
+              ForBrain Academy'ye hoş geldiniz. Sol menüden testlere başlayabilirsiniz.
+            </p>
+          ) : (
+            <p className="text-muted-foreground">
+              ForBrain Academy yönetim paneline hoş geldiniz. Bugün öğrencilerinizin gelişimini takip edebilir ve yeni testler tanımlayabilirsiniz.
+            </p>
+          )}
         </div>
 
-        {/* Quick Stats */}
+        {/* Quick Stats - Sadece admin/trainer için */}
+        {!user?.roles?.includes('kullanici') && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {loading ? (
             <div className="col-span-4 text-center py-8">
@@ -257,7 +340,10 @@ export default function Dashboard() {
             </>
           )}
         </div>
+        )}
 
+        {/* Hızlı İşlemler ve Son Aktiviteler - Sadece admin/trainer/temsilci için */}
+        {!user?.roles?.includes('kullanici') && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Quick Actions */}
           <Card className="shadow-card">
@@ -320,9 +406,14 @@ export default function Dashboard() {
                         <div className="flex items-center space-x-2 mt-1">
                           {getStatusBadge(activity.status)}
                           {activity.score && (
-                            <Badge variant="outline" className="text-xs">
-                              {activity.score}%
-                            </Badge>
+                            <div className="flex items-center space-x-1">
+                              <Badge variant="outline" className="text-xs">
+                                {activity.score}%
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                Genel Dikkat Performansı Yüzdesi
+                              </span>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -337,6 +428,18 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+        )}
+
+        {/* Kullanıcılar için özel mesaj */}
+        {user?.roles?.includes('kullanici') && (
+          <div className="text-center py-16">
+            <Brain className="h-16 w-16 text-primary mx-auto mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Testlere Başlayın</h2>
+            <p className="text-muted-foreground mb-6">
+              Bilişsel becerilerinizi geliştirmek için sol menüden testleri keşfedin.
+            </p>
+          </div>
+        )}
 
       </div>
     </DashboardLayout>

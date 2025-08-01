@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Burdon Dikkat Testi - Entegre</title>
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* === TEMEL STIL === */
+        :root {
+            --primary: #3a86ff;
+            --primary-dark: #2667cc;
+            --secondary: #ff006e;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --gray-light: #e9ecef;
+            --border-radius: 8px;
+            --font-main: 'Segoe UI', Roboto, Arial, sans-serif;
+            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-main);
+            line-height: 1.6;
+            color: var(--dark);
+            background-color: var(--light);
+            padding: 0;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* === HEADER === */
+        header {
+            background-color: white;
+            box-shadow: var(--shadow-sm);
+            padding: 15px 0;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo span {
+            margin-left: 10px;
+        }
+
+
+
+        /* === MAIN CONTENT === */
+        main {
+            flex: 1;
+            padding: 40px 0;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        h1 {
+            font-size: 2rem;
+            color: var(--primary);
+        }
+
+        p {
+            margin-bottom: 1rem;
+        }
+
+        /* === BUTTONS === */
+        .btn {
+            display: inline-block;
+            font-weight: 500;
+            color: white;
+            text-align: center;
+            vertical-align: middle;
+            cursor: pointer;
+            background-color: var(--primary);
+            padding: 12px 20px;
+            font-size: 1rem;
+            line-height: 1.5;
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+            border: none;
+            box-shadow: var(--shadow-sm);
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-dark);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary);
+        }
+
+        .btn-secondary:hover {
+            background-color: #cc0058;
+        }
+
+        #start-test-btn {
+            margin-left: auto;
+        }
+
+        /* === FORMS === */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        input, select {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: var(--dark);
+            background-color: white;
+            background-clip: padding-box;
+            border: 1px solid var(--gray-light);
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary);
+            outline: 0;
+            box-shadow: 0 0 0 0.25rem rgba(58, 134, 255, 0.25);
+        }
+
+        /* === CARD === */
+        .card {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            word-wrap: break-word;
+            background-color: white;
+            background-clip: border-box;
+            border: 1px solid var(--gray-light);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            padding: 1rem 2.5rem;
+            background-color: rgba(0, 0, 0, 0.02);
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .card-body {
+            padding: 0.8rem 2.5rem;
+            padding-left: 2.5rem; 
+            padding-right: 2.5rem;
+        }
+
+        .card-footer {
+            padding: 1rem 1.5rem;
+            background-color: rgba(0, 0, 0, 0.02);
+            border-top: 1px solid var(--gray-light);
+        }
+
+        /* === UTILITIES === */
+        .text-center {
+            text-align: center;
+        }
+
+        .mt-1 { margin-top: 0.25rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .mt-3 { margin-top: 1rem; }
+        .mt-4 { margin-top: 1.5rem; }
+        .mt-5 { margin-top: 3rem; }
+
+        .mb-1 { margin-bottom: 0.25rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-3 { margin-bottom: 1rem; }
+        .mb-4 { margin-bottom: 1.5rem; }
+        .mb-5 { margin-bottom: 3rem; }
+
+        .d-flex {
+            display: flex;
+        }
+
+        .justify-content-between {
+            justify-content: space-between;
+        }
+
+        .align-items-center {
+            align-items: center;
+        }
+
+        .flex-column {
+            flex-direction: column;
+        }
+
+        /* === TEST SPECIFIC STYLES === */
+        .screens {
+            display: none;
+        }
+
+        .screens.active {
+            display: block;
+        }
+
+
+
+        .test-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-md);
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .char-button {
+            font-family: Arial, sans-serif;
+            font-size: 12pt;
+            font-weight: bold;
+            color: #000000;
+            cursor: pointer;
+            user-select: none;
+            display: inline-block;
+            text-align: center;
+            line-height: 1;
+            margin: 0;
+            padding: 0px;
+            width: 18px;
+            height: 22px;
+        }
+
+        .char-button.marked {
+            color: #ff0000;
+        }
+
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(22, 18px);
+            gap: 2px; 
+            margin-bottom: 20px;
+            max-width: 100%;
+            justify-content: center;
+            font-family: Arial, sans-serif;
+        }
+
+        .next-section-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-weight: bold;
+            display: none; /* Başlangıçta gizli */
+        }
+
+        .next-section-btn:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .progress-bar {
+            height: 8px;
+            background-color: var(--gray-light);
+            border-radius: 4px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            background-color: var(--primary);
+            transition: width 1s linear;
+        }
+
+        .section-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .section-dot {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background-color: var(--gray-light);
+            margin: 0 5px;
+        }
+
+        .section-dot.active {
+            background-color: var(--primary);
+        }
+
+
+
+        /* === COMPLETION STYLES === */
+        .completion-card {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem 2.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            color: #333;
+            transform: translateY(0px);
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            max-width: 400px;
+            width: 100%;
+            margin: 0 auto;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .completion-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        }
+
+        .success-icon {
+            margin-bottom: 1.5rem;
+        }
+
+        .checkmark {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .checkmark svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .checkmark-circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 2;
+            stroke-miterlimit: 10;
+            stroke: #7ac142;
+            fill: none;
+            animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+        }
+
+        .checkmark-check {
+            transform-origin: 50% 50%;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            stroke-width: 3;
+            stroke-miterlimit: 10;
+            stroke: #7ac142;
+            fill: none;
+            animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+        }
+
+        @keyframes stroke {
+            100% {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        .completion-title {
+            font-size: 2.2rem;
+            font-weight: 600;
+            margin: 0 0 0.5rem 0;
+            color: var(--primary);
+        }
+
+        .completion-subtitle {
+            font-size: 1rem;
+            opacity: 0.7;
+            margin: 0;
+            font-weight: 400;
+            color: #666;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .test-grid {
+                grid-template-columns: repeat(11, 18px);
+            }
+            
+            .completion-card {
+                padding: 2rem 1.5rem;
+                margin: 0 1rem;
+            }
+            
+            .completion-title {
+                font-size: 1.8rem;
+            }
+            
+            .checkmark {
+                width: 60px;
+                height: 60px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .test-grid {
+                grid-template-columns: repeat(7, 18px);
+            }
+            
+            .completion-card {
+                padding: 1.5rem 1rem;
+            }
+            
+            .completion-title {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container header-container">
+            <a href="#" class="logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10 12a2 2 0 1 0 4 0 2 2 0 0 0-4 0"></path>
+                    <path d="M21 12c0 4.97-4.03 9-9 9-4.98 0-9-4.03-9-9s4.02-9 9-9c4.97 0 9 4.03 9 9z"></path>
+                    <path d="M8 12h.01"></path>
+                    <path d="M16 12h.01"></path>
+                </svg>
+                <span>Burdon Dikkat Testi</span>
+            </a>
+            <nav>
+                <ul>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <div id="welcome-screen" class="screens active">
+                <div class="card">
+                    <div class="card-header">
+                        <h1>Burdon Dikkat Testine Hoş Geldiniz</h1>
+                    </div>
+                    <div class="card-body">
+                        <p>Bu test, dikkat sürdürme, odaklanma ve seçici dikkat becerilerinizi değerlendirmek için tasarlanmıştır. Test sonucunda dikkat kapasiteniz ve performansınız hakkında ayrıntılı bir rapor alacaksınız.</p>
+                        
+                        <h3 class="mt-4">Nasıl Çalışır?</h3>
+                        <p>Bu test sırasında, ekranda gösterilen harfler arasından belirli hedef harfleri bulup işaretlemeniz istenecektir. Test toplam 5 dakika sürecek ve 3 bölümden oluşacaktır.</p>
+                        
+                        <h3 class="mt-4">Başlamadan Önce:</h3>
+                        <ul>
+                            <li>Sessiz ve dikkat dağıtıcı unsurların olmadığı bir ortamda olduğunuzdan emin olun</li>
+                            <li>Testin tamamlanması için yeterli zamanınız olduğundan emin olun</li>
+                            <li>Ekrana rahat bakabildiğiniz bir pozisyon alın</li>
+                            <li>Telefonunuzu sessize alın ve bildirimleri kapatın</li>
+                        </ul>
+                        
+                        <div class="d-flex justify-content-end mt-4">
+                            <button type="button" id="start-test-btn" class="btn btn-lg">Teste Başla</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="instructions-screen" class="screens">
+                <div class="card">
+                    <div class="card-header">
+                        <h1>Test Yönergeleri</h1>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <h3>Test Kuralları</h3>
+                            <p>Ekranda göreceğiniz harfler arasından aşağıdaki <strong>hedef harfleri</strong> bulup işaretlemeniz gerekmektedir:</p>
+                            <div class="d-flex justify-content-center mt-3 mb-3">
+                                <span style="font-size: 2rem; margin: 0 15px; font-weight: bold; color: var(--primary);">a</span>
+                                <span style="font-size: 2rem; margin: 0 15px; font-weight: bold; color: var(--primary);">b</span>
+                                <span style="font-size: 2rem; margin: 0 15px; font-weight: bold; color: var(--primary);">d</span>
+                                <span style="font-size: 2rem; margin: 0 15px; font-weight: bold; color: var(--primary);">g</span>
+                            </div>
+                            <p>Test sırasında dikkat etmeniz gereken kurallar:</p>
+                            <ul>
+                                <li>Test toplam 3 bölümden oluşmaktadır ve her bölümde 10x22 ızgarada harfler bulunacaktır</li>
+                                <li>Bir bölümü tamamladığınızda, sonraki bölüme geçmek için "Sonraki Bölüm" butonuna tıklayın</li>
+                                <li>Her bir hedef harfi (a, b, d, g) gördüğünüzde üzerine tıklayarak işaretleyin</li>
+                                <li>Bir kez işaretlediğiniz harfi geri alamazsınız, dikkatli olun</li>
+                                <li>Testin toplam süresi 5 dakikadır (300 saniye)</li>
+                                <li>Süre dolduğunda test otomatik olarak sonlanacaktır</li>
+                            </ul>
+                        </div>
+
+                        <div class="mb-4">
+                            <h3>Örnek Uygulama</h3>
+                            <p>Aşağıda test ekranının nasıl görüneceğine dair bir örnek bulunmaktadır. Hedef harflerden birini işaretlemek için üzerine tıklayın:</p>
+                            
+                            <div id="example-grid" class="d-flex justify-content-center mb-3" style="gap: 10px;">
+                                </div>
+                            <p class="text-center"><small>Yukarıdaki örnekte <strong>b</strong> harfi işaretlenmiş, diğer hedef harfler (<strong>a</strong>, <strong>d</strong>) henüz işaretlenmemiştir.</small></p>
+                        </div>
+
+                        <div class="mb-4">
+                                                    <h3>Test Süresi</h3>
+                        <p>Testin toplam süresi: <strong>5 dakika (300 saniye)</strong></p>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="button" id="back-to-welcome-btn" class="btn btn-secondary">Geri Dön</button>
+                            <button type="button" id="continue-to-test-btn" class="btn btn-lg">Testi Başlat</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="test-screen" class="screens">
+    
+                
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h2>Burdon Dikkat Testi</h2>
+                        <div>
+                            <strong>Hedef Harfler:</strong> 
+                            <span style="font-weight: bold; color: var(--primary); margin-left: 10px;">a, b, d, g</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="progress-bar">
+                            <div id="test-progress" class="progress" style="width: 0%;"></div>
+                        </div>
+                        
+                        <div class="section-indicator">
+                            <div class="section-dot active" data-section="1"></div>
+                            <div class="section-dot" data-section="2"></div>
+                            <div class="section-dot" data-section="3"></div>
+                        </div>
+                        
+                        <div id="test-grid" class="test-grid">
+                            </div>
+                        
+                        <button id="next-section-btn" class="next-section-btn">Sonraki Bölüm</button>
+                        <button id="finish-test-btn" class="next-section-btn" style="display: none;">Testi Bitir</button>
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-flex justify-content-center align-items-center">
+                            <div>
+                                <span id="section-info">Bölüm 1/3</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="completion-screen" class="screens">
+                <div style="display: flex; justify-content: center; align-items: center; min-height: 60vh; text-align: center;">
+                    <div class="completion-card">
+                        <div class="success-icon">
+                            <div class="checkmark">
+                                <svg viewBox="0 0 52 52">
+                                    <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                                    <path class="checkmark-check" fill="none" d="m14.1 27.2l7.1 7.2 16.7-16.8"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <h1 class="completion-title">Testi Tamamladınız</h1>
+                        <p class="completion-subtitle">Test sonuçlarınız başarıyla kaydedildi</p>
+                    </div>
+                </div>
+            </div>
+
+
+
+
+       </div>
+   </main>
+
+   <footer style="background-color: var(--gray-light); padding: 20px 0; margin-top: auto;">
+       <div class="container">
+           <div class="d-flex justify-content-center align-items-center">
+               <div>
+                   <p style="margin-bottom: 0;">© 2025 Burdon Dikkat Testi | Tüm Hakları Saklıdır</p>
+               </div>
+           </div>
+       </div>
+   </footer>
+
+   <script>
+        // DOM Elementleri
+        const screens = {
+            welcome: document.getElementById('welcome-screen'),
+            instructions: document.getElementById('instructions-screen'),
+            test: document.getElementById('test-screen'),
+            completion: document.getElementById('completion-screen')
+        };
+
+        const navLinks = {
+        };
+
+        const buttons = {
+            startTest: document.getElementById('start-test-btn'),
+            backToWelcome: document.getElementById('back-to-welcome-btn'),
+            continueToTest: document.getElementById('continue-to-test-btn'),
+            nextSection: document.getElementById('next-section-btn'),
+            finishTest: document.getElementById('finish-test-btn')
+        };
+
+        const forms = {};
+
+        const testElements = {
+            progress: document.getElementById('test-progress'),
+            grid: document.getElementById('test-grid'),
+            sectionInfo: document.getElementById('section-info'),
+            sectionDots: document.querySelectorAll('.section-dot')
+        };
+
+        const resultElements = {
+            name: document.getElementById('result-name'),
+            demographics: document.getElementById('result-demographics'),
+            date: document.getElementById('result-date'),
+            attentionScore: document.getElementById('attention-score'),
+            attentionRatio: document.getElementById('attention-ratio'),
+            elapsedTime: document.getElementById('elapsed-time'),
+            completedSections: document.getElementById('completed-sections'),
+            autoCompleteMessage: document.getElementById('auto-complete-message'),
+            totalCorrect: document.getElementById('total-correct'),
+            totalMissed: document.getElementById('total-missed'),
+            totalWrong: document.getElementById('total-wrong'),
+            totalScore: document.getElementById('total-score'),
+            section1Correct: document.getElementById('section1-correct'),
+            section1Missed: document.getElementById('section1-missed'),
+            section1Wrong: document.getElementById('section1-wrong'),
+            section1Score: document.getElementById('section1-score'),
+            section2Correct: document.getElementById('section2-correct'),
+            section2Missed: document.getElementById('section2-missed'),
+            section2Wrong: document.getElementById('section2-wrong'),
+            section2Score: document.getElementById('section2-score'),
+            section3Correct: document.getElementById('section3-correct'),
+            section3Missed: document.getElementById('section3-missed'),
+            section3Wrong: document.getElementById('section3-wrong'),
+            section3Score: document.getElementById('section3-score'),
+            evaluationText: document.getElementById('evaluation-text'),
+            attentionEvaluation: document.getElementById('attention-evaluation'),
+            recommendations: document.getElementById('recommendations')
+        };
+
+        // Test Verileri
+
+        let testData = {
+            startTime: null,
+            endTime: null,
+            testDuration: 300, // 5 dakika (saniye cinsinden)
+            currentElapsedTime: 0,
+            targetChars: ['a', 'b', 'd', 'g'],
+            currentSection: 1,
+            completedSections: 0,
+            timerInterval: null,
+            autoCompleted: false,
+
+            sections: {
+                1: { grid: [], markedChars: [], results: { correct: 0, missed: 0, wrong: 0, score: 0 }},
+                2: { grid: [], markedChars: [], results: { correct: 0, missed: 0, wrong: 0, score: 0 }},
+                3: { grid: [], markedChars: [], results: { correct: 0, missed: 0, wrong: 0, score: 0 }}
+            },
+            totalResults: { correct: 0, missed: 0, wrong: 0, score: 0, ratio: 0 }
+        };
+
+        // Sayfa yüklendiğinde çalışacak ana fonksiyon
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // Event Listeners (DOMContentLoaded içine taşındı)
+            buttons.startTest.addEventListener('click', () => {
+                showScreen('instructions');
+                renderExampleGrid(); // Örnek ızgarayı oluştur
+            });
+            
+            buttons.backToWelcome.addEventListener('click', () => showScreen('welcome'));
+            buttons.continueToTest.addEventListener('click', () => {
+                showScreen('test');
+                startTest();
+            });
+            buttons.finishTest.addEventListener('click', () => {
+                if (confirm('Testi şimdi bitirmek istediğinizden emin misiniz?')) {
+                    completeTest();
+                }
+            });
+            buttons.nextSection.addEventListener('click', moveToNextSection);
+            
+            if (forms.contact) { // forms.contact null değilse event listener ekle
+                forms.contact.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    alert('Mesajınız gönderildi. En kısa sürede size dönüş yapacağız.'); // Basit bir bildirim
+                    forms.contact.reset(); // Formu temizle
+                    showScreen('welcome');
+                });
+            }
+
+
+            
+            // Başlangıç ekranını göster
+            showScreen('welcome');
+        });
+        
+        // Test verilerini sıfırlama fonksiyonu
+        function resetTestData() {
+            testData = {
+                startTime: null,
+                endTime: null,
+                testDuration: 300,
+                currentElapsedTime: 0,
+                targetChars: ['a', 'b', 'd', 'g'],
+                currentSection: 1,
+                completedSections: 0,
+                timerInterval: null,
+                autoCompleted: false,
+
+                sections: {
+                    1: { grid: [], markedChars: [], results: { correct: 0, missed: 0, wrong: 0, score: 0 }},
+                    2: { grid: [], markedChars: [], results: { correct: 0, missed: 0, wrong: 0, score: 0 }},
+                    3: { grid: [], markedChars: [], results: { correct: 0, missed: 0, wrong: 0, score: 0 }}
+                },
+                totalResults: { correct: 0, missed: 0, wrong: 0, score: 0, ratio: 0 }
+            };
+
+            // Zamanlayıcıyı temizle (eğer çalışıyorsa)
+            if (testData.timerInterval) clearInterval(testData.timerInterval);
+            testElements.progress.style.width = "0%";
+        }
+
+
+        // Test sonuçlarını Supabase'e kaydetme fonksiyonu
+        async function sendResultsToServer() {
+            try {
+                console.log('🚀 Burdon Test Supabase kayıt başlatılıyor...');
+                
+                const resultsToSend = {
+                    test_start_time: testData.startTime,
+                    test_end_time: testData.endTime,
+                    test_elapsed_time_seconds: testData.currentElapsedTime,
+                    test_auto_completed: testData.autoCompleted,
+                    total_correct: testData.totalResults.correct,
+                    total_missed: testData.totalResults.missed,
+                    total_wrong: testData.totalResults.wrong,
+                    total_score: testData.totalResults.score,
+                    attention_ratio: testData.totalResults.ratio,
+                    sections_results: {
+                        section1: testData.sections[1].results,
+                        section2: testData.sections[2].results,
+                        section3: testData.sections[3].results
+                    }
+                };
+                
+                // Supabase client'ı başlat
+                const supabaseUrl = 'https://gamjzzomkosvqhficabt.supabase.co';
+                const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhbWp6em9ta29zdnFoZmljYWJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI4ODc3MDAsImV4cCI6MjA2ODQ2MzcwMH0.r8KkywdhNSP1hxzSAlKo8SB5jOEb0KQRUBfZ9Va0p9I';
+                
+                const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+                
+                // Authentication kontrolü
+                const { data: { user }, error: authError } = await supabase.auth.getUser();
+                
+                if (authError || !user) {
+                    console.warn('⚠️ Kullanıcı giriş yapmamış, localStorage\'a kaydediliyor');
+                    localStorage.setItem('pendingBurdonResults', JSON.stringify(resultsToSend));
+                    return false;
+                }
+                
+                console.log('👤 Aktif kullanıcı:', user.email);
+                
+                // Kullanıcı bilgilerini al
+                const { data: userData, error: userError } = await supabase
+                    .from('users')
+                    .select('id, first_name, last_name, roles, supervisor_id')
+                    .eq('auth_user_id', user.id)
+                    .single();
+                
+                if (userError || !userData) {
+                    console.error('❌ Kullanıcı bilgileri alınamadı:', userError);
+                    localStorage.setItem('pendingBurdonResults', JSON.stringify(resultsToSend));
+                    return false;
+                }
+                
+                // Role kontrolü
+                const userRole = getUserRole(userData.roles);
+                console.log(`👤 Kullanıcı rolü: ${userRole}`);
+                
+                if (!['admin', 'temsilci', 'beyin_antrenoru', 'kullanici'].includes(userRole)) {
+                    console.warn('⚠️ Geçersiz kullanıcı rolü - pending olarak kaydediliyor');
+                    localStorage.setItem('pendingBurdonResults', JSON.stringify(resultsToSend));
+                    return false;
+                }
+                
+                // Test edilen öğrenci ID'sini al (localStorage'dan veya current user)
+                let studentId = await findValidStudentId(supabase, userData, userRole);
+                
+                if (!studentId) {
+                    console.error('❌ Geçerli öğrenci ID bulunamadı');
+                    return false;
+                }
+                
+                // Test süresini ISO string'e çevir
+                const testStartTime = new Date(resultsToSend.test_start_time).toISOString();
+                const testEndTime = new Date(resultsToSend.test_end_time).toISOString();
+                
+                // conducted_by belirleme - Doğru mantık: supervisor varsa supervisor, yoksa kendisi
+                let conductedBy;
+                if (userData.supervisor_id) {
+                    // Kullanıcının supervisor'ı varsa, test yapan supervisor'dür
+                    conductedBy = userData.supervisor_id;
+                    console.log(`👨‍🏫 Burdon Test yapan kişi: Supervisor (ID: ${conductedBy}) - Öğrenci: ${userData.first_name} ${userData.last_name}`);
+                } else {
+                    // Supervisor yoksa (admin/trainer kendisi), kendisi yapmıştır
+                    conductedBy = userData.id;
+                    console.log(`👨‍🏫 Burdon Test yapan kişi: ${userData.first_name} ${userData.last_name} - ID: ${conductedBy}`);
+                }
+                
+                // Burdon test results için final data
+                const finalData = {
+                    student_id: studentId,
+                    conducted_by: conductedBy,
+                    test_start_time: testStartTime,
+                    test_end_time: testEndTime,
+                    test_duration_seconds: resultsToSend.test_elapsed_time_seconds,
+                    completion_status: resultsToSend.test_auto_completed ? 'auto_completed' : 'completed',
+                    
+                    // Total results
+                    total_correct: resultsToSend.total_correct,
+                    total_wrong: resultsToSend.total_wrong,
+                    total_missed: resultsToSend.total_missed,
+                    total_score: resultsToSend.total_score,
+                    attention_ratio: resultsToSend.attention_ratio,
+                    
+                    // Section 1 results
+                    section1_correct: resultsToSend.sections_results.section1.correct,
+                    section1_wrong: resultsToSend.sections_results.section1.wrong,
+                    section1_missed: resultsToSend.sections_results.section1.missed,
+                    section1_score: resultsToSend.sections_results.section1.score,
+                    
+                    // Section 2 results
+                    section2_correct: resultsToSend.sections_results.section2.correct,
+                    section2_wrong: resultsToSend.sections_results.section2.wrong,
+                    section2_missed: resultsToSend.sections_results.section2.missed,
+                    section2_score: resultsToSend.sections_results.section2.score,
+                    
+                    // Section 3 results
+                    section3_correct: resultsToSend.sections_results.section3.correct,
+                    section3_wrong: resultsToSend.sections_results.section3.wrong,
+                    section3_missed: resultsToSend.sections_results.section3.missed,
+                    section3_score: resultsToSend.sections_results.section3.score,
+                    
+                    // Detailed results as JSONB
+                    detailed_results: {
+                        test_auto_completed: resultsToSend.test_auto_completed,
+                        sections_details: resultsToSend.sections_results,
+                        target_chars: testData.targetChars,
+                        completed_sections: testData.completedSections,
+                        test_duration_limit: testData.testDuration
+                    },
+                    
+                    notes: resultsToSend.test_auto_completed ? 'Test süre dolduğu için otomatik tamamlandı' : 'Test manuel olarak tamamlandı'
+                };
+                
+                console.log('📝 Supabase\'e kaydedilecek Burdon test verisi:', finalData);
+                
+                // Supabase'e kaydet
+                const { data: insertData, error: insertError } = await supabase
+                    .from('burdon_test_results')
+                    .insert([finalData])
+                    .select();
+                
+                if (insertError) {
+                    console.error('❌ Burdon test Supabase kayıt hatası:', insertError);
+                    
+                    // Hata detayları
+                    if (insertError.code === '23503') {
+                        console.error('🔗 Foreign key hatası - Student veya User ID geçersiz');
+                    } else if (insertError.code === '42501') {
+                        console.error('🔒 Yetki hatası - RLS policy ihlali');
+                    }
+                    
+                    // Hata durumunda localStorage'a kaydet
+                    localStorage.setItem('failedBurdonResults', JSON.stringify({
+                        data: finalData,
+                        error: insertError,
+                        timestamp: new Date().toISOString()
+                    }));
+                    
+                    return false;
+                }
+                
+                console.log('✅ Burdon test Supabase kayıt başarılı!', insertData);
+                
+                // Başarılı kayıt sonrası temizlik
+                localStorage.removeItem('pendingBurdonResults');
+                localStorage.removeItem('failedBurdonResults');
+                localStorage.setItem('lastTestedStudent', finalData.student_id);
+                
+                // Başarı mesajı
+                console.log('🎉 BURDON TESTİ PRODUCTION\'A KAYDEDILDI!');
+                console.log(`📊 Test ID: ${insertData[0]?.id}`);
+                console.log(`👤 Test Alan Kullanıcı ID: ${finalData.student_id}`);
+                console.log(`👨‍🏫 Test Yöneten: ${userData.first_name} ${userData.last_name}`);
+                console.log(`📊 Test Sonuçları:`, {
+                    doğru: finalData.total_correct,
+                    yanlış: finalData.total_wrong,
+                    kaçırılan: finalData.total_missed,
+                    toplam_skor: finalData.total_score,
+                    dikkat_oranı: finalData.attention_ratio
+                });
+                
+                return true;
+                
+            } catch (error) {
+                console.error('❌ Burdon test Supabase kayıt genel hatası:', error);
+                
+                // Genel hata durumunda localStorage'a kaydet
+                localStorage.setItem('failedBurdonResults', JSON.stringify({
+                    error: error.message,
+                    timestamp: new Date().toISOString()
+                }));
+                
+                return false;
+            }
+        }
+
+        // Helper fonksiyonlar
+        function getUserRole(roles) {
+            if (!roles || !Array.isArray(roles) || roles.length === 0) {
+                return 'kullanici'; // Default role
+            }
+            
+            // Öncelik sırası: admin > temsilci > beyin_antrenoru > kullanici
+            if (roles.includes('admin')) return 'admin';
+            if (roles.includes('temsilci')) return 'temsilci';
+            if (roles.includes('beyin_antrenoru')) return 'beyin_antrenoru';
+            if (roles.includes('kullanici')) return 'kullanici';
+            
+            return 'kullanici'; // Fallback
+        }
+
+        async function findValidStudentId(supabase, userData, userRole) {
+            try {
+                console.log('🔍 Student ID belirleniyor... Giriş yapan:', userData.email, 'Role:', userRole);
+                
+                // Giriş yapan kullanıcının kendi testini yapıyor (HER ZAMAN)
+                console.log('👤 Giriş yapan kullanıcının kendi testi:', userData.first_name, userData.last_name);
+                console.log('🎯 Student ID = Giriş yapan kullanıcı ID:', userData.id);
+                
+                // localStorage cache'ini temizle (eski veri karışmasın)
+                localStorage.removeItem('selectedStudentId');
+                localStorage.removeItem('currentStudentId');
+                localStorage.removeItem('lastTestedStudent');
+                
+                return userData.id; // Her zaman giriş yapan kullanıcının ID'si
+                
+            } catch (error) {
+                console.error('❌ Student ID bulma hatası:', error);
+                return userData.id; // Fallback: Giriş yapan kullanıcı
+            }
+        }
+
+        async function completeTest() {
+            testData.endTime = new Date().getTime();
+            if(testData.timerInterval) {
+                clearInterval(testData.timerInterval);
+            }
+            
+            // Mevcut bölümün sonuçlarını hesapla
+            calculateSectionResults(testData.currentSection);
+            testData.completedSections = testData.currentSection;
+            
+            // Tamamlanmamış bölümler için hedef karakterleri sayalım
+            for (let i = 1; i <= 3; i++) {
+                if (i > testData.completedSections && testData.sections[i] && 
+                    testData.sections[i].results.missed === 0 && 
+                    testData.sections[i].results.correct === 0 && 
+                    testData.sections[i].results.wrong === 0) {
+                    
+                    // Bu bölümdeki toplam hedef karakter sayısını hesaplayalım
+                    let totalTargets = 0;
+                    if (sectionLetters[i]) {
+                        sectionLetters[i].forEach(row => {
+                            row.forEach(char => {
+                                if (testData.targetChars.includes(char)) {
+                                    totalTargets++;
+                                }
+                            });
+                        });
+                    }
+                    
+                    testData.sections[i].results.missed = totalTargets; 
+                    testData.sections[i].results.score = 0 - testData.sections[i].results.missed;
+                }
+            }
+            
+            // Toplam sonuçları hesapla
+            calculateTotalResults();
+            
+            // Sonuçları Supabase'e gönder
+            await sendResultsToServer();
+            
+            // Tamamlama sayfasını göster
+            showScreen('completion');
+        }
+
+        function moveToNextSection() {
+            calculateSectionResults(testData.currentSection);
+            testData.completedSections = testData.currentSection;
+            
+            if (testData.currentSection < 3) {
+                testData.currentSection++;
+                generateTestGrid();
+            } else {
+                completeTest(); // Son bölümden sonra testi bitir
+            }
+        }
+
+        // Diğer fonksiyonlarınız (showScreen, saveUserData, generateTestGrid, renderTestGrid, vb.)
+        // olduğu gibi kalmalı veya bu entegrasyonla uyumlu hale getirdiğim
+        // temel fonksiyonları ekliyorum. Kendi kodunuzla karşılaştırıp birleştirmeniz gerekebilir.
+
+
+
+
+
+        function showScreen(screenId) {
+            Object.keys(screens).forEach(key => {
+                if (screens[key]) screens[key].classList.remove('active');
+            });
+            if (screens[screenId]) screens[screenId].classList.add('active');
+            
+            Object.keys(navLinks).forEach(key => {
+                if (navLinks[key]) navLinks[key].classList.remove('active');
+            });
+            
+            if (screenId === 'welcome' || screenId === 'instructions' || screenId === 'test' || screenId === 'results') {
+                if (navLinks.home) navLinks.home.classList.add('active');
+            } else if (screenId === 'about') {
+                if (navLinks.about) navLinks.about.classList.add('active');
+            } else if (screenId === 'contact') {
+                if (navLinks.contact) navLinks.contact.classList.add('active');
+            }
+        }
+
+
+
+
+        
+        function renderExampleGrid() {
+            const exampleGridElement = document.getElementById('example-grid');
+            if (!exampleGridElement) return;
+            exampleGridElement.innerHTML = ''; // Önce temizle
+            const exampleChars = ['m', 'n', 'a', 'p', 'r', 'b', 'c', 'h', 'd', 'j'];
+            exampleChars.forEach(char => {
+                const charButton = document.createElement('div');
+                charButton.className = 'char-button';
+                charButton.textContent = char;
+                charButton.onclick = function() { markExampleButton(this); };
+                if (char === 'b') { // Örnekte 'b' işaretli olsun
+                    charButton.classList.add('marked');
+                }
+                exampleGridElement.appendChild(charButton);
+            });
+        }
+
+
+        // Sabit harf dizileri - 3 bölüm
+        const sectionLetters = {
+            1: [
+                ['a', 'e', 'p', 'z', 'n', 'z', 's', 'u', 'a', 'h', 'v', 'k', 'l', 'a', 's', 'i', 'b', 'i', 'o', 'u', 'o', 'e'],
+                ['r', 'v', 'b', 'p', 'm', 'i', 'b', 'i', 'r', 'b', 's', 'm', 'n', 't', 'd', 'a', 'u', 'f', 'c', 'f', 'k', 'a'],
+                ['c', 'k', 'a', 'h', 's', 'e', 'y', 'p', 'h', 'b', 'p', 's', 'd', 'g', 'y', 'z', 'd', 'v', 'r', 'i', 'f', 'g'],
+                ['y', 'd', 'v', 'c', 'o', 'y', 'e', 'r', 'z', 'h', 'e', 'z', 's', 'e', 'g', 'm', 'k', 'f', 'z', 'd', 'a', 'y'],
+                ['f', 's', 'd', 'y', 'i', 'b', 't', 'd', 'h', 'm', 'l', 'r', 'i', 'e', 'm', 't', 'g', 't', 'b', 'd', 'f', 'u'],
+                ['k', 'c', 'i', 'c', 'k', 'o', 'k', 'o', 's', 't', 'l', 'u', 'z', 'u', 'g', 'm', 'a', 'f', 'l', 'v', 'u', 't'],
+                ['i', 'z', 'r', 'f', 'o', 'u', 'd', 'v', 'h', 'y', 'p', 'n', 'b', 'p', 'm', 'v', 'h', 'n', 'n', 'g', 'r', 'y'],
+                ['p', 'v', 'k', 'l', 'n', 't', 'y', 'o', 'r', 'z', 'n', 'c', 'p', 'h', 't', 'e', 'm', 'z', 'i', 'o', 'i', 'm'],
+                ['r', 'a', 'l', 'y', 'g', 's', 'o', 'i', 'v', 'a', 'i', 'n', 'a', 'r', 'c', 'h', 'o', 'd', 'b', 'f', 'p', 'h'],
+                ['k', 'u', 'b', 's', 'y', 'g', 'u', 'e', 'm', 'k', 'l', 't', 'c', 'g', 'v', 'g', 'r', 'i', 'p', 'c', 't', 'e']
+            ],
+            2: [
+                ['c', 'i', 't', 'e', 'l', 'r', 'n', 'z', 'f', 'u', 'd', 't', 'm', 's', 'h', 'd', 'k', 'u', 'f', 'd', 's', 'm'],
+                ['s', 'i', 'v', 'e', 't', 'c', 'p', 'l', 'r', 'g', 'v', 'g', 'c', 't', 'l', 'r', 'm', 'e', 'u', 'g', 'y', 'e'],
+                ['b', 'o', 'k', 'e', 'h', 'b', 'u', 'k', 'o', 'p', 'f', 'i', 'd', 'o', 'h', 'o', 'r', 'a', 'n', 'i', 'a', 'v'],
+                ['i', 'o', 's', 'g', 'y', 'l', 'a', 'r', 'm', 'i', 'f', 'b', 'z', 'm', 'e', 'l', 'h', 'p', 'z', 'n', 'z', 'r'],
+                ['o', 'y', 't', 'n', 'a', 'k', 'v', 'p', 'y', 'k', 'g', 'v', 'n', 'h', 'v', 'm', 'p', 'b', 'n', 'p', 'y', 'h'],
+                ['v', 'd', 'u', 'o', 'f', 'r', 'h', 'i', 't', 'u', 'v', 'l', 'u', 'a', 'm', 'f', 'a', 'c', 'u', 'l', 't', 's'],
+                ['o', 'k', 'o', 'k', 'c', 'i', 'c', 'k', 'u', 'f', 's', 'b', 't', 'g', 't', 'm', 'e', 'i', 'n', 'i', 'z', 'h'],
+                ['d', 't', 'b', 'i', 'y', 'a', 's', 'f', 'y', 'n', 'd', 'z', 'f', 'k', 'm', 'g', 'e', 's', 'z', 'e', 'h', 'z'],
+                ['r', 'e', 'n', 'o', 'c', 'v', 'd', 'y', 'f', 'f', 'l', 'r', 'v', 'd', 'z', 'v', 'g', 'd', 'z', 'p', 'b', 'e'],
+                ['p', 'y', 'c', 'a', 'a', 's', 'c', 'g', 'c', 'a', 'h', 't', 'n', 'm', 'p', 'b', 'r', 'i', 'b', 'i', 'k', 'p']
+            ],
+            3: [
+                ['a', 'f', 'n', 'p', 'v', 'd', 'm', 't', 'o', 'y', 'm', 'i', 'l', 'g', 'd', 'e', 'o', 't', 'o', 'c', 'n', 't'],
+                ['l', 'u', 'p', 'z', 'n', 'k', 'r', 'h', 'p', 'u', 'c', 'b', 'o', 'y', 'g', 'u', 'd', 'v', 'y', 'a', 'o', 'l'],
+                ['s', 'z', 'o', 'a', 'p', 'f', 'f', 't', 'c', 'v', 'k', 'i', 'r', 'b', 'p', 'm', 'n', 'e', 'r', 'g', 'e', 's'],
+                ['b', 'a', 'h', 'v', 'i', 'h', 's', 'c', 'k', 'z', 'r', 'f', 'd', 'r', 'a', 'c', 'g', 'y', 'n', 'm', 'h', 'y'],
+                ['t', 'd', 's', 'v', 'c', 'g', 'z', 'y', 'f', 'm', 'p', 't', 'r', 'o', 'g', 'e', 'u', 'u', 'b', 'b', 'y', 'h'],
+                ['i', 'u', 'a', 'n', 'y', 'a', 'd', 'u', 'm', 'f', 'a', 'p', 'y', 'z', 'e', 'b', 'k', 'd', 'b', 'o', 'l', 'z'],
+                ['e', 'l', 'z', 'h', 'e', 'a', 'd', 'z', 't', 'c', 'l', 'p', 'r', 'y', 'f', 'm', 's', 'n', 'v', 'i', 'c', 'v'],
+                ['s', 'b', 'i', 'v', 'm', 'z', 'g', 'p', 's', 'm', 'r', 'k', 'b', 'k', 'r', 'e', 'h', 'c', 'u', 'v', 'n', 's'],
+                ['f', 'l', 's', 'l', 'e', 'i', 'o', 'l', 'g', 'l', 'k', 't', 'h', 'z', 'o', 'k', 't', 'd', 'e', 'a', 'r', 'h'],
+                ['f', 'm', 'i', 'u', 'c', 'f', 't', 'i', 'b', 's', 'g', 'k', 'm', 'k', 'n', 'p', 'h', 'v', 'b', 'g', 'u', 'i']
+            ]
+        };
+
+        function generateTestGrid() {
+            const currentSection = testData.currentSection;
+            const targetSectionData = testData.sections[currentSection];
+            
+            targetSectionData.grid = [];
+            targetSectionData.markedChars = [];
+            
+            const sectionData = sectionLetters[currentSection];
+            
+            for (let r = 0; r < 10; r++) {
+                const row = [];
+                for (let c = 0; c < 22; c++) {
+                    const char = sectionData[r][c];
+                    const isTarget = testData.targetChars.includes(char);
+                    
+                    row.push({
+                        char: char,
+                        isTarget: isTarget,
+                        isMarked: false,
+                        row: r,
+                        col: c
+                    });
+                }
+                targetSectionData.grid.push(row);
+            }
+            renderTestGrid();
+        }
+
+        function renderTestGrid() {
+            const currentGrid = testData.sections[testData.currentSection].grid;
+            testElements.grid.innerHTML = '';
+            
+            currentGrid.forEach((row, rIndex) => {
+                row.forEach((charData, cIndex) => {
+                    const charButton = document.createElement('div');
+                    charButton.className = 'char-button';
+                    charButton.textContent = charData.char;
+                    charButton.dataset.row = rIndex;
+                    charButton.dataset.col = cIndex;
+
+                    
+                    if (charData.isMarked) {
+                        charButton.classList.add('marked');
+                    }
+                    
+                    charButton.addEventListener('click', () => toggleCharMark(rIndex, cIndex, charButton));
+                    testElements.grid.appendChild(charButton);
+                });
+            });
+            
+            testElements.sectionInfo.textContent = `Bölüm ${testData.currentSection}/3`;
+            
+            testElements.sectionDots.forEach(dot => {
+                dot.classList.remove('active');
+                if (parseInt(dot.dataset.section) === testData.currentSection) {
+                    dot.classList.add('active');
+                }
+            });
+
+            buttons.nextSection.style.display = 'none'; // Başlangıçta sonraki bölüm butonu gizli
+            buttons.finishTest.style.display = 'none'; // Başlangıçta testi bitir butonu gizli
+            
+            // Butonları doğru şekilde göster
+            checkSectionCompletion();
+        }
+
+        function toggleCharMark(row, col, element) {
+            const section = testData.sections[testData.currentSection];
+            const charData = section.grid[row][col];
+            
+            if (charData.isMarked) return;
+            
+            charData.isMarked = true;
+            element.classList.add('marked');
+            
+            section.markedChars.push({
+                row: row, col: col, char: charData.char, 
+                isTarget: charData.isTarget, time: new Date().getTime() - testData.startTime
+            });
+            
+            checkSectionCompletion();
+        }
+
+        function checkSectionCompletion() {
+            const currentSection = testData.currentSection;
+            if (currentSection < 3) { // İlk 2 bölüm için "Sonraki Bölüm" göster
+                buttons.nextSection.style.display = 'block';
+                buttons.finishTest.style.display = 'none';
+            } else { // Son bölüm için "Testi Bitir" göster
+                buttons.nextSection.style.display = 'none';
+                buttons.finishTest.style.display = 'block';
+            }
+        }
+
+
+
+        function startTest() {
+            resetTestData(); // Testi her başlattığımızda verileri sıfırla
+            testData.startTime = new Date().getTime();
+            testData.currentSection = 1;
+            
+            generateTestGrid();
+            
+            testData.currentElapsedTime = 0;
+            testElements.progress.style.width = "0%";
+            
+            testData.timerInterval = setInterval(() => {
+                testData.currentElapsedTime++;
+                testElements.progress.style.width = `${(testData.currentElapsedTime / testData.testDuration) * 100}%`;
+                
+                if (testData.currentElapsedTime >= testData.testDuration) {
+                    testData.autoCompleted = true;
+                    completeTest();
+                }
+            }, 1000);
+        }
+
+        function calculateSectionResults(sectionNum) {
+            const section = testData.sections[sectionNum];
+            const results = { correct: 0, missed: 0, wrong: 0, score: 0 };
+            
+            section.markedChars.forEach(mark => {
+                if (mark.isTarget) results.correct++;
+                else results.wrong++;
+            });
+            
+            section.grid.forEach(row => {
+                row.forEach(cell => {
+                    if (cell.isTarget && !cell.isMarked) results.missed++;
+                });
+            });
+            results.score = results.correct - (results.missed + results.wrong);
+            
+            section.results = results;
+        }
+
+        function calculateTotalResults() {
+            const total = { correct: 0, missed: 0, wrong: 0, score: 0, ratio: 0 };
+            for (let i = 1; i <= 3; i++) {
+                const sectionResults = testData.sections[i].results;
+                total.correct += sectionResults.correct;
+                total.missed += sectionResults.missed;
+                total.wrong += sectionResults.wrong;
+                total.score += sectionResults.score;
+            }
+            
+            // Toplam hedef sayısını sabit harf dizisinden hesaplayalım
+            let totalPossibleTargets = 0;
+            for (let i = 1; i <= 3; i++) {
+                if (sectionLetters[i]) {
+                    sectionLetters[i].forEach(row => {
+                        row.forEach(char => {
+                            if (testData.targetChars.includes(char)) {
+                                totalPossibleTargets++;
+                            }
+                        });
+                    });
+                }
+            }
+            
+            total.ratio = totalPossibleTargets > 0 ? (total.score / totalPossibleTargets) : 0;
+            testData.totalResults = total;
+        }
+
+
+        
+        function markExampleButton(button) {
+            button.classList.toggle('marked');
+        }
+
+
+
+        function showScreen(screenName) {
+            Object.values(screens).forEach(screen => {
+                if (screen) screen.classList.remove('active');
+            });
+            if (screens[screenName]) {
+                screens[screenName].classList.add('active');
+            }
+        }
+
+   </script>
+</body>
+</html>

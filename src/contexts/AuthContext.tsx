@@ -12,8 +12,8 @@ export interface AuthUser {
   phone?: string;
   avatarUrl?: string;
   isActive: boolean;
-  roles: UserRole[];
-  currentRole: UserRole;
+  roles: string[]; // Dinamik rol isimleri - database'den ne gelirse
+  currentRole: UserRole; // Kategorize edilmiş rol
 }
 
 interface AuthContextType {
@@ -47,25 +47,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single();
 
       if (profileError) {
-        console.error('Error fetching profile:', profileError);
+        // PGRST116 = no rows found - normal yeni kullanıcı oluşturma sırasında
+        if (profileError.code === 'PGRST116') {
+          console.log('👤 Profile not found (likely new user being created):', authUser.email);
+        } else {
+          console.error('Error fetching profile:', profileError);
+        }
         return null;
       }
 
-      // Get user roles
-      const { data: userRoles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', profile.id);
-
-      if (rolesError) {
-        console.error('Error fetching roles:', rolesError);
-        return null;
-      }
-
-      const roles = userRoles.map(ur => ur.role as UserRole);
-      const primaryRole = roles.includes('admin') ? 'admin' : 
-                          roles.includes('trainer') ? 'trainer' :
-                          roles.includes('representative') ? 'representative' : 'user';
+      // Get user roles from JSONB field - dinamik olarak her rol değerini al
+      const roles = Array.isArray(profile.roles) ? profile.roles as string[] : ['kullanici'] as string[];
+      
+      // Dinamik rol kategorisi belirleme - sadece role değerine bak, isim/koda bakma
+      const determineRoleCategory = (userRoles: string[]): UserRole => {
+        // Admin kontrolü - en yüksek yetki
+        if (userRoles.includes('admin')) return 'admin';
+        
+        // Temsilci kontrolü
+        if (userRoles.includes('temsilci')) return 'temsilci';
+        
+        // Beyin antrenörü kontrolü
+        if (userRoles.includes('beyin_antrenoru')) return 'beyin_antrenoru';
+        
+        // Kullanıcı kontrolü - varsayılan
+        if (userRoles.includes('kullanici')) return 'kullanici';
+        
+        // Varsayılan (eski kayıtlar için)
+        return 'kullanici';
+      };
+      
+      const primaryRole = determineRoleCategory(roles);
+      
+      // User profile and roles loaded successfully
 
       const authUserData: AuthUser = {
         id: profile.id,
@@ -113,6 +127,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      // Auth session loaded
+      
       setSession(session);
       if (session?.user) {
         setTimeout(async () => {
@@ -153,16 +169,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     password: string, 
     firstName: string, 
     lastName: string,
-    roles: UserRole[] = ['user']
+    roles: UserRole[] = ['kullanici']
   ): Promise<{ error?: string }> => {
+    // Mevcut session'ı tamamen koru (admin/temsilci/beyin_antrenoru için)
+    const currentSession = await supabase.auth.getSession();
+    const originalUser = user;
+    const originalCurrentRole = currentRole;
+    
     try {
-      const redirectUrl = `${window.location.origin}/`;
+      console.log('🔄 Creating auth user for:', email);
+      console.log('💾 Current session preserved for:', originalUser?.email);
       
-      const { error } = await supabase.auth.signUp({
+      // 1. Supabase Auth'da kullanıcı oluştur
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: redirectUrl,
           data: {
             first_name: firstName,
             last_name: lastName,
@@ -170,15 +192,123 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       });
 
-      if (error) {
-        return { error: error.message };
+      if (authError) {
+        console.error('❌ Auth signup error:', authError);
+        // Session'ı geri yükle
+        if (currentSession.data.session) {
+          await supabase.auth.setSession(currentSession.data.session);
+          setUser(originalUser);
+          setCurrentRole(originalCurrentRole);
+        }
+        return { error: authError.message };
       }
 
-      // TODO: After user is created, assign roles via admin function
-      // This will require additional API call to assign specific roles
+      if (!authData.user) {
+        console.error('❌ No user returned from auth signup');
+        // Session'ı geri yükle
+        if (currentSession.data.session) {
+          await supabase.auth.setSession(currentSession.data.session);
+        }
+        return { error: 'Kullanıcı oluşturulamadı.' };
+      }
+
+      console.log('✅ Auth user created:', authData.user.id);
+
+      // HEMEN session'ı geri yükle - yeni kullanıcıya geçmesin!
+      if (currentSession.data.session) {
+        await supabase.auth.setSession(currentSession.data.session);
+        setUser(originalUser);
+        setCurrentRole(originalCurrentRole);
+        console.log('🔄 Session restored to original user:', originalUser?.email);
+      }
+
+      // 2. Current user'ın users tablosundaki ID'sini bul (parent için)
+      let currentUserId = null;
+      if (user?.id) {
+        currentUserId = user.id; // user.id zaten users tablosundaki ID
+        console.log('✅ Current user ID alındı, Parent ID:', currentUserId);
+      } else {
+        console.log('⚠️ Current user yok (bağımsız kullanıcı olacak)');
+      }
+
+      // 3. Users tablosuna kullanıcı + roller tek seferde kaydet
+      console.log('🔧 Creating user with roles:', roles);
+      console.log('🔧 Parent user ID:', currentUserId);
+      
+      const insertData = {
+        auth_user_id: authData.user.id,
+        email: email,
+        first_name: firstName,
+        last_name: lastName,
+        roles: roles,                       // JSONB array olarak direk gönder
+        supervisor_id: currentUserId       // Kişi bazında hiyerarşi (supervisor_id)
+      };
+      
+      console.log('🔧 Insert data:', insertData);
+      
+      // INSERT öncesi session kontrol
+      const currentSessionCheck = await supabase.auth.getSession();
+      console.log('🔍 INSERT öncesi session kontrol:', {
+        session_exists: !!currentSessionCheck.data.session,
+        user_email: currentSessionCheck.data.session?.user?.email
+      });
+      
+      const { data: newUserData, error: userError } = await supabase
+        .from('users')
+        .insert(insertData)
+        .select('id, roles, supervisor_id')
+        .single();
+
+      if (userError) {
+        console.error('❌ Users tablosuna kayıt hatası:', userError);
+        // Session'ı geri yükle
+        if (currentSession.data.session) {
+          await supabase.auth.setSession(currentSession.data.session);
+          setUser(originalUser);
+          setCurrentRole(originalCurrentRole);
+        }
+        return { error: 'Kullanıcı profili oluşturulamadı: ' + userError.message };
+      }
+
+      if (!newUserData) {
+        // Session'ı geri yükle
+        if (currentSession.data.session) {
+          await supabase.auth.setSession(currentSession.data.session);
+          setUser(originalUser);
+          setCurrentRole(originalCurrentRole);
+        }
+        return { error: 'Kullanıcı ID alınamadı.' };
+      }
+
+      console.log('✅ Kullanıcı başarıyla oluşturuldu!', {
+        id: newUserData.id,
+        roles: newUserData.roles,
+        supervisor_id: newUserData.supervisor_id
+      });
+
+      // BAŞARI: Orijinal session'ı geri yükle (admin/temsilci/beyin_antrenoru)
+      if (currentSession.data.session) {
+        console.log('🔄 Restoring original session for:', originalUser?.email);
+        await supabase.auth.setSession(currentSession.data.session);
+        
+        // State'leri direkt güncelle - timing sorununu çöz
+        setUser(originalUser);
+        setCurrentRole(originalCurrentRole);
+        console.log('✅ Original session restored successfully');
+      }
 
       return {};
     } catch (error) {
+      console.error('Kullanıcı oluşturma hatası:', error);
+      
+      // HATA: Orijinal session'ı geri yükle (admin/temsilci/beyin_antrenoru)
+      if (currentSession.data.session) {
+        console.log('🔄 Restoring original session after error for:', originalUser?.email);
+        await supabase.auth.setSession(currentSession.data.session);
+        setUser(originalUser);
+        setCurrentRole(originalCurrentRole);
+      }
+      
       return { error: 'Kullanıcı oluşturulurken beklenmeyen bir hata oluştu.' };
     }
   };
@@ -223,6 +353,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       toast.error('Bu role geçiş yapma yetkiniz yok');
     }
   };
+
+  // Global window function for HTML tests to access user data
+  useEffect(() => {
+    (window as any).getAuthUser = () => user;
+    
+    return () => {
+      delete (window as any).getAuthUser;
+    };
+  }, [user]);
 
   const value: AuthContextType = {
     user,

@@ -1,0 +1,2562 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>d2 Dikkat Testi</title>
+    
+    <!-- Supabase Client -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        /* === TEMEL STIL === */
+        :root {
+            --primary: #3a86ff;
+            --primary-dark: #2667cc;
+            --secondary: #ff006e;
+            --success: #38b000;
+            --warning: #ffbe0b;
+            --danger: #ff595e;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --gray-light: #e9ecef;
+            --border-radius: 8px;
+            --font-main: 'Segoe UI', Roboto, Arial, sans-serif;
+            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-main);
+            line-height: 1.6;
+            color: var(--dark);
+            background-color: var(--light);
+            padding: 0;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* === HEADER === */
+        header {
+            background-color: white;
+            box-shadow: var(--shadow-sm);
+            padding: 15px 0;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo span {
+            margin-left: 10px;
+        }
+
+        /* === NAVIGATION === */
+        nav ul {
+            list-style: none;
+            display: flex;
+        }
+
+        nav ul li {
+            margin-left: 20px;
+        }
+
+        nav ul li a {
+            text-decoration: none;
+            color: var(--dark);
+            font-weight: 500;
+            padding: 8px 12px;
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+        }
+
+        nav ul li a:hover,
+        nav ul li a.active {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        /* === MAIN CONTENT === */
+        main {
+            flex: 1;
+            padding: 40px 0;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        h1 {
+            font-size: 2rem;
+            color: var(--primary);
+        }
+
+        p {
+            margin-bottom: 1rem;
+        }
+
+        /* === BUTTONS === */
+        .btn {
+            display: inline-block;
+            font-weight: 500;
+            color: white;
+            text-align: center;
+            vertical-align: middle;
+            cursor: pointer;
+            background-color: var(--primary);
+            padding: 12px 20px;
+            font-size: 1rem;
+            line-height: 1.5;
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+            border: none;
+            box-shadow: var(--shadow-sm);
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-dark);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary);
+        }
+
+        .btn-secondary:hover {
+            background-color: #cc0058;
+        }
+
+        .btn-success {
+            background-color: var(--success);
+        }
+
+        .btn-success:hover {
+            background-color: #2a8c00;
+        }
+
+        .btn-lg {
+            padding: 15px 25px;
+            font-size: 1.1rem;
+        }
+
+        .btn-sm {
+            padding: 8px 15px;
+            font-size: 0.9rem;
+        }
+
+        .btn-block {
+            display: block;
+            width: 100%;
+        }
+
+        /* === FORMS === */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        input, select, textarea {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: var(--dark);
+            background-color: white;
+            background-clip: padding-box;
+            border: 1px solid var(--gray-light);
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary);
+            outline: 0;
+            box-shadow: 0 0 0 0.25rem rgba(58, 134, 255, 0.25);
+        }
+
+        /* === CARD === */
+        .card {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            word-wrap: break-word;
+            background-color: white;
+            background-clip: border-box;
+            border: 1px solid var(--gray-light);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            padding: 1rem 1.5rem;
+            background-color: rgba(0, 0, 0, 0.02);
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .card-body {
+            padding: 0.8rem 1rem;
+        }
+
+        .card-footer {
+            padding: 1rem 1.5rem;
+            background-color: rgba(0, 0, 0, 0.02);
+            border-top: 1px solid var(--gray-light);
+        }
+
+        /* === UTILITIES === */
+        .text-center {
+            text-align: center;
+        }
+
+        .mt-1 { margin-top: 0.25rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .mt-3 { margin-top: 1rem; }
+        .mt-4 { margin-top: 1.5rem; }
+        .mt-5 { margin-top: 3rem; }
+
+        .mb-1 { margin-bottom: 0.25rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-3 { margin-bottom: 1rem; }
+        .mb-4 { margin-bottom: 1.5rem; }
+        .mb-5 { margin-bottom: 3rem; }
+
+        .d-flex {
+            display: flex;
+        }
+
+        .justify-content-between {
+            justify-content: space-between;
+        }
+
+        .align-items-center {
+            align-items: center;
+        }
+
+        .flex-column {
+            flex-direction: column;
+        }
+
+        /* === TEST SPECIFIC STYLES === */
+        .screens {
+            display: none;
+        }
+
+        .screens.active {
+            display: block;
+        }
+
+        .info-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            background-color: var(--primary);
+            color: white;
+            padding: 10px 15px;
+            border-radius: var(--border-radius);
+            font-weight: bold;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .test-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-md);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background-color: var(--gray-light);
+            border-radius: 4px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            background-color: var(--primary);
+            transition: width 23s linear;
+        }
+
+        /* d2 Test Grid Styles */
+        .test-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px; 
+            padding: 0px;
+            background-color: white;
+            border-radius: var(--border-radius);
+            margin-bottom: 0px;
+            overflow-x: visible;
+            max-height: none;
+        }
+
+        .line {
+            display: flex;
+            flex-wrap: nowrap;
+            justify-content: center;
+            opacity: 0.7;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            white-space: nowrap;
+            margin-bottom: 0;
+            position: relative;
+        }
+        
+        .line.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .char-wrapper {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            min-width: 16px;
+            width: 16px;
+            height: 32px;
+            font-size: 12pt;
+            cursor: pointer;
+            text-align: center;
+            margin: 0 1px;
+            transition: all 0.2s ease;
+        }
+
+        .marks {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1px;
+            width: 100%;
+            min-height: 6px;
+        }
+        
+        .marks-above {
+            order: -1;
+            margin-bottom: 1px;
+        }
+        
+        .marks-below {
+            order: 1;
+            margin-top: 1px;
+        }
+
+        .mark {
+            width: 1px;
+            height: 4px;
+            background-color: var(--dark);
+            transition: background-color 0.2s ease;
+        }
+
+        .letter {
+            line-height: 1;
+            color: var(--dark);
+            transition: color 0.2s ease;
+        }
+
+        .char-wrapper.clicked .letter {
+            color: var(--danger);
+        }
+        
+        .char-wrapper.clicked .mark {
+            background-color: var(--danger);
+        }
+
+        /* Result screen styles */
+        .result-card {
+            margin-bottom: 30px;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+        }
+
+        .result-header {
+            background-color: var(--primary);
+            color: white;
+            padding: 15px 20px;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .result-body {
+            padding: 20px;
+            background-color: white;
+        }
+
+        .result-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--dark);
+            margin-bottom: 5px;
+        }
+
+        .result-label {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        .result-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .results-table th, 
+        .results-table td {
+            border: 1px solid var(--gray-light);
+            padding: 10px;
+            text-align: left;
+        }
+        
+        .results-table th {
+            background-color: var(--gray-light);
+            font-weight: 600;
+        }
+
+        /* Target example styles */
+        .target-example {
+            font-size: 1.3em;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0 8px;
+            vertical-align: middle;
+            padding: 10px;
+            border: 1px solid var(--gray-light);
+            border-radius: var(--border-radius);
+            background-color: white;
+        }
+        
+        .target-example .marks {
+            min-height: 10px;
+        }
+        
+        .target-example .mark {
+            width: 2px;
+            height: 7px;
+            background-color: var(--primary);
+        }
+        
+        .target-example .letter {
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        /* Practice grid - Gerçek test gibi */
+        .practice-container {
+            background-color: white;
+            border: 2px solid var(--primary);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #practice-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 0px;
+            background-color: white;
+            margin: 0;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #practice-grid .line {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        #practice-grid .line.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Message boxes */
+        .message-box {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 25px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-md);
+            display: none;
+            z-index: 1000;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .warning-message {
+            background-color: var(--warning);
+            color: var(--dark);
+        }
+
+        .success-message {
+            background-color: var(--success);
+            color: white;
+        }
+
+        /* Practice Instructions */
+        .practice-instructions {
+            background-color: #f0f7ff;
+            border: 2px solid var(--primary);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .step {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .step-number {
+            background-color: var(--primary);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .arrow-indicator {
+            display: inline-block;
+            color: var(--primary);
+            font-weight: bold;
+            margin: 0 5px;
+        }
+
+        .highlight-text {
+            background-color: #ffeb3b;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+
+        /* Animated Line Scanner */
+        .line-scanner {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 5px; /* 3px'ten 5px'e çıkarıldı */
+            background-color: var(--danger);
+            display: none;
+            z-index: 200;
+            pointer-events: none;
+            box-shadow: 0 2px 8px rgba(255, 0, 0, 0.5); /* Gölge eklendi */
+        }
+
+        .line-scanner::after {
+            content: '→';
+            position: absolute;
+            right: -25px; /* -20px'ten -25px'e */
+            top: -10px; /* -8px'ten -10px'e */
+            color: var(--danger);
+            font-size: 24px; /* 20px'ten 24px'e */
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); /* Gölge eklendi */
+        }
+
+        @keyframes scanLine {
+            from {
+                left: 0;
+                width: 0;
+            }
+            to {
+                left: 0;
+                width: 100%;
+            }
+        }
+
+        @keyframes returnToStart {
+            from {
+                right: 0;
+                width: 100%;
+            }
+            to {
+                right: 0;
+                width: 0;
+            }
+        }
+
+        /* Guide text for line change */
+        .line-change-guide {
+            position: absolute;
+            background-color: var(--warning);
+            color: var(--dark);
+            padding: 8px 15px;
+            border-radius: var(--border-radius);
+            font-weight: bold;
+            font-size: 14px;
+            white-space: nowrap;
+            box-shadow: var(--shadow-md);
+            display: none;
+            z-index: 201;
+            pointer-events: none;
+        }
+
+        /* Practice ended overlay */
+        .practice-ended-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+            border-radius: var(--border-radius);
+        }
+
+        .practice-ended-message {
+            text-align: center;
+            padding: 30px;
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-md);
+            border: 2px solid var(--success);
+        }
+
+        .practice-ended-message h3 {
+            color: var(--success);
+            margin-bottom: 15px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .header-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            nav ul {
+                margin-top: 15px;
+                flex-wrap: wrap;
+            }
+
+            nav ul li {
+                margin: 5px 10px 5px 0;
+            }
+            
+            .practice-container {
+                overflow-x: auto;
+            }
+            
+            .char-wrapper {
+                min-width: 14px;
+                width: 14px;
+                height: 28px;
+                font-size: 11pt;
+            }
+            
+            .test-grid {
+                gap: 8px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .char-wrapper {
+                min-width: 12px;
+                width: 12px;
+                height: 25px;
+                font-size: 10pt;
+            }
+            
+            .mark {
+                width: 1px;
+                height: 3px;
+            }
+            
+            .test-grid {
+                gap: 5px;
+                padding: 8px;
+            }
+            
+            .card-body {
+                padding: 0.6rem 0.8rem;
+            }
+        }
+        
+        @media (min-width: 992px) {
+            .test-grid {
+                max-width: 950px;
+                margin: 0 auto 20px auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container header-container">
+            <a href="#" class="logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span>d2 Dikkat Testi</span>
+            </a>
+
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <div class="container">
+            <!-- Welcome Screen -->
+            <div id="welcome-screen" class="screens active">
+                <div class="card">
+                    <div class="card-header">
+                        <h1>d2 Dikkat Testine Hoş Geldiniz</h1>
+                    </div>
+                    <div class="card-body">
+                        <p>Bu test, dikkat sürdürme, odaklanma ve seçici dikkat becerilerinizi değerlendirmek için tasarlanmıştır.</p>
+                        <p>Teste başlamaya hazır olduğunuzda aşağıdaki butona tıklayın.</p>
+                        
+                        <div class="text-center mt-4">
+                            <button type="button" id="start-test-btn" class="btn btn-lg">Yönergelere Geç</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Instructions Screen -->
+            <div id="instructions-screen" class="screens">
+                <div class="card">
+                    <div class="card-header">
+                        <h1>Test Yönergeleri</h1>
+                    </div>
+                    <div class="card-body">
+                        <p>Lütfen aşağıdaki yönergeleri dikkatlice okuyunuz.</p>
+                        <ul>
+                            <li>Test toplam <strong>14 satırdan</strong> oluşur ve her satırda <strong>47 karakter</strong> bulunur.</li>
+                            <li>Hedefiniz, üzerinde <strong>toplamda 2 adet çizgi/tırnak</strong> bulunan 'd' harflerini bulup işaretlemektir. Bu hedefler şunlardır:</li>
+                        </ul>
+                        
+                        <div class="d-flex justify-content-center mt-3 mb-3">
+                            <div class="target-example">
+                                <div class="marks marks-above"><span class="mark"></span></div>
+                                <span class="letter">d</span>
+                                <div class="marks marks-below"><span class="mark"></span></div>
+                            </div>
+                            <div class="target-example">
+                                <div class="marks marks-above"><span class="mark"></span><span class="mark"></span></div>
+                                <span class="letter">d</span>
+                                <div class="marks marks-below"></div>
+                            </div>
+                            <div class="target-example">
+                                <div class="marks marks-above"></div>
+                                <span class="letter">d</span>
+                                <div class="marks marks-below"><span class="mark"></span><span class="mark"></span></div>
+                            </div>
+                        </div>
+
+                        <div class="practice-instructions">
+                            <h3 class="mb-3">Testi Nasıl Yapacaksınız?</h3>
+                            
+                            <div class="step">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <strong>Soldan Sağa Tarayın:</strong> Her satırı <span class="highlight-text">soldan sağa doğru</span> dikkatlice tarayarak hedef karakterleri bulun. 
+                                    <span class="arrow-indicator">→</span>
+                                </div>
+                            </div>
+
+                            <div class="step">
+                                <div class="step-number">2</div>
+                                <div class="step-content">
+                                    <strong>Hedefleri İşaretleyin:</strong> Toplamda 2 çizgisi olan 'd' harflerini gördüğünüzde üzerine tıklayın. İşaretlenen harfler <span style="color: var(--danger);">kırmızı</span> olacaktır.
+                                </div>
+                            </div>
+
+                            <div class="step">
+                                <div class="step-number">3</div>
+                                <div class="step-content">
+                                    <strong>Satır Sonuna Ulaşın:</strong> Satır sonuna geldiğinizde, <span class="highlight-text">20 saniye</span> dolduğunda sistem otomatik olarak bir sonraki satıra geçecektir.
+                                    <span class="arrow-indicator">↓</span>
+                                </div>
+                            </div>
+
+                            <div class="step">
+                                <div class="step-number">4</div>
+                                <div class="step-content">
+                                    <strong>Dikkat:</strong> Bir karaktere tıkladığınızda <span class="highlight-text">seçim geri alınamaz</span>. Sadece aktif (parlak) satırda işaretleme yapabilirsiniz.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <h3 class="mt-4">İnteraktif Pratik Uygulama:</h3>
+                        <p>Aşağıdaki testte gerçek gibi çalışan bir deneme yapabilirsiniz. Bu bölüm puanlanmayacaktır.</p>
+                        
+                        <div class="practice-container" id="practice-wrapper">
+                            <!-- Practice info bar -->
+                            <div class="info-bar">
+                                <div id="practice-line-info">Satır: 1/3</div>
+                                <div>Pratik Uygulama</div>
+                            </div>
+                            
+                            <!-- Practice progress bar -->
+                            <div class="progress-bar">
+                                <div id="practice-progress" class="progress" style="width: 0%;"></div>
+                            </div>
+                            
+                            <!-- Practice grid -->
+                            <div id="practice-grid" style="position: relative;">
+                                <!-- JavaScript ile oluşturulacak -->
+                            </div>
+                            
+                            <!-- Line scanner -->
+                            <!--<div id="line-scanner" class="line-scanner"></div>-->
+                            
+                            <!-- Line change guide -->
+                            <!--<div id="line-change-guide" class="line-change-guide">
+                                Satır bitti! Şimdi aşağıdaki satıra geçin ve yine soldan başlayın
+                            </div>-->
+                            
+                            <!-- Practice ended overlay -->
+                            <div id="practice-ended-overlay" class="practice-ended-overlay">
+                                <div class="practice-ended-message">
+                                    <h3>Pratik Uygulama Tamamlandı!</h3>
+                                    <p>Artık gerçek teste hazırsınız.</p>
+                                    <p>Aşağıdaki "Teste Başla" butonuna tıklayarak gerçek teste geçebilirsiniz.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <button type="button" id="start-practice-btn" class="btn btn-success">Pratik Uygulamayı Başlat</button>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="button" id="back-to-welcome-btn" class="btn btn-secondary">Geri</button>
+                            <button type="button" id="continue-to-test-btn" class="btn btn-lg">Teste Başla</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Test Screen -->
+            <div id="test-screen" class="screens">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h2>d2 Dikkat Testi</h2>
+                        <div>
+                            <strong>Hedef:</strong> 
+                            <span style="font-weight: bold; color: var(--primary); margin-left: 10px;">Toplamda 2 çizgili 'd' harfleri</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="info-bar">
+                            <div id="current-line-info">Satır: 1/14</div>
+                        </div>
+                        
+                        <div class="progress-bar">
+                           <div id="test-progress" class="progress" style="width: 0%;"></div>
+                       </div>
+                       
+                       <div id="test-grid" class="test-grid">
+                           <!-- JavaScript ile oluşturulacak -->
+                       </div>
+                   </div>
+               </div>
+           </div>
+
+           <!-- Results Screen -->
+           <div id="results-screen" class="screens">
+               <div class="card">
+                   <div class="card-header">
+                       <h1>Test Sonuçları</h1>
+                   </div>
+                   <div class="card-body">
+                       <div id="user-info-summary" class="mb-4"></div>
+                       
+                       <p>Testi tamamladınız. İşte puanlarınız:</p>
+                       
+                       <table class="results-table">
+                           <thead>
+                               <tr>
+                                   <th>Puan Türü</th>
+                                   <th>Değer</th>
+                               </tr>
+                           </thead>
+                           <tbody id="results-tbody">
+                               <!-- JavaScript ile doldurulacak -->
+                           </tbody>
+                       </table>
+                       
+                       <div class="d-flex justify-content-between mt-4">
+                           <button type="button" id="restart-test-btn" class="btn btn-lg">Testi Yeniden Başlat</button>
+                       </div>
+                   </div>
+               </div>
+           </div>
+
+       </div>
+   </main>
+
+   <!-- Message Boxes -->
+   <div id="warning-message" class="message-box warning-message">Lütfen bulunduğunuz (aktif) satırda işaretleme yapın.</div>
+   <div id="end-test-message" class="message-box success-message">Test tamamlandı! Sonuçlar hesaplanıyor...</div>
+
+   
+
+   <!-- JavaScript -->
+   <script>
+       // --- DOM Elementleri ---
+       const screens = {
+           welcome: document.getElementById('welcome-screen'),
+           instructions: document.getElementById('instructions-screen'),
+           test: document.getElementById('test-screen'),
+           results: document.getElementById('results-screen')
+       };
+
+
+
+       // Butonlar
+       const buttons = {
+           startTest: document.getElementById('start-test-btn'),
+           backToWelcome: document.getElementById('back-to-welcome-btn'),
+           continueToTest: document.getElementById('continue-to-test-btn'),
+           restartTest: document.getElementById('restart-test-btn'),
+           startPractice: document.getElementById('start-practice-btn')
+       };
+
+       // Test Öğeleri
+       const practiceGrid = document.getElementById('practice-grid');
+       const testGrid = document.getElementById('test-grid');
+       const currentLineInfoDisplay = document.getElementById('current-line-info');
+       const testProgressFill = document.getElementById('test-progress');
+       const warningMessage = document.getElementById('warning-message');
+       const endTestMessage = document.getElementById('end-test-message');
+       const resultsTbody = document.getElementById('results-tbody');
+       const userInfoSummaryDiv = document.getElementById('user-info-summary');
+
+       // Practice elements
+       const practiceLineInfo = document.getElementById('practice-line-info');
+       const practiceProgress = document.getElementById('practice-progress');
+       const lineScanner = document.getElementById('line-scanner');
+       const lineChangeGuide = document.getElementById('line-change-guide');
+       const practiceEndedOverlay = document.getElementById('practice-ended-overlay');
+
+       // --- Supabase Client Initialize ---
+       const SUPABASE_URL = 'https://gamjzzomkosvqhficabt.supabase.co';
+       const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhbWp6em9ta29zdnFoZmljYWJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI4ODc3MDAsImV4cCI6MjA2ODQ2MzcwMH0.r8KkywdhNSP1hxzSAlKo8SB5jOEb0KQRUBfZ9Va0p9I';
+       const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+       // --- Test Parametreleri ---
+       const TOTAL_LINES = 14;
+       const CHARS_PER_LINE = 47;
+       const TIME_PER_LINE = 23; // Gerçekte 23 saniye
+       const PRACTICE_LINES = 3;
+       const PRACTICE_TIME_PER_LINE = 23; // Pratik için de 23 saniye
+
+       let currentLineIndex = 0;
+       let lineTimerInterval;
+       let progressInterval;
+       let testCharacterData = [];
+
+       // Sistem kullanıcı bilgileri (SystemUser'dan gelecek)
+       let systemUserData = null;
+
+       // Practice variables
+       let practiceCurrentLine = 0;
+       let practiceTimer;
+       let practiceRunning = false;
+       let scannerAnimation;
+
+       const lineTargetDistribution = [
+           { d1a1b: 6, d2a0b: 5, d0a2b: 10, totalTargets: 21 }, { d1a1b: 6, d2a0b: 7, d0a2b: 9,  totalTargets: 22 },
+           { d1a1b: 8, d2a0b: 9, d0a2b: 4,  totalTargets: 21 }, { d1a1b: 6, d2a0b: 5, d0a2b: 10, totalTargets: 21 },
+           { d1a1b: 6, d2a0b: 7, d0a2b: 9,  totalTargets: 22 }, { d1a1b: 8, d2a0b: 9, d0a2b: 4,  totalTargets: 21 },
+           { d1a1b: 6, d2a0b: 5, d0a2b: 10, totalTargets: 21 }, { d1a1b: 6, d2a0b: 7, d0a2b: 9,  totalTargets: 22 },
+           { d1a1b: 8, d2a0b: 9, d0a2b: 4,  totalTargets: 21 }, { d1a1b: 6, d2a0b: 5, d0a2b: 10, totalTargets: 21 },
+           { d1a1b: 6, d2a0b: 7, d0a2b: 9,  totalTargets: 22 }, { d1a1b: 8, d2a0b: 9, d0a2b: 4,  totalTargets: 21 },
+           { d1a1b: 6, d2a0b: 5, d0a2b: 10, totalTargets: 21 }, { d1a1b: 6, d2a0b: 7, d0a2b: 9,  totalTargets: 22 }
+       ];
+
+       const targetTypes = {
+           d1a1b: { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+           d2a0b: { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+           d0a2b: { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true }
+       };
+
+       const distractorDefs = [
+           { letter: 'd', numTicksAbove: 0, numTicksBelow: 0, isTarget: false },
+           { letter: 'd', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+           { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+           { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+           { letter: 'p', numTicksAbove: 0, numTicksBelow: 0, isTarget: false },
+           { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+           { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+           { letter: 'p', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+           { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+           { letter: 'p', numTicksAbove: 1, numTicksBelow: 1, isTarget: false },
+           { letter: 'p', numTicksAbove: 2, numTicksBelow: 2, isTarget: false }
+       ];
+
+
+
+       function createCharElement(charDef, globalIdx) {
+           const charWrapper = document.createElement('div');
+           charWrapper.classList.add('char-wrapper');
+           if (globalIdx !== undefined && globalIdx !== null) {
+               charWrapper.dataset.globalIndex = globalIdx;
+           }
+
+           const marksAboveDiv = document.createElement('div');
+           marksAboveDiv.classList.add('marks', 'marks-above');
+           for(let k=0; k < (charDef.numTicksAbove || 0); k++) {
+               const markSpan = document.createElement('span');
+               markSpan.classList.add('mark');
+               marksAboveDiv.appendChild(markSpan);
+           }
+
+           const letterSpan = document.createElement('span');
+           letterSpan.classList.add('letter');
+           letterSpan.textContent = charDef.letter;
+
+           const marksBelowDiv = document.createElement('div');
+           marksBelowDiv.classList.add('marks', 'marks-below');
+           for(let k=0; k < (charDef.numTicksBelow || 0); k++) {
+               const markSpan = document.createElement('span');
+               markSpan.classList.add('mark');
+               marksBelowDiv.appendChild(markSpan);
+           }
+           
+           charWrapper.appendChild(marksAboveDiv);
+           charWrapper.appendChild(letterSpan);
+           charWrapper.appendChild(marksBelowDiv);
+           
+           return charWrapper;
+       }
+       
+       // Word dosyasından alınan tam 14 satır (47 karakter/satır)
+       const fixedLinePatterns = [
+           // Satır 1 (21 hedef)
+           [
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false }
+           ],
+           // Satır 2 (22 hedef)
+           [
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true }
+           ],
+           // Satır 3 (21 hedef)
+           [
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true }
+           ],
+           // Satır 4 (21 hedef)
+           [
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false }
+           ],
+           // Satır 5 (22 hedef)
+           [
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true }
+           ],
+           // Satır 6 (21 hedef)
+           [
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true }
+           ],
+           // Satır 7 (21 hedef)
+           [
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false }
+           ],
+           // Satır 8 (22 hedef)
+           [
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true }
+           ],
+           // Satır 9 (21 hedef)
+           [
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true }
+           ],
+           // Satır 10 (21 hedef)
+           [
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false }
+           ],
+           // Satır 11 (22 hedef)
+           [
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true }
+           ],
+           // Satır 12 (21 hedef)
+           [
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true }
+           ],
+           // Satır 13 (21 hedef)
+           [
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false }
+           ],
+           // Satır 14 (22 hedef)
+           [
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 2, isTarget: false },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 1, isTarget: false },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 1, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 1, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'd', numTicksAbove: 0, numTicksBelow: 2, isTarget: true },
+               { letter: 'p', numTicksAbove: 2, numTicksBelow: 0, isTarget: false },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true },
+               { letter: 'p', numTicksAbove: 0, numTicksBelow: 2, isTarget: false },
+               { letter: 'd', numTicksAbove: 1, numTicksBelow: 1, isTarget: true },
+               { letter: 'd', numTicksAbove: 2, numTicksBelow: 0, isTarget: true }
+           ]
+       ];
+
+       function generateLineContent(lineIdxForDistribution, isPractice = false) {
+           // Her satır için kendi pattern'ini kullan
+           if (fixedLinePatterns[lineIdxForDistribution]) {
+               return [...fixedLinePatterns[lineIdxForDistribution]];
+           }
+           
+           // Fallback - eski rastgele sistem
+           let charactersForThisLine = [];
+           const currentLineDist = lineTargetDistribution[lineIdxForDistribution % lineTargetDistribution.length];
+
+           for(let k=0; k < currentLineDist.d1a1b; k++) charactersForThisLine.push(targetTypes.d1a1b);
+           for(let k=0; k < currentLineDist.d2a0b; k++) charactersForThisLine.push(targetTypes.d2a0b);
+           for(let k=0; k < currentLineDist.d0a2b; k++) charactersForThisLine.push(targetTypes.d0a2b);
+
+           const numCharsForLine = CHARS_PER_LINE;
+           const numDistractorsNeeded = numCharsForLine - currentLineDist.totalTargets;
+           
+           for (let k = 0; k < numDistractorsNeeded; k++) {
+               if (distractorDefs.length > 0) {
+                   charactersForThisLine.push(distractorDefs[Math.floor(Math.random() * distractorDefs.length)]);
+               } else {
+                   charactersForThisLine.push({ letter: (Math.random() < 0.5 ? 'd' : 'p'), numTicksAbove: 0, numTicksBelow: 0, isTarget: false });
+               }
+           }
+           
+           while(charactersForThisLine.length < numCharsForLine) {
+               charactersForThisLine.push(distractorDefs[Math.floor(Math.random() * distractorDefs.length)]);
+           }
+           
+           charactersForThisLine = charactersForThisLine.slice(0, numCharsForLine);
+           // shuffleArray(charactersForThisLine); // Shuffle devre dışı - sabit sıralama korunuyor
+           return charactersForThisLine;
+       }
+
+             function generateLinesToDOM(gridElement, numLines, isPractice = false) {
+          gridElement.innerHTML = '';
+          if (!isPractice) testCharacterData = [];
+          let globalCharIndex = 0;
+
+          for (let i = 0; i < numLines; i++) {
+              const lineDiv = document.createElement('div');
+              lineDiv.classList.add('line');
+              if (isPractice && i === 0) lineDiv.classList.add('active');
+              lineDiv.dataset.lineIndex = i;
+              
+              const lineContent = generateLineContent(i, isPractice);
+
+              lineContent.forEach((charDef, charIdxInLine) => {
+                  const currentGlobalIndex = isPractice ? null : globalCharIndex;
+                  const charElement = createCharElement(charDef, currentGlobalIndex);
+                  
+                  if (isPractice) {
+                      charElement.addEventListener('click', handlePracticeCharClick);
+                      charElement.dataset.isTarget = charDef.isTarget;
+                      charElement.dataset.charIndex = charIdxInLine;
+                  } else {
+                      charElement.addEventListener('click', handleCharClick);
+                      testCharacterData.push({
+                          globalIndex: globalCharIndex,
+                          lineIndex: i,
+                          charLetter: charDef.letter,
+                          numTicksAbove: charDef.numTicksAbove || 0,
+                          numTicksBelow: charDef.numTicksBelow || 0,
+                          isTarget: charDef.isTarget,
+                          isClicked: false
+                      });
+                      globalCharIndex++;
+                  }
+                  lineDiv.appendChild(charElement);
+              });
+              gridElement.appendChild(lineDiv);
+          }
+      }
+       
+               function generatePracticeLinesDOM() {
+            generateLinesToDOM(practiceGrid, PRACTICE_LINES, true);
+        }
+
+       function handleCharClick(event) {
+           const charWrapper = event.currentTarget;
+           const lineDiv = charWrapper.parentElement;
+
+           if (!lineDiv.classList.contains('active')) {
+               showWarning("Lütfen bulunduğunuz (aktif) satırda işaretleme yapın.");
+               return;
+           }
+           
+           if (!charWrapper.classList.contains('clicked')) {
+               charWrapper.classList.add('clicked');
+               const globalIndex = parseInt(charWrapper.dataset.globalIndex);
+               const dataEntry = testCharacterData.find(d => d.globalIndex === globalIndex);
+               if (dataEntry) {
+                   dataEntry.isClicked = true;
+               }
+           }
+       }
+
+       function handlePracticeCharClick(event) {
+           const charWrapper = event.currentTarget;
+           const lineDiv = charWrapper.parentElement;
+
+           if (!lineDiv.classList.contains('active')) {
+               showWarning("Lütfen bulunduğunuz (aktif) satırda işaretleme yapın.");
+               return;
+           }
+           
+           if (!charWrapper.classList.contains('clicked')) {
+               charWrapper.classList.add('clicked');
+           }
+       }
+
+       function showWarning(message) {
+           warningMessage.textContent = message;
+           warningMessage.style.display = 'block';
+           setTimeout(() => { warningMessage.style.display = 'none'; }, 2000);
+       }
+       
+       function showEndTestMsg(message) {
+           endTestMessage.textContent = message;
+           endTestMessage.style.display = 'block';
+           setTimeout(() => { endTestMessage.style.display = 'none'; }, 3000);
+       }
+
+       function switchScreen(screenId) {
+           // Eğer yönerge ekranından çıkıyorsak pratik testi durdur
+           if (screens.instructions.classList.contains('active') && screenId !== 'instructions') {
+               endPractice(false);
+           }
+           
+           Object.values(screens).forEach(screen => screen.classList.remove('active'));
+           if (screens[screenId]) {
+               screens[screenId].classList.add('active');
+           }
+       }
+
+       function updateProgressBar() {
+           testProgressFill.style.transition = 'none';
+           testProgressFill.style.width = '0%';
+           
+           setTimeout(() => {
+               testProgressFill.style.transition = `width ${TIME_PER_LINE}s linear`;
+               testProgressFill.style.width = '100%';
+           }, 50);
+       }
+
+       function updatePracticeProgressBar() {
+           practiceProgress.style.transition = 'none';
+           practiceProgress.style.width = '0%';
+           
+           setTimeout(() => {
+               practiceProgress.style.transition = `width ${PRACTICE_TIME_PER_LINE}s linear`;
+               practiceProgress.style.width = '100%';
+           }, 50);
+       }
+
+       function activateLine(index) {
+           const allLines = testGrid.querySelectorAll('.line');
+           allLines.forEach(line => line.classList.remove('active'));
+           
+           if (index < TOTAL_LINES) {
+               const activeLine = allLines[index];
+               if (activeLine) {
+                   activeLine.classList.add('active');
+                   if (index === 0) {
+                       testGrid.scrollTop = 0;
+                   } else {
+                       activeLine.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                   }
+               }
+               currentLineInfoDisplay.textContent = `Satır: ${index + 1} / ${TOTAL_LINES}`;
+               updateProgressBar();
+           } else {
+               endTest();
+           }
+       }
+
+       // Mevcut showLineScanner fonksiyonunu bulun ve şu şekilde değiştirin:
+       function showLineScanner(lineElement) {
+            /*const lineRect = lineElement.getBoundingClientRect();
+            const containerRect = practiceGrid.getBoundingClientRect();
+            
+            lineScanner.style.display = 'block';
+            lineScanner.style.top = `${lineRect.top - containerRect.top + lineRect.height/2}px`;
+            lineScanner.style.animation = 'scanLine 15s linear forwards'; // 4s'den 8s'ye çıkarıldı
+            
+            // Satır sonunda rehberlik göster
+            setTimeout(() => {
+                if (practiceCurrentLine < PRACTICE_LINES - 1) {
+                    lineChangeGuide.style.display = 'block';
+                    lineChangeGuide.style.top = `${lineRect.bottom - containerRect.top + 10}px`;
+                    lineChangeGuide.style.left = '50%';
+                    lineChangeGuide.style.transform = 'translateX(-50%)';
+                    
+                    // Çizgiyi geri döndür
+                    setTimeout(() => {
+                        lineScanner.style.animation = 'returnToStart 2s linear forwards'; // 1s'den 2s'ye çıkarıldı
+                        setTimeout(() => {
+                            lineScanner.style.display = 'none';
+                            lineChangeGuide.style.display = 'none';
+                        }, 2000); // 1000'den 2000'e çıkarıldı
+                    }, 3000); // 2000'den 3000'e çıkarıldı
+                }
+            }, 8000); // 4000'den 8000'e çıkarıldı*/
+        }
+
+       function activatePracticeLine(index) {
+           const allLines = practiceGrid.querySelectorAll('.line');
+           allLines.forEach(line => line.classList.remove('active'));
+           
+           if (index < PRACTICE_LINES) {
+               const activeLine = allLines[index];
+               if (activeLine) {
+                   activeLine.classList.add('active');
+                   
+                   // İlk satırda scanner animasyonunu göster
+                  /* if (index === 0 && practiceRunning) {
+                       setTimeout(() => {
+                           showLineScanner(activeLine);
+                       }, 1000);
+                   }*/
+               }
+               practiceLineInfo.textContent = `Satır: ${index + 1}/${PRACTICE_LINES}`;
+               updatePracticeProgressBar();
+           } else {
+               endPractice(true);
+           }
+       }
+
+               function startPractice() {
+            if (practiceRunning) return;
+            
+            practiceRunning = true;
+            practiceCurrentLine = 0;
+            buttons.startPractice.disabled = true;
+            buttons.startPractice.textContent = 'Pratik Devam Ediyor...';
+            
+            // Overlay'i gizle
+            practiceEndedOverlay.style.display = 'none';
+            
+            generatePracticeLinesDOM();
+            activatePracticeLine(0);
+            startPracticeTimer();
+        }
+
+       function startPracticeTimer() {
+           clearInterval(practiceTimer);
+           practiceTimer = setInterval(() => {
+               practiceCurrentLine++;
+               if (practiceCurrentLine < PRACTICE_LINES) {
+                   activatePracticeLine(practiceCurrentLine);
+               } else {
+                   endPractice(true);
+               }
+           }, PRACTICE_TIME_PER_LINE * 1000);
+       }
+
+       function endPractice(showOverlay = true) {
+           clearInterval(practiceTimer);
+           practiceRunning = false;
+           /*lineScanner.style.display = 'none';
+           lineChangeGuide.style.display = 'none';*/
+           
+           buttons.startPractice.disabled = false;
+           buttons.startPractice.textContent = 'Pratik Uygulamayı Tekrar Başlat';
+           
+           if (showOverlay) {
+               practiceEndedOverlay.style.display = 'flex';
+           }
+       }
+
+       function startLineTimer() {
+           clearInterval(lineTimerInterval);
+           lineTimerInterval = setInterval(() => {
+               currentLineIndex++;
+               if (currentLineIndex < TOTAL_LINES) {
+                   activateLine(currentLineIndex);
+               } else {
+                   endTest();
+               }
+           }, TIME_PER_LINE * 1000);
+       }
+       
+       function initTestState() {
+           currentLineIndex = 0;
+           testCharacterData = [];
+           resultsTbody.innerHTML = '';
+           currentLineInfoDisplay.textContent = `Satır: - / ${TOTAL_LINES}`;
+           testProgressFill.style.width = '0%';
+       }
+
+       function startMainTest() {
+           initTestState();
+           switchScreen('test');
+           generateLinesToDOM(testGrid, TOTAL_LINES, false);
+           activateLine(currentLineIndex);
+           startLineTimer();
+       }
+
+       function calculateScores() {
+           let TN_val = 0;
+           const clickedItems = testCharacterData.filter(item => item.isClicked);
+           if (clickedItems.length > 0) {
+               TN_val = Math.max(...clickedItems.map(item => item.globalIndex)) + 1;
+           }
+
+           let D = 0, E1 = 0, E2 = 0;
+           let itemsProcessedPerLineCounts = new Array(TOTAL_LINES).fill(0);
+
+           testCharacterData.forEach(item => {
+               if (item.isClicked) {
+                   if (item.globalIndex < TN_val) {
+                       if (item.isTarget) D++;
+                       else E1++;
+                   }
+               }
+               
+               if (item.globalIndex < TN_val) {
+                   if (item.isTarget && !item.isClicked) E2++;
+               }
+           });
+           
+           for(let i=0; i<TOTAL_LINES; i++) {
+               const firstCharGlobalIndexOfLine = i * CHARS_PER_LINE;
+               const endScanPointForLine = Math.min(TN_val, firstCharGlobalIndexOfLine + CHARS_PER_LINE);
+               
+               if (endScanPointForLine > firstCharGlobalIndexOfLine) {
+                   itemsProcessedPerLineCounts[i] = endScanPointForLine - firstCharGlobalIndexOfLine;
+               } else if (firstCharGlobalIndexOfLine >= TN_val) {
+                   itemsProcessedPerLineCounts[i] = 0;
+               }
+           }
+
+           const E = E1 + E2;
+           const CP = D - E1;
+           const TN_E = TN_val - E;
+
+           const relevantLineCountsForFR = itemsProcessedPerLineCounts.filter(count => count > 0);
+           const B_max = relevantLineCountsForFR.length > 0 ? Math.max(...relevantLineCountsForFR) : 0;
+           const B_min = relevantLineCountsForFR.length > 0 ? Math.min(...relevantLineCountsForFR) : 0;
+           const FR = (B_max > 0 && relevantLineCountsForFR.length >=1) ? B_max - B_min : 0;
+
+           resultsTbody.innerHTML = `
+               <tr><td>Toplam İşlenen Madde (TN)</td><td>${TN_val}</td></tr>
+               <tr><td>Doğru Sayısı (D)</td><td>${D}</td></tr>
+               <tr><td>Yanlış İşaretleme (E1)</td><td>${E1}</td></tr>
+               <tr><td>Boş Bırakma (E2)</td><td>${E2}</td></tr>
+               <tr><td>Toplam Hata (E = E1+E2)</td><td>${E}</td></tr>
+               <tr><td>Konsantrasyon Performansı (CP = D-E1)</td><td>${CP}</td></tr>
+               <tr><td>TN - E</td><td>${TN_E}</td></tr>
+               <tr><td>Dalgalanma Oranı (FR = Bmax-Bmin)</td><td>${FR}</td></tr>
+           `;
+           
+           userInfoSummaryDiv.innerHTML = `
+               <div class="mb-3">
+                   <h3>Kullanıcı Bilgileri</h3>
+                   <p><strong>Ad Soyad:</strong> ${systemUserData ? systemUserData.name : 'N/A'}</p>
+                   <p><strong>Email:</strong> ${systemUserData ? systemUserData.email : 'N/A'}</p>
+               </div>
+           `;
+           
+           // 🔍 DEBUG: Test sonuçları console'da göster
+           console.log('🧪 D2 TEST SONUÇLARI HESAPLANDI:');
+           console.log('═══════════════════════════════════════');
+           console.log('📊 Temel Skorlar:');
+           console.log('  • Toplam İşlenen Madde (TN):', TN_val);
+           console.log('  • Doğru Sayısı (D):', D);
+           console.log('  • Yanlış İşaretleme (E1):', E1);
+           console.log('  • Boş Bırakma (E2):', E2);
+           console.log('  • Toplam Hata (E = E1+E2):', E);
+           console.log('  • Konsantrasyon Performansı (CP = D-E1):', CP);
+           console.log('  • TN - E:', TN_E);
+           console.log('  • Dalgalanma Oranı (FR = Bmax-Bmin):', FR);
+           console.log('═══════════════════════════════════════');
+           console.log('👤 Authentication Durumu:');
+           console.log('  • Giriş yapan kullanıcı:', systemUserData ? systemUserData.name : '❌ YOK');
+           console.log('  • Email:', systemUserData ? systemUserData.email : '❌ YOK');
+           console.log('  • Role:', systemUserData ? systemUserData.userRole : '❌ YOK');
+           console.log('═══════════════════════════════════════');
+           
+           // Test sonuçlarını backend'e gönder
+           saveD2TestResults(TN_val, D, E1, E2, E, CP, TN_E, FR);
+           
+           switchScreen('results');
+       }
+
+       function endTest() {
+           clearInterval(lineTimerInterval);
+           clearInterval(progressInterval);
+           
+           const activeTestLine = testGrid.querySelector('.line.active');
+           if(activeTestLine) activeTestLine.classList.remove('active');
+           
+           testProgressFill.style.width = '100%';
+           showEndTestMsg("Test tamamlandı! Sonuçlarınız hesaplanıyor...");
+           
+           setTimeout(calculateScores, 1500);
+       }
+
+       // Ekran boyutuna göre test ızgarasını ayarla
+       function adjustTestGridToScreen() {
+           const screenWidth = window.innerWidth;
+           const charWidth = screenWidth < 576 ? 12 : (screenWidth < 768 ? 14 : 16);
+           const charHeight = screenWidth < 576 ? 25 : (screenWidth < 768 ? 28 : 32);
+           const fontSize = screenWidth < 576 ? '10pt' : (screenWidth < 768 ? '11pt' : '12pt');
+           
+           document.documentElement.style.setProperty('--char-width', `${charWidth}px`);
+           document.documentElement.style.setProperty('--char-height', `${charHeight}px`);
+           document.documentElement.style.setProperty('--char-font-size', fontSize);
+           
+           const lines = document.querySelectorAll('.line');
+           lines.forEach(line => {
+               line.style.justifyContent = 'center';
+           });
+       }
+
+       // --- Event Listeners moved to DOMContentLoaded section ---
+
+       // Pencere boyutu değiştiğinde
+       window.addEventListener('resize', adjustTestGridToScreen);
+
+       // D2 Test sonuçlarını Modern Supabase sistemi ile kaydetme fonksiyonu
+       async function saveD2TestResults(TN_val, D, E1, E2, E, CP, TN_E, FR) {
+           try {
+               console.log('🚀 D2 Test Modern Supabase kayıt başlatılıyor...');
+               
+               // Authentication kontrolü
+               const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+               
+               if (authError || !user) {
+                   console.warn('⚠️ Kullanıcı giriş yapmamış, localStorage\'a kaydediliyor');
+                   const testResult = {
+                       TN_val, D, E1, E2, E, CP, TN_E, FR,
+                       timestamp: new Date().toISOString(),
+                       testCharacterData
+                   };
+                   localStorage.setItem('pendingD2Results', JSON.stringify(testResult));
+                   return false;
+               }
+               
+               console.log('👤 Aktif kullanıcı:', user.email);
+               
+               // Kullanıcı bilgilerini al
+               const { data: userData, error: userError } = await supabaseClient
+                   .from('users')
+                   .select('id, first_name, last_name, roles, supervisor_id, email')
+                   .eq('auth_user_id', user.id)
+                   .single();
+               
+               if (userError || !userData) {
+                   console.error('❌ Kullanıcı bilgileri alınamadı:', userError);
+                   localStorage.setItem('pendingD2Results', JSON.stringify({
+                       TN_val, D, E1, E2, E, CP, TN_E, FR,
+                       timestamp: new Date().toISOString(),
+                       testCharacterData
+                   }));
+                   return false;
+               }
+               
+               // Role kontrolü
+               const userRole = getUserRole(userData.roles);
+               console.log(`👤 Kullanıcı rolü: ${userRole}`);
+               
+               if (!['admin', 'temsilci', 'beyin_antrenoru', 'kullanici'].includes(userRole)) {
+                   console.warn('⚠️ Geçersiz kullanıcı rolü - pending olarak kaydediliyor');
+                   localStorage.setItem('pendingD2Results', JSON.stringify({
+                       TN_val, D, E1, E2, E, CP, TN_E, FR,
+                       timestamp: new Date().toISOString(),
+                       testCharacterData
+                   }));
+                   return false;
+               }
+               
+               // Test edilen öğrenci ID'sini al
+               let studentId = await findValidStudentId();
+               
+               // Eğer findValidStudentId null dönerse, fallback olarak userData.id kullan
+               if (!studentId) {
+                   console.warn('⚠️ Student ID bulunamadı, kullanıcı kendi testini yapıyor varsayılıyor');
+                   studentId = userData.id;
+               }
+               
+               // Test süresını hesapla
+               const testStartTime = new Date(Date.now() - (TOTAL_LINES * TIME_PER_LINE * 1000));
+               const testEndTime = new Date();
+               
+               // Hesaplanan skorlar
+               const totalScore = CP; // Konsantrasyon performansını toplam skor olarak kullan
+               const concentrationPerformance = (D > 0) ? ((D / (D + E1)) * 100) : 0;
+               const processingSpeed = parseFloat((TN_val / TOTAL_LINES).toFixed(2)); // Satır başına işlenen madde
+               const attentionStability = parseFloat((FR === 0 ? 100 : (100 - (FR * 5))).toFixed(2)); // Dalgalanma oranı düşükse stabilite yüksek
+               
+               // conducted_by belirleme - Doğru mantık: supervisor varsa supervisor, yoksa kendisi
+               let conductedBy;
+               if (userData.supervisor_id) {
+                   // Kullanıcının supervisor'ı varsa, test yapan supervisor'dür
+                   conductedBy = userData.supervisor_id;
+                   console.log(`👨‍🏫 D2 Test yapan kişi: Supervisor (ID: ${conductedBy}) - Öğrenci: ${userData.first_name} ${userData.last_name}`);
+               } else {
+                   // Supervisor yoksa (admin/trainer kendisi), kendisi yapmıştır
+                   conductedBy = userData.id;
+                   console.log(`👨‍🏫 D2 Test yapan kişi: ${userData.first_name} ${userData.last_name} - ID: ${conductedBy}`);
+               }
+               
+               // D2 test results için final data
+               const finalData = {
+                   student_id: studentId,
+                   conducted_by: conductedBy,
+                   test_start_time: testStartTime.toISOString(),
+                   test_end_time: testEndTime.toISOString(),
+                   test_duration_seconds: TOTAL_LINES * TIME_PER_LINE,
+                   completion_status: 'completed',
+                   
+                   // D2 Test specific metrics
+                   total_items_processed: TN_val,
+                   correct_selections: D,
+                   commission_errors: E1,
+                   omission_errors: E2,
+                   total_errors: E,
+                   concentration_performance: CP,
+                   total_net_performance: TN_E,
+                   fluctuation_rate: FR,
+                   
+                   // Calculated scores
+                   total_score: totalScore,
+                   processing_speed: processingSpeed,
+                   attention_stability: attentionStability,
+                   
+                   // Line by line detailed results
+                   line_results: testCharacterData,
+                   detailed_results: {
+                       test_metrics: {
+                           total_items_processed: TN_val,
+                           correct_selections: D,
+                           commission_errors: E1,
+                           omission_errors: E2,
+                           total_errors: E,
+                           concentration_performance: CP,
+                           total_net_performance: TN_E,
+                           fluctuation_rate: FR
+                       },
+                       calculated_scores: {
+                           total_score: totalScore,
+                           concentration_performance_percentage: concentrationPerformance,
+                           processing_speed: processingSpeed,
+                           attention_stability: attentionStability
+                       },
+                       raw_test_data: testCharacterData
+                   },
+                   
+                   notes: 'D2 Test tamamlandı - Modern Supabase authentication sistemi ile kaydedildi'
+               };
+               
+               console.log('📝 Supabase\'e kaydedilecek D2 test verisi:', finalData);
+               
+               // Supabase'e kaydet
+               const { data: insertData, error: insertError } = await supabaseClient
+                   .from('d2_test_results')
+                   .insert([finalData])
+                   .select();
+               
+               if (insertError) {
+                   console.error('❌ D2 Test Supabase kayıt hatası:', insertError);
+                   
+                   // Hata detayları
+                   if (insertError.code === '23503') {
+                       console.error('🔗 Foreign key hatası - Student veya User ID geçersiz');
+                   } else if (insertError.code === '42501') {
+                       console.error('🔒 Yetki hatası - RLS policy ihlali');
+                   }
+                   
+                   // Hata durumunda localStorage'a kaydet
+                   localStorage.setItem('failedD2Results', JSON.stringify({
+                       data: finalData,
+                       error: insertError,
+                       timestamp: new Date().toISOString()
+                   }));
+                   
+                   return false;
+               }
+               
+               console.log('✅ D2 Test Modern Supabase kayıt başarılı!', insertData);
+               
+               // Başarılı kayıt sonrası temizlik
+               localStorage.removeItem('pendingD2Results');
+               localStorage.removeItem('failedD2Results');
+               localStorage.setItem('lastTestedStudent', finalData.student_id);
+               
+               // Başarı mesajı
+               console.log('🎉 D2 TESTİ PRODUCTION\'A KAYDEDILDI!');
+               console.log(`📊 Test ID: ${insertData[0]?.id}`);
+               console.log(`👤 Test Alan Kullanıcı ID: ${finalData.student_id}`);
+               console.log(`👨‍🏫 Test Yöneten: ${userData.first_name} ${userData.last_name}`);
+               console.log(`📊 Test Sonuçları:`, {
+                   toplam_işlenen: finalData.total_items_processed,
+                   doğru: finalData.correct_selections,
+                   yanlış_işaretleme: finalData.commission_errors,
+                   boş_bırakma: finalData.omission_errors,
+                   konsantrasyon_performansı: finalData.concentration_performance,
+                   toplam_skor: finalData.total_score
+               });
+               
+               return true;
+               
+           } catch (error) {
+               console.error('❌ D2 Test Modern Supabase kayıt genel hatası:', error);
+               
+               // Genel hata durumunda localStorage'a kaydet
+               localStorage.setItem('failedD2Results', JSON.stringify({
+                   error: error.message,
+                   timestamp: new Date().toISOString()
+               }));
+               
+               return false;
+           }
+       }
+
+       // Modern Supabase Authentication sistemi
+       async function getSystemUserData() {
+           try {
+               console.log('🔐 Modern Supabase authentication başlatılıyor...');
+               
+               // Authentication kontrolü
+               const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+               
+               if (authError || !user) {
+                   console.warn('⚠️ Kullanıcı giriş yapmamış');
+                   systemUserData = null;
+                   return null;
+               }
+               
+               console.log('👤 Aktif kullanıcı:', user.email);
+               
+               // Kullanıcı bilgilerini users tablosundan al
+               const { data: userData, error: userError } = await supabaseClient
+                   .from('users')
+                   .select('id, first_name, last_name, roles, supervisor_id, email')
+                   .eq('auth_user_id', user.id)
+                   .single();
+               
+               if (userError || !userData) {
+                   console.error('❌ Kullanıcı bilgileri alınamadı:', userError);
+                   systemUserData = null;
+                   return null;
+               }
+               
+               // Role kontrolü
+               const userRole = getUserRole(userData.roles);
+               console.log(`👤 Kullanıcı rolü: ${userRole}`);
+               
+               if (!['admin', 'temsilci', 'beyin_antrenoru', 'kullanici'].includes(userRole)) {
+                   console.warn('⚠️ Geçersiz kullanıcı rolü');
+                   systemUserData = null;
+                   return null;
+               }
+               
+               // SystemUserData nesnesini oluştur
+               systemUserData = {
+                   id: userData.id,
+                   name: `${userData.first_name} ${userData.last_name}`,
+                   email: userData.email,
+                   firstName: userData.first_name,
+                   lastName: userData.last_name,
+                   roles: userData.roles,
+                   supervisor_id: userData.supervisor_id,
+                   userRole: userRole
+               };
+               
+               console.log('✅ Modern authentication başarılı:', systemUserData);
+               return systemUserData;
+               
+           } catch (error) {
+               console.error('❌ Modern authentication hatası:', error);
+               systemUserData = null;
+               return null;
+           }
+       }
+
+       // Helper fonksiyonlar
+       function getUserRole(roles) {
+           if (!roles || !Array.isArray(roles) || roles.length === 0) {
+               return 'kullanici'; // Default role
+           }
+           
+           // Öncelik sırası: admin > temsilci > beyin_antrenoru > kullanici
+           if (roles.includes('admin')) return 'admin';
+           if (roles.includes('temsilci')) return 'temsilci';
+           if (roles.includes('beyin_antrenoru')) return 'beyin_antrenoru';
+           if (roles.includes('kullanici')) return 'kullanici';
+           
+           return 'kullanici'; // Fallback
+       }
+
+       async function findValidStudentId() {
+           try {
+               if (!systemUserData) {
+                   console.error('❌ Sistem kullanıcı bilgisi yok');
+                   return null;
+               }
+               
+               console.log('🔍 D2 Student ID belirleniyor... Giriş yapan:', systemUserData.email, 'Role:', systemUserData.userRole);
+               
+               // Giriş yapan kullanıcının kendi testini yapıyor (HER ZAMAN)
+               console.log('👤 Giriş yapan kullanıcının kendi D2 testi:', systemUserData.firstName, systemUserData.lastName);
+               console.log('🎯 Student ID = Giriş yapan kullanıcı ID:', systemUserData.id);
+               
+               // localStorage cache'ini temizle (eski veri karışmasın)
+               localStorage.removeItem('selectedStudentId');
+               localStorage.removeItem('currentStudentId');
+               localStorage.removeItem('lastTestedStudent');
+               
+               return systemUserData.id; // Her zaman giriş yapan kullanıcının ID'si
+               
+           } catch (error) {
+               console.error('❌ D2 Student ID bulma hatası:', error);
+               return systemUserData ? systemUserData.id : null; // Fallback: Giriş yapan kullanıcı
+           }
+       }
+
+       // Sayfa ilk yüklendiğinde
+       document.addEventListener('DOMContentLoaded', async () => {
+           initTestState();
+           switchScreen('welcome');
+           adjustTestGridToScreen();
+           
+           // Modern Supabase authentication ile sistem kullanıcı bilgilerini al
+           await getSystemUserData();
+           
+           // Event Listeners (DOM yüklendikten sonra)
+           buttons.startTest.addEventListener('click', () => {
+               switchScreen('instructions');
+           });
+           
+           buttons.backToWelcome.addEventListener('click', () => {
+               switchScreen('welcome');
+           });
+           
+           buttons.continueToTest.addEventListener('click', () => {
+               switchScreen('test');
+               startMainTest();
+           });
+           
+           buttons.restartTest.addEventListener('click', () => {
+               initTestState();
+               switchScreen('welcome');
+           });
+           
+           buttons.startPractice.addEventListener('click', () => {
+               startPractice();
+           });
+           
+           
+       });
+   </script>
+</body>
+</html>
+

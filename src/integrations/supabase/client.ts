@@ -15,3 +15,14 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
   }
 });
+
+// D2 ve Burdon template'ler için localStorage'a config kaydet
+if (typeof window !== 'undefined') {
+  try {
+    localStorage.setItem('sb-url', SUPABASE_URL);
+    localStorage.setItem('sb-anon-key', SUPABASE_PUBLISHABLE_KEY);
+    console.log('✅ Supabase config localStorage\'a kaydedildi');
+  } catch (error) {
+    console.warn('⚠️ localStorage\'a Supabase config kaydedilemedi:', error);
+  }
+}

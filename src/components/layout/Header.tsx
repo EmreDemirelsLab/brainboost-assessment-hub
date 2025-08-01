@@ -15,7 +15,7 @@ interface HeaderProps {
   user?: {
     name: string;
     email: string;
-    roles: UserRole[];
+    roles: string[]; // Dinamik rol isimleri
     currentRole: UserRole;
   };
   onRoleSwitch: (role: UserRole) => void;
@@ -25,15 +25,21 @@ interface HeaderProps {
 const roleLabels: Record<UserRole, string> = {
   admin: "Admin",
   trainer: "Beyin Antrenörü",
-  representative: "Temsilci", 
-  user: "Kullanıcı"
+  beyin_antrenoru: "Beyin Antrenörü",
+  representative: "Temsilci",
+  temsilci: "Temsilci", 
+  user: "Kullanıcı",
+  kullanici: "Kullanıcı"
 };
 
 const roleColors: Record<UserRole, string> = {
   admin: "bg-slate-100 text-slate-700 border-slate-200",
   trainer: "bg-blue-50 text-blue-700 border-blue-200",
+  beyin_antrenoru: "bg-blue-50 text-blue-700 border-blue-200",
   representative: "bg-green-50 text-green-700 border-green-200",
-  user: "bg-gray-50 text-gray-700 border-gray-200"
+  temsilci: "bg-green-50 text-green-700 border-green-200",
+  user: "bg-gray-50 text-gray-700 border-gray-200",
+  kullanici: "bg-gray-50 text-gray-700 border-gray-200"
 };
 
 export function Header({ user, onRoleSwitch, onLogout }: HeaderProps) {
@@ -86,8 +92,8 @@ export function Header({ user, onRoleSwitch, onLogout }: HeaderProps) {
                     <div className="flex items-center justify-start gap-2 mt-0.5 w-full max-w-[160px]">
                       <div className={`w-2 h-2 rounded-full ${
                         user.currentRole === 'admin' ? 'bg-red-500' :
-                        user.currentRole === 'trainer' ? 'bg-blue-500' :
-                        user.currentRole === 'representative' ? 'bg-green-500' :
+                        (user.currentRole === 'trainer' || user.currentRole === 'beyin_antrenoru') ? 'bg-blue-500' :
+                        (user.currentRole === 'representative' || user.currentRole === 'temsilci') ? 'bg-green-500' :
                         'bg-gray-500'
                       }`}></div>
                       <span className="text-xs text-muted-foreground font-medium truncate">
@@ -119,8 +125,8 @@ export function Header({ user, onRoleSwitch, onLogout }: HeaderProps) {
                       <div className="flex items-center gap-2 mt-1">
                         <div className={`w-2 h-2 rounded-full ${
                           user.currentRole === 'admin' ? 'bg-red-500' :
-                          user.currentRole === 'trainer' ? 'bg-blue-500' :
-                          user.currentRole === 'representative' ? 'bg-green-500' :
+                          (user.currentRole === 'trainer' || user.currentRole === 'beyin_antrenoru') ? 'bg-blue-500' :
+                          (user.currentRole === 'representative' || user.currentRole === 'temsilci') ? 'bg-green-500' :
                           'bg-gray-500'
                         }`}></div>
                         <span className="text-xs text-muted-foreground">{roleLabels[user.currentRole]}</span>
@@ -136,24 +142,39 @@ export function Header({ user, onRoleSwitch, onLogout }: HeaderProps) {
                     <div className="px-3 py-2">
                       <p className="text-xs font-medium text-muted-foreground mb-2">Rol Değiştir</p>
                       <div className="space-y-1">
-                        {user.roles.map((role) => (
-                          <DropdownMenuItem
-                            key={role}
-                            onClick={() => onRoleSwitch(role)}
-                            className={`text-sm rounded-lg cursor-pointer flex items-center justify-between ${role === user.currentRole ? 'bg-accent' : ''}`}
-                          >
+                        {user.roles.map((role) => {
+                          // Dinamik rol kategorisi belirleme
+                          const getRoleCategory = (roleString: string): UserRole => {
+                            if (roleString === 'admin') return 'admin';
+                            if (roleString === 'beyin_antrenoru') return 'beyin_antrenoru';
+                            if (roleString === 'trainer') return 'trainer';
+                            if (roleString === 'representative') return 'representative';
+                            if (roleString === 'temsilci') return 'temsilci';
+                            if (roleString === 'kullanici') return 'kullanici';
+                            return 'user';
+                          };
+                          
+                          const roleCategory = getRoleCategory(role);
+                          
+                          return (
+                            <DropdownMenuItem
+                              key={role}
+                              onClick={() => onRoleSwitch(roleCategory)}
+                              className={`text-sm rounded-lg cursor-pointer flex items-center justify-between ${roleCategory === user.currentRole ? 'bg-accent' : ''}`}
+                            >
                             <div className="flex items-center gap-2">
                               <div className={`w-2 h-2 rounded-full ${
                                 role === 'admin' ? 'bg-red-400' :
-                                role === 'trainer' ? 'bg-blue-400' :
-                                role === 'representative' ? 'bg-green-400' :
+                                (role === 'trainer' || role === 'beyin_antrenoru') ? 'bg-blue-400' :
+                                (role === 'representative' || role === 'temsilci') ? 'bg-green-400' :
                                 'bg-gray-400'
                               }`}></div>
-                              <span className="text-xs">{roleLabels[role]}</span>
+                              <span className="text-xs">{roleLabels[roleCategory]}</span>
                             </div>
-                            {role === user.currentRole && <span className="text-primary font-medium text-xs">✓</span>}
+                            {roleCategory === user.currentRole && <span className="text-primary font-medium text-xs">✓</span>}
                           </DropdownMenuItem>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                     <DropdownMenuSeparator />

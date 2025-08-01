@@ -9,7 +9,7 @@ interface DashboardLayoutProps {
   user?: {
     name: string;
     email: string;
-    roles: UserRole[];
+    roles: string[]; // Dinamik rol isimleri
     currentRole: UserRole;
   };
   onRoleSwitch: (role: UserRole) => void;

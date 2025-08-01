@@ -1241,6 +1241,59 @@
             }
         }
 
+        // ==================== IMAGE PRELOADING SİSTEMİ ====================
+        let preloadedImages = new Map();
+        let preloadingPromises = [];
+
+        function preloadImage(src) {
+            if (preloadedImages.has(src)) {
+                return Promise.resolve(preloadedImages.get(src));
+            }
+
+            const promise = new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    preloadedImages.set(src, img);
+                    console.log(`✅ Görsel yüklendi: ${src}`);
+                    resolve(img);
+                };
+                img.onerror = (e) => {
+                    console.error(`❌ Görsel yüklenemedi: ${src}`, e);
+                    reject(new Error(`Görsel yüklenemedi: ${src}`));
+                };
+                img.src = src;
+            });
+
+            preloadingPromises.push(promise);
+            return promise;
+        }
+
+        function preloadAllImages() {
+            console.log('🖼️ Görsel ön yükleme başlatılıyor...');
+            const imagesToPreload = [];
+
+            // Örnek görselleri
+            testData.examples.forEach(example => {
+                const basePath = example.folder;
+                imagesToPreload.push(`${basePath}/soru.png`);
+                for (let i = 1; i <= 5; i++) {
+                    imagesToPreload.push(`${basePath}/${i}.png`);
+                }
+            });
+
+            // Ana test görselleri
+            testData.mainQuestions.forEach(question => {
+                const basePath = question.folder;
+                imagesToPreload.push(`${basePath}/soru.png`);
+                const optionCount = basePath.includes('4-ALTILI KARE FORMAT') ? 6 : 5;
+                for (let i = 1; i <= optionCount; i++) {
+                    imagesToPreload.push(`${basePath}/${i}.png`);
+                }
+            });
+
+            return Promise.allSettled(imagesToPreload.map(src => preloadImage(src)));
+        }
+
         // ==================== TEST VERİLERİ ====================
         const testData = {
             // Örnek sorular - 4 adet (1'i program gösterecek, 3'ü kullanıcı yapacak)
@@ -1484,9 +1537,65 @@
         // ==================== GİRİŞ EKRANLARI ====================
         function goToWelcome() {
             stopCurrentAudio(); // Önceki sesi durdur
+            
+            // 🧹 DEEP CLEANUP - Önceki testlerden kalan verileri temizle
+            performDeepCleanup();
+            
+            // 🧹 ADDITIONAL MEMORY CLEANUP - Önceki testlerden kalan verileri temizle
+            try {
+                // Global değişkenleri temizle
+                if (window.testState) delete window.testState;
+                if (window.testData) delete window.testData;
+                if (window.currentTest) delete window.currentTest;
+                
+                // Event listener'ları temizle
+                const allElements = document.querySelectorAll('*');
+                allElements.forEach(el => {
+                    if (el.cloneNode) {
+                        const newEl = el.cloneNode(true);
+                        if (el.parentNode) {
+                            el.parentNode.replaceChild(newEl, el);
+                        }
+                    }
+                });
+                
+                // Garbage collection'a yardım et
+                if (window.gc) window.gc();
+                
+                console.log('🧹 Memory cleanup tamamlandı');
+            } catch (e) {
+                console.warn('Memory cleanup kısmen başarısız:', e);
+            }
+            
             showScreen('welcomeScreen');
-            playAudio(testData.audioFiles.welcome, () => {
-                showButton('welcomeNextBtn');
+            
+            // 🖼️ GÖRSEL ÖN YÜKLEME BAŞLAT
+            showLoading('Görseller yükleniyor...', 1000);
+            preloadAllImages().then((results) => {
+                const successful = results.filter(r => r.status === 'fulfilled').length;
+                const failed = results.filter(r => r.status === 'rejected').length;
+                
+                console.log(`🖼️ Görsel yükleme tamamlandı: ✅${successful} başarılı, ❌${failed} başarısız`);
+                
+                if (failed > 0) {
+                    console.warn('⚠️ Görsel yükleme uyarısı: Bazı görseller yüklenemedi');
+                    const failedImages = results
+                        .filter(r => r.status === 'rejected')
+                        .map(r => r.reason?.message || 'Bilinmeyen hata');
+                    console.log('❌ Başarısız görseller:', failedImages);
+                }
+                
+                hideLoading();
+                playAudio(testData.audioFiles.welcome, () => {
+                    showButton('welcomeNextBtn');
+                });
+            }).catch(error => {
+                console.error('❌ Kritik görsel yükleme hatası:', error);
+                hideLoading();
+                showError('Görseller yüklenirken bir sorun oluştu. Test devam edecek.', 3000);
+                playAudio(testData.audioFiles.welcome, () => {
+                    showButton('welcomeNextBtn');
+                });
             });
         }
 
@@ -1501,20 +1610,34 @@
             setTimeout(showProgramDemo, 500);
         }
 
-        // Program örnek gösterimi
+        // Program örnek gösterimi - GÜÇLENDIRILMIŞ GÖRSEL YÜKLEME
         function showProgramDemo() {
             const demoArea = document.getElementById('demoArea');
             
             const example = testData.examples[0];
             const basePath = `${example.folder}`;
             
+            // Soru görselini kontrollü yükle
+            const questionImgSrc = `${basePath}/soru.png`;
+            
+            // Preloaded görseli kullan veya fallback
+            let questionImgElement = '';
+            if (preloadedImages.has(questionImgSrc)) {
+                console.log(`✅ Preloaded görsel kullanılıyor: ${questionImgSrc}`);
+                questionImgElement = `<img class="question-image" src="${questionImgSrc}" alt="Örnek soru">`;
+            } else {
+                console.warn(`⚠️ Preloaded görsel bulunamadı, manuel yükleme: ${questionImgSrc}`);
+                questionImgElement = `<img class="question-image" src="${questionImgSrc}" alt="Örnek soru" 
+                    onerror="console.error('Demo soru görseli yüklenemedi: ${questionImgSrc}'); this.style.background='#f0f0f0'; this.style.border='2px dashed #ccc'; this.alt='Görsel yüklenemedi';">`;
+            }
+            
             // Soru ve seçenekleri göster
             demoArea.innerHTML = `
                 <div class="question-display">
-                    <img class="question-image" src="${basePath}/soru.png" alt="Örnek soru">
+                    ${questionImgElement}
                 </div>
                 <div class="options-container" id="demoOptions">
-                    ${generateOptions(basePath, 'demo')}
+                    ${generateOptionsWithPreload(basePath, 'demo')}
                 </div>
             `;
             
@@ -1707,13 +1830,27 @@
             const example = testData.examples[testState.currentExampleIndex];
             const basePath = `${example.folder}`;
             
-            // Soru görselini göster
-            document.getElementById('exampleQuestionImg').src = 
-                `${basePath}/soru.png`;
+            // Soru görselini güvenli yükle
+            const questionImgSrc = `${basePath}/soru.png`;
+            const questionImg = document.getElementById('exampleQuestionImg');
             
-            // Seçenekleri göster
+            if (preloadedImages.has(questionImgSrc)) {
+                console.log(`✅ Preloaded örnek soru görseli: ${questionImgSrc}`);
+                questionImg.src = questionImgSrc;
+            } else {
+                console.warn(`⚠️ Preloaded örnek soru bulunamadı: ${questionImgSrc}`);
+                questionImg.src = questionImgSrc;
+                questionImg.onerror = function() {
+                    console.error(`❌ Örnek soru görseli yüklenemedi: ${questionImgSrc}`);
+                    this.style.background = '#f0f0f0';
+                    this.style.border = '2px dashed #ccc';
+                    this.alt = 'Görsel yüklenemedi';
+                };
+            }
+            
+            // Seçenekleri preload ile göster
             document.getElementById('exampleOptions').innerHTML = 
-                generateOptions(basePath, 'example');
+                generateOptionsWithPreload(basePath, 'example');
             
             // Debounced event listener'ları ekle
             const options = document.querySelectorAll('#exampleOptions .option');
@@ -1739,10 +1876,42 @@
             
             // 5 seçenek için
             for (let i = 1; i <= 5; i++) {
+                const imgSrc = `${basePath}/${i}.png`;
                 html += `
                     <div class="option" data-option-index="${i-1}" data-option-type="${type}">
                         <div class="option-label">${letters[i-1]}</div>
-                        <img src="${basePath}/${i}.png" alt="Seçenek ${i}">
+                        <img src="${imgSrc}" alt="Seçenek ${i}" 
+                             onerror="console.error('Seçenek görseli yüklenemedi: ${imgSrc}'); this.style.background='#f0f0f0'; this.style.border='2px dashed #ccc'; this.alt='Görsel yüklenemedi';">
+                    </div>
+                `;
+            }
+            
+            return html;
+        }
+
+        function generateOptionsWithPreload(basePath, type) {
+            let html = '';
+            const letters = ['A', 'B', 'C', 'D', 'E'];
+            
+            // 5 seçenek için
+            for (let i = 1; i <= 5; i++) {
+                const imgSrc = `${basePath}/${i}.png`;
+                
+                // Preloaded görsel kontrolü
+                let imgElement = '';
+                if (preloadedImages.has(imgSrc)) {
+                    console.log(`✅ Preloaded seçenek görseli: ${imgSrc}`);
+                    imgElement = `<img src="${imgSrc}" alt="Seçenek ${i}">`;
+                } else {
+                    console.warn(`⚠️ Preloaded seçenek bulunamadı: ${imgSrc}`);
+                    imgElement = `<img src="${imgSrc}" alt="Seçenek ${i}" 
+                        onerror="console.error('Seçenek görseli yüklenemedi: ${imgSrc}'); this.style.background='#f0f0f0'; this.style.border='2px dashed #ccc'; this.alt='Görsel yüklenemedi';">`;
+                }
+                
+                html += `
+                    <div class="option" data-option-index="${i-1}" data-option-type="${type}">
+                        <div class="option-label">${letters[i-1]}</div>
+                        ${imgElement}
                     </div>
                 `;
             }
@@ -1947,17 +2116,29 @@
             
             const basePath = `${question.folder}`;
             
-            // Soru görselini göster - artık hepsi standart
+            // Soru görselini güvenli yükle
             const questionImgSrc = `${basePath}/soru.png`;
+            const mainQuestionImg = document.getElementById('mainQuestionImg');
             
-            document.getElementById('mainQuestionImg').src = questionImgSrc;
-            document.getElementById('mainQuestionImg').onerror = function() {
-                this.src = './placeholder-pattern.png'; // Placeholder görsel
-            };
+            if (preloadedImages.has(questionImgSrc)) {
+                console.log(`✅ Preloaded ana test görseli: ${questionImgSrc}`);
+                mainQuestionImg.src = questionImgSrc;
+            } else {
+                console.warn(`⚠️ Preloaded ana test görseli bulunamadı: ${questionImgSrc}`);
+                mainQuestionImg.src = questionImgSrc;
+                mainQuestionImg.onerror = function() {
+                    console.error(`❌ Ana test görseli yüklenemedi: ${questionImgSrc}`);
+                    this.style.background = '#f0f0f0';
+                    this.style.border = '2px dashed #ccc';
+                    this.alt = 'Görsel yüklenemedi';
+                    // Fallback placeholder dene
+                    this.src = './placeholder-pattern.png';
+                };
+            }
             
-            // Seçenekleri göster
+            // Seçenekleri preload ile göster
             document.getElementById('mainOptions').innerHTML = 
-                generateMainOptions(basePath);
+                generateMainOptionsWithPreload(basePath);
             
             // Debounced event listener'ları ekle
             const options = document.querySelectorAll('#mainOptions .option');
@@ -1986,12 +2167,46 @@
             const optionCount = is6Option ? 6 : 5;
             
             for (let i = 1; i <= optionCount; i++) {
+                const imgSrc = `${basePath}/${i}.png`;
                 html += `
                     <div class="option" data-option-index="${i-1}" data-option-type="main">
                         <div class="option-label">${letters[i-1]}</div>
-                        <img src="${basePath}/${i}.png" 
+                        <img src="${imgSrc}" 
                              alt="Seçenek ${i}"
-                             onerror="console.error('Görsel yüklenemedi: ${basePath}/${i}.png'); this.style.background='#f0f0f0'; this.style.border='2px dashed #ccc';">
+                             onerror="console.error('Görsel yüklenemedi: ${imgSrc}'); this.style.background='#f0f0f0'; this.style.border='2px dashed #ccc';">
+                    </div>
+                `;
+            }
+            
+            return html;
+        }
+
+        function generateMainOptionsWithPreload(basePath) {
+            let html = '';
+            const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+            
+            // 4-ALTILI KARE FORMAT klasörleri 6 seçenekli
+            const is6Option = basePath.includes('4-ALTILI KARE FORMAT');
+            const optionCount = is6Option ? 6 : 5;
+            
+            for (let i = 1; i <= optionCount; i++) {
+                const imgSrc = `${basePath}/${i}.png`;
+                
+                // Preloaded görsel kontrolü
+                let imgElement = '';
+                if (preloadedImages.has(imgSrc)) {
+                    console.log(`✅ Preloaded ana test seçenek: ${imgSrc}`);
+                    imgElement = `<img src="${imgSrc}" alt="Seçenek ${i}">`;
+                } else {
+                    console.warn(`⚠️ Preloaded ana test seçenek bulunamadı: ${imgSrc}`);
+                    imgElement = `<img src="${imgSrc}" alt="Seçenek ${i}" 
+                        onerror="console.error('Ana test seçenek görseli yüklenemedi: ${imgSrc}'); this.style.background='#f0f0f0'; this.style.border='2px dashed #ccc'; this.alt='Görsel yüklenemedi';">`;
+                }
+                
+                html += `
+                    <div class="option" data-option-index="${i-1}" data-option-type="main">
+                        <div class="option-label">${letters[i-1]}</div>
+                        ${imgElement}
                     </div>
                 `;
             }
@@ -2301,15 +2516,9 @@
         // ==================== VERİTABANI KAYIT ====================
         async function saveTestResults(results) {
             try {
-                const urlParams = new URLSearchParams(window.location.search);
                 
                 const payload = {
                     testType: 'Akil_Mantik_Testi',
-                    learnworlds_user_id: urlParams.get('user_id'),
-                    learnworlds_user_email: urlParams.get('user_email'),
-                    learnworlds_user_name: urlParams.get('user_name'),
-                    course_id: urlParams.get('course_id'),
-                    lesson_id: urlParams.get('lesson_id'),
                     
                     // Test zamanları
                     test_start_time: testState.testStartTime,
@@ -2349,7 +2558,6 @@
                 // Veritabanı kayıt logu
                 console.log(`\n💾 ================= VERİTABANI KAYIT =================`);
                 console.log(`📊 Payload Boyutu: ${JSON.stringify(payload).length} karakter`);
-                console.log(`👤 Kullanıcı: ${payload.learnworlds_user_email || 'Bilinmiyor'}`);
                 console.log(`📋 Test Türü: ${payload.testType}`);
                 console.log(`📅 Kayıt Zamanı: ${new Date().toLocaleString('tr-TR')}`);
                 
@@ -2488,18 +2696,29 @@
                 }
                 
                 const messageData = {
-                    type: 'test-complete',
+                    type: 'all-tests-complete',
                     testName: 'akil-mantik',
                     results: testResults,
                     timestamp: new Date().toISOString()
                 };
                 
+                console.log('✅ Tüm testler tamamlandı! Ana pencereye bilgi gönderiliyor...');
+                
                 // Ana pencereye mesaj gönder (window.opener kullan)
                 if (window.opener) {
                     window.opener.postMessage(messageData, window.location.origin);
-                    console.log('✅ Akıl-Mantık testi sonuçları ana pencereye gönderildi:', messageData);
+                    console.log('✅ Test süreci tamamlandı - ana pencereye bilgi gönderildi');
+                    
+                    // Kısa bir gecikme sonra pencereyi kapat
+                    setTimeout(() => {
+                        window.close();
+                    }, 1000);
                 } else {
                     console.error('❌ window.opener mevcut değil - ana pencereye mesaj gönderilemedi');
+                    // Yine de pencereyi kapat
+                    setTimeout(() => {
+                        window.close();
+                    }, 1000);
                 }
             } catch (error) {
                 console.error('❌ Test completion hatası:', error);
@@ -2535,7 +2754,48 @@
             }, 3000);
         }
 
-        // ==================== CLEANUP & EVENT LISTENERS ====================
+        // ==================== ENHANCED CLEANUP & EVENT LISTENERS ====================
+        
+        // Test başlangıcında çağrılacak cleanup fonksiyonu
+        function performDeepCleanup() {
+            console.log('🧹 Derin temizlik başlatılıyor...');
+            
+            try {
+                // 1. Tüm timeout/interval'ları temizle
+                const highestId = setTimeout(() => {}, 0);
+                for (let i = 0; i < highestId; i++) {
+                    clearTimeout(i);
+                    clearInterval(i);
+                }
+                
+                // 2. Memory cleanup
+                if (window.testResults) delete window.testResults;
+                if (window.currentTestData) delete window.currentTestData; 
+                if (window.gameState) delete window.gameState;
+                if (window.stroopTestData) delete window.stroopTestData;
+                if (window.puzzleResults) delete window.puzzleResults;
+                
+                // 3. CSS Animation cleanup  
+                document.querySelectorAll('*').forEach(el => {
+                    if (el.style) {
+                        el.style.animation = '';
+                        el.style.transition = '';
+                        el.style.transform = '';
+                    }
+                });
+                
+                // 4. Force garbage collection
+                if (window.gc) {
+                    window.gc();
+                    console.log('🗑️ Garbage collection çalıştırıldı');
+                }
+                
+                console.log('✅ Derin temizlik tamamlandı');
+            } catch (e) {
+                console.warn('⚠️ Cleanup kısmen başarısız:', e);
+            }
+        }
+        
         window.addEventListener('beforeunload', function(e) {
             try {
                 // Eğer test devam ediyorsa uyar

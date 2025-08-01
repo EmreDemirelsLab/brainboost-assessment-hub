@@ -71,188 +71,202 @@ export default function Auth() {
 
   if (showResetForm) {
     return (
-      <div className="min-h-screen bg-gradient-secondary flex items-center justify-center p-4">
-        <div className="w-full max-w-md space-y-6">
-          {/* Logo */}
-          <div className="text-center">
-          <img 
-            src="/assets/images/logo.png" 
-            alt="ForTest Logo" 
-            className="h-16 mx-auto mb-2"
-          />
-            <p className="text-muted-foreground text-2x1 font-medium">ForBrain Gelişim ve Takip Sistemi</p>
-          </div>
-
-          {/* Reset Password Card */}
-          <Card className="shadow-card">
-            <CardHeader className="text-center">
-              <CardTitle className="text-2xl font-bold">Şifre Sıfırla</CardTitle>
-              <CardDescription>
-                E-posta adresinizi girin, size şifre sıfırlama bağlantısı gönderelim
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {resetSuccess ? (
-                <div className="text-center space-y-4">
-                  <CheckCircle className="h-16 w-16 text-success mx-auto" />
-                  <p className="text-success font-medium">
-                    Şifre sıfırlama e-postası gönderildi!
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    E-posta kutunuzu kontrol edin ve talimatları izleyin.
-                  </p>
-                  <Button variant="outline" onClick={() => setShowResetForm(false)}>
-                    Giriş sayfasına dön
-                  </Button>
-                </div>
-              ) : (
-                <form onSubmit={handleResetPassword} className="space-y-4">
-                  {resetError && (
-                    <Alert variant="destructive">
-                      <Shield className="h-4 w-4" />
-                      <AlertDescription>{resetError}</AlertDescription>
-                    </Alert>
-                  )}
-
-                  <div className="space-y-2">
-                    <Label htmlFor="resetEmail">E-posta Adresi</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="resetEmail"
-                        type="email"
-                        placeholder="ornek@forbrainacademy.com"
-                        value={resetEmail}
-                        onChange={(e) => setResetEmail(e.target.value)}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Button type="submit" className="w-full" disabled={isResetting}>
-                      {isResetting ? "Gönderiliyor..." : "Şifre Sıfırlama E-postası Gönder"}
-                    </Button>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={() => setShowResetForm(false)}
-                    >
-                      Geri
-                    </Button>
-                  </div>
-                </form>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-secondary flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-6">
-        {/* Logo */}
-        <div className="text-center">
-          <img 
-            src="/assets/images/logo.png" 
-            alt="ForTest Logo" 
-            className="h-16 mx-auto mb-2"
-          />
-          <p className="text-muted-foreground text-2x1 font-medium">ForBrain Gelişim ve Takip Sistemi</p>
-        </div>
-
-        {/* Login Card */}
-        <Card className="shadow-card">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold">Giriş Yap</CardTitle>
-            <CardDescription>
-              Hesabınıza giriş yaparak devam edin
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              {loginError && (
-                <Alert variant="destructive">
-                  <Shield className="h-4 w-4" />
-                  <AlertDescription>{loginError}</AlertDescription>
-                </Alert>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="loginEmail">E-posta</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="loginEmail"
-                    type="email"
-                    placeholder="ornek@forbrainacademy.com"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="loginPassword">Şifre</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="loginPassword"
-                    type={showLoginPassword ? "text" : "password"}
-                    placeholder="Şifrenizi girin"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    className="pl-10 pr-10"
-                    required
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-0 top-0 h-full px-3"
-                    onClick={() => setShowLoginPassword(!showLoginPassword)}
-                  >
-                    {showLoginPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-
-              <Button type="submit" className="w-full" disabled={isLoggingIn}>
-                {isLoggingIn ? "Giriş yapılıyor..." : "Giriş Yap"}
-              </Button>
-            </form>
-
-            <div className="mt-6 text-center">
-              <button 
-                className="text-sm text-primary hover:underline font-medium"
-                onClick={() => setShowResetForm(true)}
-              >
-                Şifrenizi mi unuttunuz?
-              </button>
+      <div className="min-h-screen bg-gradient-secondary flex flex-col">
+        {/* Main Content */}
+        <div className="flex-1 flex items-center justify-center p-4">
+          <div className="w-full max-w-md space-y-6">
+            {/* Logo */}
+            <div className="text-center">
+            <img 
+              src="/assets/images/logo.png" 
+              alt="ForTest Logo" 
+              className="h-16 mx-auto mb-2"
+            />
+              <p className="text-muted-foreground text-2x1 font-medium">ForBrain Gelişim ve Takip Sistemi</p>
             </div>
-          </CardContent>
-        </Card>
 
+            {/* Reset Password Card */}
+            <Card className="shadow-card">
+              <CardHeader className="text-center">
+                <CardTitle className="text-2xl font-bold">Şifre Sıfırla</CardTitle>
+                <CardDescription>
+                  E-posta adresinizi girin, size şifre sıfırlama bağlantısı gönderelim
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {resetSuccess ? (
+                  <div className="text-center space-y-4">
+                    <CheckCircle className="h-16 w-16 text-success mx-auto" />
+                    <p className="text-success font-medium">
+                      Şifre sıfırlama e-postası gönderildi!
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      E-posta kutunuzu kontrol edin ve talimatları izleyin.
+                    </p>
+                    <Button variant="outline" onClick={() => setShowResetForm(false)}>
+                      Giriş sayfasına dön
+                    </Button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleResetPassword} className="space-y-4">
+                    {resetError && (
+                      <Alert variant="destructive">
+                        <Shield className="h-4 w-4" />
+                        <AlertDescription>{resetError}</AlertDescription>
+                      </Alert>
+                    )}
 
-        {/* Footer */}
-        <div className="text-center pt-8">
+                    <div className="space-y-2">
+                      <Label htmlFor="resetEmail">E-posta Adresi</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="resetEmail"
+                          type="email"
+                          placeholder="ornek@forbrainacademy.com"
+                          value={resetEmail}
+                          onChange={(e) => setResetEmail(e.target.value)}
+                          className="pl-10"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Button type="submit" className="w-full" disabled={isResetting}>
+                        {isResetting ? "Gönderiliyor..." : "Şifre Sıfırlama E-postası Gönder"}
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => setShowResetForm(false)}
+                      >
+                        Geri
+                      </Button>
+                    </div>
+                  </form>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Footer - Always at bottom */}
+        <footer className="text-center py-6 px-4">
           <div className="h-1 bg-primary rounded-full mb-4 mx-auto max-w-32"></div>
           <div className="text-xs text-muted-foreground space-y-1">
             <div>+90 212 351 32 12</div>
             <div>forbrain@forbrainacademy.com</div>
           </div>
+        </footer>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-secondary flex flex-col">
+      {/* Main Content */}
+      <div className="flex-1 flex items-center justify-center p-4">
+        <div className="w-full max-w-md space-y-6">
+          {/* Logo */}
+          <div className="text-center">
+            <img 
+              src="/assets/images/logo.png" 
+              alt="ForTest Logo" 
+              className="h-16 mx-auto mb-2"
+            />
+            <p className="text-muted-foreground text-2x1 font-medium">ForBrain Gelişim ve Takip Sistemi</p>
+          </div>
+
+          {/* Login Card */}
+          <Card className="shadow-card">
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl font-bold">Giriş Yap</CardTitle>
+              <CardDescription>
+                Hesabınıza giriş yaparak devam edin
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleLogin} className="space-y-4">
+                {loginError && (
+                  <Alert variant="destructive">
+                    <Shield className="h-4 w-4" />
+                    <AlertDescription>{loginError}</AlertDescription>
+                  </Alert>
+                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="loginEmail">E-posta</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="loginEmail"
+                      type="email"
+                      placeholder="ornek@forbrainacademy.com"
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="loginPassword">Şifre</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="loginPassword"
+                      type={showLoginPassword ? "text" : "password"}
+                      placeholder="Şifrenizi girin"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      className="pl-10 pr-10"
+                      required
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full px-3"
+                      onClick={() => setShowLoginPassword(!showLoginPassword)}
+                    >
+                      {showLoginPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                <Button type="submit" className="w-full" disabled={isLoggingIn}>
+                  {isLoggingIn ? "Giriş yapılıyor..." : "Giriş Yap"}
+                </Button>
+              </form>
+
+              <div className="mt-6 text-center">
+                <button 
+                  className="text-sm text-primary hover:underline font-medium"
+                  onClick={() => setShowResetForm(true)}
+                >
+                  Şifrenizi mi unuttunuz?
+                </button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
+
+      {/* Footer - Always at bottom */}
+      <footer className="text-center py-6 px-4">
+        <div className="h-1 bg-primary rounded-full mb-4 mx-auto max-w-32"></div>
+        <div className="text-xs text-muted-foreground space-y-1">
+          <div>+90 212 351 32 12</div>
+          <div>forbrain@forbrainacademy.com</div>
+        </div>
+      </footer>
     </div>
   );
 }

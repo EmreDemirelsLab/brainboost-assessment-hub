@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Burdon Dikkat Testi Raporu</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 40px;
+            margin: 0 auto;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        
+        @media print {
+            body {
+                margin: 0;
+            }
+            .page {
+                margin: 0;
+                box-shadow: none;
+                page-break-after: always;
+            }
+        }
+        
+        /* Page 1 Styles */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            color: #8B4789;
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 30px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .info-item {
+            text-align: left;
+        }
+        
+        .info-label {
+            color: #FF8C42;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .info-value {
+            color: #333;
+            font-size: 20px;
+        }
+        
+        .gauge-container {
+            display: flex;
+            justify-content: center;
+            margin: 60px 0;
+        }
+        
+        .gauge {
+            position: relative;
+            width: 400px;
+            height: 200px;
+        }
+        
+        .gauge svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .performance-title {
+            text-align: center;
+            color: #FF8C42;
+            font-size: 28px;
+            font-weight: 600;
+            margin: 40px 0 30px;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+        }
+        
+        .section-title {
+            color: #8B4789;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        
+        .section-content {
+            color: #333;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        
+        .bullet-point {
+            margin-left: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .logo {
+            text-align: center;
+            margin-top: 60px;
+        }
+        
+        .logo span {
+            font-size: 36px;
+            font-weight: 700;
+        }
+        
+        .logo .for {
+            color: #00C9FF;
+        }
+        
+        .logo .test {
+            color: #333;
+        }
+        
+        .logo .check {
+            color: #00D100;
+            font-size: 40px;
+        }
+        
+        /* Page 2 Styles */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+        }
+        
+        .data-table th,
+        .data-table td {
+            border: 2px solid #8B4789;
+            padding: 15px;
+            text-align: center;
+            font-size: 18px;
+        }
+        
+        .data-table th {
+            background-color: #F0E6F0;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .chart-container {
+            margin: 50px 0;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .bar-chart {
+            width: 500px;
+            height: 400px;
+            position: relative;
+        }
+        
+        .chart-bars {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            height: 300px;
+            border-left: 2px solid #999;
+            border-bottom: 2px solid #999;
+            padding: 20px;
+        }
+        
+        .bar-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100px;
+        }
+        
+        .bar {
+            width: 80px;
+            background: linear-gradient(to top, #FF8C42, #FF6B35);
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+        }
+        
+        .bar-value {
+            color: white;
+            font-size: 32px;
+            font-weight: 700;
+            padding-top: 10px;
+        }
+        
+        .bar-label {
+            margin-top: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .chart-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 80px;
+            z-index: -1;
+        }
+        
+        .grid-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            border-top: 1px dotted #ccc;
+        }
+        
+        .grid-label {
+            position: absolute;
+            left: -40px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .comment-section {
+            background-color: #F0E6F0;
+            padding: 30px;
+            border-radius: 10px;
+            margin-top: 40px;
+        }
+        
+        .comment-title {
+            color: #8B4789;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        
+        .comment-text {
+            color: #333;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        
+        .observation-section {
+            background-color: #E8D5E8;
+            padding: 40px;
+            border-radius: 10px;
+            margin-top: 30px;
+            min-height: 200px;
+        }
+        
+        .observation-title {
+            color: #8B4789;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Page 1 -->
+    <div class="page">
+        <div class="header">
+            <h1>Burdon Dikkat Testi Raporu</h1>
+        </div>
+        
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Ad Soyad</div>
+                <div class="info-value">Ece Yeşim Cinemre</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Yaş</div>
+                <div class="info-value">31 Yıl 7 Ay 11 Gün</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Değerlendirme Tarihi</div>
+                <div class="info-value">11/07/2025</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Cinsiyet</div>
+                <div class="info-value">Kadın</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Doğum Tarihi</div>
+                <div class="info-value">16/12/1994</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Uygulayan</div>
+                <div class="info-value">Funda Demirel</div>
+            </div>
+        </div>
+        
+        <div class="gauge-container">
+            <div class="gauge">
+                <svg viewBox="0 0 200 120">
+                    <!-- Gauge background -->
+                    <defs>
+                        <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#FFA500;stop-opacity:1" />
+                            <stop offset="50%" style="stop-color:#FF8C00;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#FF4500;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    
+                    <!-- Gauge arc -->
+                    <path d="M 20 100 A 80 80 0 0 1 180 100" fill="url(#gaugeGradient)" stroke="none"/>
+                    
+                    <!-- Center circle -->
+                    <circle cx="100" cy="100" r="15" fill="white"/>
+                    <circle cx="100" cy="100" r="8" fill="#FFA500"/>
+                    
+                    <!-- Pointer -->
+                    <path d="M 100 100 L 140 95 L 135 100 L 140 105 Z" fill="#1e3a8a" transform="rotate(20 100 100)"/>
+                    
+                    <!-- Scale marks -->
+                    <text x="20" y="110" font-size="14" fill="#333">0</text>
+                    <text x="175" y="110" font-size="14" fill="#333">100</text>
+                </svg>
+            </div>
+        </div>
+        
+        <div class="performance-title">Genel Dikkat Performans Yüzdesi</div>
+        
+        <div class="section">
+            <div class="section-title">Burdon Dikkat Testinin Amacı</div>
+            <div class="section-content">
+                Burdon Dikkat Testi, bireyin dikkatini bir görev üzerinde ne kadar süreyle ve ne kadar doğru sürdürebildiğini ölçmek amacıyla kullanılır. Bu teste yapılan doğru ve hatalı işaretlemeler, dikkat süresi, odaklanma kalitesi ve dikkati sürdürebilme becerisi hakkında bilgi verir.
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">Hedeflenen Kullanım Alanları</div>
+            <div class="section-content">
+                <div class="bullet-point">•Okuma-yazma becerisi kazanmış bireylerde dikkat ve odaklanma becerilerini değerlendirmek</div>
+                <div class="bullet-point">•Seçici dikkat, dikkat süresi ve görsel dikkatin sürekliliğini ölçmek</div>
+                <div class="bullet-point">•Bilişsel beceri geliştirme programlarında uygulama öncesi ve sonrası dikkat performansındaki değişimi izlemek</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">Ölçülen Bilişsel Alanlar</div>
+            <div class="section-content">
+                <strong>Seçici Dikkat:</strong> Hedef veya göreve odaklanma, uyaranları yok sayma<br>
+                <strong>Sürdürülebilir Dikkat:</strong> Dikkati belirli bir süre aynı hedef üzerinde dağılmadan devam ettirebilme<br>
+                <strong>Odaklanma:</strong> Görsel olarak dikkat dağıtıcı birçok uyaran arasında yalnızca hedefe yönelme ve bu odakta kalabilme<br>
+                <strong>Psikomotor Hız (İşlem Hızı):</strong> Bilgiyi hızlıca algılayıp doğru şekilde tepki verebilme hızı
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">Önemli Notlar</div>
+            <div class="section-content">
+                <div class="bullet-point">•Rapor bireyin dikkat ve odaklanma becerilerindeki güçlü ve desteklenmesi gereken yönleri belirlemek içindir. Tanı koymak için değildir.</div>
+                <div class="bullet-point">•Test sonuçları sadece test anındaki durumu yansıtır. Uyku, stres, heyecan gibi değişkenler bireyin performansını etkileyebilir.</div>
+            </div>
+        </div>
+        
+        <div class="logo">
+            <span class="for">for</span><span class="test">TEST</span><span class="check">✓</span>
+        </div>
+    </div>
+    
+    <!-- Page 2 -->
+    <div class="page">
+        <div class="header">
+            <h1>Burdon Dikkat Testi Raporu</h1>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">Ham Puan Veri Tablosu</div>
+            <table class="data-table">
+                <tr>
+                    <th></th>
+                    <th>Doğru İşaretleme</th>
+                    <th>Yanlış İşaretleme</th>
+                    <th>Boş Bırakılan</th>
+                </tr>
+                <tr>
+                    <td><strong>Başta</strong></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td><strong>Ortada</strong></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td><strong>Sonda</strong></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </table>
+        </div>
+        
+        <div class="chart-container">
+            <div class="bar-chart">
+                <div class="chart-grid">
+                    <div class="grid-line" style="bottom: 20%;"><span class="grid-label">20</span></div>
+                    <div class="grid-line" style="bottom: 40%;"><span class="grid-label">40</span></div>
+                    <div class="grid-line" style="bottom: 60%;"><span class="grid-label">60</span></div>
+                    <div class="grid-line" style="bottom: 80%;"><span class="grid-label">80</span></div>
+                    <div class="grid-line" style="bottom: 100%;"><span class="grid-label">100</span></div>
+                </div>
+                <div class="chart-bars">
+                    <div class="bar-wrapper">
+                        <div class="bar" style="height: 89%;">
+                            <div class="bar-value">89</div>
+                        </div>
+                        <div class="bar-label">Başta</div>
+                    </div>
+                    <div class="bar-wrapper">
+                        <div class="bar" style="height: 72%;">
+                            <div class="bar-value">72</div>
+                        </div>
+                        <div class="bar-label">Ortada</div>
+                    </div>
+                    <div class="bar-wrapper">
+                        <div class="bar" style="height: 64%;">
+                            <div class="bar-value">64</div>
+                        </div>
+                        <div class="bar-label">Sonda</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="comment-section">
+            <div class="comment-title">Yorum</div>
+            <div class="comment-text">
+                Dikkatini sürdürmekte güçlük yaşayabildiği gözlenmektedir. Dikkat ve odaklanma becerilerinin gelişimi için aşamalı, hedefe yönelik ve yapılandırılmış çalışmalar önerilmektedir.
+            </div>
+        </div>
+        
+        <div class="observation-section">
+            <div class="observation-title">Beyin Antrenörü Gözlem ve Görüşleri</div>
+        </div>
+        
+        <div class="logo">
+            <span class="for">for</span><span class="test">TEST</span><span class="check">✓</span>
+        </div>
+    </div>
+</body>
+</html>

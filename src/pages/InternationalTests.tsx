@@ -1,14 +1,9 @@
-import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { ArrowLeft, GraduationCap, Globe, Clock, Users, Play, Award } from "lucide-react";
+import { ArrowLeft, Play } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
-import { BurdonTest } from "@/components/tests/BurdonTest";
 
 interface TestResult {
   testType: string;
@@ -18,9 +13,6 @@ interface TestResult {
 
 export default function InternationalTests() {
   const { user, switchRole, logout } = useAuth();
-  const [selectedGrade, setSelectedGrade] = useState("all");
-  const [selectedSubject, setSelectedSubject] = useState("all");
-  const [showBurdonTest, setShowBurdonTest] = useState(false);
 
   const handleRoleSwitch = (role: any) => {
     switchRole(role);
@@ -31,21 +23,49 @@ export default function InternationalTests() {
   };
 
   const handleTestStart = (testType: string) => {
+    // Test penceresi açma işlemi - tam ekran
+    const screenWidth = window.screen.availWidth;
+    const screenHeight = window.screen.availHeight;
+    let testUrl = '';
+    let testTitle = '';
+
     if (testType === 'burdon') {
-      setShowBurdonTest(true);
+      testUrl = '/international-tests/burdon-test/burdon.html';
+      testTitle = 'Burdon Dikkat Testi';
+    } else if (testType === 'd2') {
+      testUrl = '/international-tests/d2-test/D2_testi.html';
+      testTitle = 'd2 Dikkat Testi';
     } else {
-      // Diğer testler henüz aktif değil
       alert('Bu test henüz aktif değil');
+      return;
+    }
+      
+    const testWindow = window.open(testUrl, '_blank', 
+      `width=${screenWidth},height=${screenHeight},left=0,top=0,toolbar=no,menubar=no,scrollbars=yes,resizable=yes,status=no,fullscreen=yes`);
+
+    if (!testWindow) {
+      alert('Test penceresi açılamadı. Lütfen popup engelleyiciyi kapatın.');
+    } else {
+      // Test penceresi yüklendikten sonra başlığı değiştir ve tam ekran moduna geç
+      testWindow.addEventListener('load', () => {
+        try {
+          // Pencere başlığını değiştir
+          testWindow.document.title = testTitle;
+
+          // Tam ekran moduna geçmeye çalış
+          if (testWindow.document.documentElement && testWindow.document.documentElement.requestFullscreen) {
+            testWindow.document.documentElement.requestFullscreen().catch(err => {
+              console.log('Tam ekran modu başlatılamadı:', err);
+            });
+          }
+        } catch (error) {
+          console.log('Pencere ayarları uygulanamadı:', error);
+        }
+      });
     }
   };
 
-  const handleTestComplete = () => {
-    console.log('Burdon test tamamlandı');
-    setShowBurdonTest(false);
-    // Here you could show a success message or redirect
-  };
-
-  // Only the Burdon test is available - other tests are removed
+  // Available International Tests
   const availableTests = [
     {
       id: 1,
@@ -53,34 +73,31 @@ export default function InternationalTests() {
       description: "Dikkat sürdürme, odaklanma ve seçici dikkat becerilerini değerlendiren uluslararası standart test",
       grade: "Tüm Yaşlar",
       subject: "Psikometri",
-      duration: "5 dakika",
+      duration: "3 dakika",
       participants: "Bireysel",
       difficulty: "Orta",
       country: "Burdon Standardı",
       nextSession: "Her Zaman",
       testType: "burdon",
       isActive: true
+    },
+    {
+      id: 2,
+      title: "d2 Dikkat Testi",
+      description: "Konsantrasyon performansı, işlem hızı ve dikkat kararlılığını ölçen altın standart d2 testi",
+      grade: "Tüm Yaşlar",
+      subject: "Psikometri",
+      duration: "5 dakika",
+      participants: "Bireysel",
+      difficulty: "Orta", 
+      country: "d2 Standardı",
+      nextSession: "Her Zaman",
+      testType: "d2",
+      isActive: true
     }
   ];
 
-  // Filter tests based on grade and subject
-  const filteredTests = availableTests.filter(test => {
-    const gradeMatch = selectedGrade === "all" || test.grade.includes(selectedGrade);
-    const subjectMatch = selectedSubject === "all" || test.subject === selectedSubject;
-    return gradeMatch && subjectMatch && test.isActive;
-  });
 
-  const subjects = ["Psikometri"]; // Only available subject
-  const grades = ["Tüm Yaşlar"]; // Available for all ages
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "Kolay": return "bg-green-100 text-green-800";
-      case "Orta": return "bg-yellow-100 text-yellow-800";
-      case "Zor": return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
-    }
-  };
 
   return (
     <DashboardLayout
@@ -94,179 +111,66 @@ export default function InternationalTests() {
       onLogout={handleLogout}
     >
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" asChild>
-              <Link to="/dashboard">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Ana Sayfa
-              </Link>
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold flex items-center gap-2">
-                <GraduationCap className="h-8 w-8 text-primary" />
-                Uluslararası Alan Testleri
-              </h1>
-              <p className="text-muted-foreground">
-                Dünya standartlarında değerlendirme testleri ile öğrencilerinizi ölçün.
-              </p>
-            </div>
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-6">
+          <Link to="/dashboard" className="text-gray-600 hover:text-gray-900">
+            <ArrowLeft className="w-6 h-6" />
+          </Link>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Uluslararası Alan Testleri
+          </h1>
+        </div>
+
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <img 
+            src="/assets/images/forbrain logo.png" 
+            alt="ForBrain Logo" 
+            className="h-20 mx-auto mb-6"
+          />
+          
+          {/* Uyarı */}
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-8 max-w-2xl mx-auto">
+            <p className="text-sm text-amber-800">
+              <strong>Önemli:</strong> Testler ayrı bir pencerede açılacaktır. Pop-up engelleyici ayarlarınızın kapalı olduğundan emin olun.
+            </p>
           </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Test Filtreleri</CardTitle>
-            <CardDescription>
-              Sınıf seviyesi ve alan bazında testleri filtreleyebilirsiniz.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-4">
-              <Select value={selectedGrade} onValueChange={setSelectedGrade}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Sınıf seviyesi seçin" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tüm Sınıflar</SelectItem>
-                  {grades.map(grade => (
-                    <SelectItem key={grade} value={grade}>
-                      {grade}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Alan seçin" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tüm Alanlar</SelectItem>
-                  {subjects.map(subject => (
-                    <SelectItem key={subject} value={subject}>
-                      {subject}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {filteredTests.map((test) => (
-            <Card key={test.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-xl flex items-center gap-2">
-                      <Globe className="h-5 w-5 text-primary" />
-                      {test.title}
-                    </CardTitle>
-                    <CardDescription className="mt-2">
-                      {test.description}
-                    </CardDescription>
-                    <Badge variant="outline" className="mt-2">
-                      {test.country}
-                    </Badge>
-                  </div>
+
+        <div className="flex flex-col items-center space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl">
+            {availableTests.map((test) => (
+            <Card key={test.id} className="text-center p-8 hover:shadow-lg transition-shadow flex flex-col h-full">
+              <CardHeader className="flex-grow flex flex-col">
+                <div className="flex-grow">
+                  <CardTitle className="text-2xl font-bold text-slate-800 mb-4">
+                    {test.title}
+                  </CardTitle>
+                  <CardDescription className="text-slate-600 mb-6">
+                    {test.description}
+                  </CardDescription>
                 </div>
+
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Sınıf:</span>
-                      <div className="font-medium">{test.grade}</div>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Alan:</span>
-                      <div className="font-medium">{test.subject}</div>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Süre:</span>
-                      <div className="font-medium flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {test.duration}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Katılımcı:</span>
-                      <div className="font-medium flex items-center gap-1">
-                        <Users className="h-3 w-3" />
-                        {test.participants}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="p-3 bg-muted rounded-lg">
-                    <div className="text-sm text-muted-foreground">Sonraki Oturum</div>
-                    <div className="font-medium">{test.nextSession}</div>
-                  </div>
-                  
-                  <Button 
-                    className="w-full" 
-                    variant="default"
-                    onClick={() => handleTestStart(test.testType || '')}
-                  >
-                    <Play className="h-4 w-4 mr-2" />
-                    Teste Başla
-                  </Button>
-                </div>
+              <CardContent className="mt-auto">
+                <Button 
+                  size="lg"
+                  className="w-full text-lg px-8 py-4 bg-blue-600 hover:bg-blue-700" 
+                  onClick={() => handleTestStart(test.testType || '')}
+                >
+                  <Play className="h-5 w-5 mr-2" />
+                  Teste Başla
+                </Button>
               </CardContent>
             </Card>
           ))}
+          </div>
         </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Uluslararası Testler Hakkında</CardTitle>
-            <CardDescription>
-              Dünya standartlarında değerlendirme sistemleri
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="space-y-3">
-                <Award className="h-8 w-8 text-primary" />
-                <h3 className="font-semibold">PISA Testleri</h3>
-                <p className="text-sm text-muted-foreground">
-                  OECD tarafından düzenlenen, 15 yaş grubundaki öğrencilerin matematik, 
-                  fen ve okuma becerilerini değerlendiren uluslararası test.
-                </p>
-              </div>
-              <div className="space-y-3">
-                <Award className="h-8 w-8 text-primary" />
-                <h3 className="font-semibold">TIMSS Testleri</h3>
-                <p className="text-sm text-muted-foreground">
-                  4. ve 8. sınıf öğrencilerinin matematik ve fen bilimleri alanındaki 
-                  başarılarını uluslararası düzeyde karşılaştıran değerlendirme.
-                </p>
-              </div>
-              <div className="space-y-3">
-                <Award className="h-8 w-8 text-primary" />
-                <h3 className="font-semibold">PIRLS Testleri</h3>
-                <p className="text-sm text-muted-foreground">
-                  4. sınıf öğrencilerinin okuma anlama becerilerini uluslararası 
-                  standartlarda ölçen kapsamlı değerlendirme sistemi.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
-      {/* Burdon Test Modal */}
-      <Dialog open={showBurdonTest} onOpenChange={setShowBurdonTest}>
-        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto p-0">
-          <div className="sr-only">
-            <h2>Burdon Dikkat Testi</h2>
-            <p>Dikkat sürdürme ve odaklanma testini başlatın</p>
-          </div>
-          <BurdonTest onComplete={handleTestComplete} />
-        </DialogContent>
-      </Dialog>
+
     </DashboardLayout>
   );
 }

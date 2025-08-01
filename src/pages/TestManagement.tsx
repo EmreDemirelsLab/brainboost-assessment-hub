@@ -27,7 +27,7 @@ interface Test {
 }
 
 export default function TestManagement() {
-  const { user, switchRole, logout } = useAuth();
+  const { user, switchRole, logout, isLoading } = useAuth();
   const { toast } = useToast();
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [selectedTest, setSelectedTest] = useState<string>("");
@@ -35,31 +35,104 @@ export default function TestManagement() {
   const [tests, setTests] = useState<Test[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Auth yüklenene kadar bekle
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Basit rol kontrolü - user varsa kontrol et
+  const canViewTestManagement = user?.roles?.includes('admin') || 
+                                user?.roles?.includes('temsilci') || 
+                                user?.roles?.includes('beyin_antrenoru');
+
+  if (user && !canViewTestManagement) {
+    return (
+      <DashboardLayout
+        user={user ? {
+          name: `${user.firstName} ${user.lastName}`,
+          email: user.email,
+          roles: user.roles,
+          currentRole: user.currentRole,
+        } : undefined}
+        onRoleSwitch={(role: any) => switchRole(role)}
+        onLogout={logout}
+      >
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold mb-2">Erişim Yetkisi Yok</h2>
+            <p className="text-muted-foreground">Bu sayfayı görüntüleme yetkiniz bulunmamaktadır.</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   useEffect(() => {
     fetchStudents();
     fetchTests();
-  }, []);
+  }, [user?.currentRole, user?.id]); // Rol değişince yeniden çek
 
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('students')
+      
+      if (!user) {
+        console.error('❌ User not found');
+        return;
+      }
+
+      console.log('🔍 Test Management - Fetching students for role:', user.currentRole);
+      
+      // Dinamik rol kategorisi belirleme
+      const isAdminRole = user.currentRole === 'admin';
+      const isTrainerRole = ['trainer', 'beyin_antrenoru'].includes(user.currentRole);
+      
+      // Dinamik query builder - role göre filtering
+      let query = supabase
+        .from('users')
         .select(`
           id,
-          user_id,
-          student_number,
-          users(first_name, last_name)
-        `);
+          first_name,
+          last_name,
+          email,
+          supervisor_id,
+          demographic_info
+        `)
+        .contains('roles', '["kullanici"]'); // Sadece öğrenciler - JSON string formatı
+
+      // Rol bazlı dinamik filtering
+      if (isAdminRole) {
+        console.log('👑 Admin - showing all students for test management');
+      } else if (isTrainerRole) {
+        console.log('🎯 Trainer - showing only supervised students for test management');
+        query = query.eq('supervisor_id', user.id);
+      } else {
+        console.log('👤 Other role - no students for test management');
+        query = query.limit(0);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
 
+      // Format for compatibility with existing interface
       const formattedStudents = data?.map(student => ({
-        ...student,
-        first_name: student.users?.first_name || 'Bilinmeyen',
-        last_name: student.users?.last_name || 'Öğrenci'
+        id: student.id,
+        user_id: student.id, // Compatibility field
+        student_number: student.demographic_info?.student_number || `STU-${student.id.slice(-8)}`,
+        first_name: student.first_name,
+        last_name: student.last_name,
+        users: {
+          first_name: student.first_name,
+          last_name: student.last_name
+        }
       })) || [];
 
+      console.log('✅ Test Management Students loaded:', formattedStudents.length);
       setStudents(formattedStudents);
     } catch (error) {
       console.error('Error fetching students:', error);
