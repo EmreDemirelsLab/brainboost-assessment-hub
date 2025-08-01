@@ -1274,7 +1274,7 @@
 
             // Örnek görselleri
             testData.examples.forEach(example => {
-                const basePath = example.folder;
+                const basePath = `/cognitive-tests/akil-mantik/${example.folder}`;
                 imagesToPreload.push(`${basePath}/soru.png`);
                 for (let i = 1; i <= 5; i++) {
                     imagesToPreload.push(`${basePath}/${i}.png`);
@@ -1283,7 +1283,7 @@
 
             // Ana test görselleri
             testData.mainQuestions.forEach(question => {
-                const basePath = question.folder;
+                const basePath = `/cognitive-tests/akil-mantik/${question.folder}`;
                 imagesToPreload.push(`${basePath}/soru.png`);
                 const optionCount = basePath.includes('4-ALTILI KARE FORMAT') ? 6 : 5;
                 for (let i = 1; i <= optionCount; i++) {
@@ -1299,19 +1299,19 @@
             // Örnek sorular - 4 adet (1'i program gösterecek, 3'ü kullanıcı yapacak)
             examples: [
                 {
-                    folder: 'Oruntuler/1-ORNEK UYGULAMA/ÖRNEK UYGULAMA-1',
+                    folder: 'Oruntuler/1-ORNEK UYGULAMA/ORNEK-UYGULAMA-1',
                     correctAnswer: 2 // 3-DOĞRU
                 },
                 {
-                    folder: 'Oruntuler/1-ORNEK UYGULAMA/ÖRNEK UYGULAMA-2',
+                    folder: 'Oruntuler/1-ORNEK UYGULAMA/ORNEK-UYGULAMA-2',
                     correctAnswer: 3 // 4-DOĞRU
                 },
                 {
-                    folder: 'Oruntuler/1-ORNEK UYGULAMA/ÖRNEK UYGULAMA-3',
+                    folder: 'Oruntuler/1-ORNEK UYGULAMA/ORNEK-UYGULAMA-3',
                     correctAnswer: 1 // 2-DOĞRU
                 },
                 {
-                    folder: 'Oruntuler/1-ORNEK UYGULAMA/ÖRNEK UYGULAMA-4',
+                    folder: 'Oruntuler/1-ORNEK UYGULAMA/ORNEK-UYGULAMA-4',
                     correctAnswer: 1 // 2-DOĞRU
                 }
             ],
@@ -1615,7 +1615,7 @@
             const demoArea = document.getElementById('demoArea');
             
             const example = testData.examples[0];
-            const basePath = `${example.folder}`;
+            const basePath = `/cognitive-tests/akil-mantik/${example.folder}`;
             
             // Soru görselini kontrollü yükle
             const questionImgSrc = `${basePath}/soru.png`;
@@ -1623,10 +1623,8 @@
             // Preloaded görseli kullan veya fallback
             let questionImgElement = '';
             if (preloadedImages.has(questionImgSrc)) {
-                console.log(`✅ Preloaded görsel kullanılıyor: ${questionImgSrc}`);
                 questionImgElement = `<img class="question-image" src="${questionImgSrc}" alt="Örnek soru">`;
             } else {
-                console.warn(`⚠️ Preloaded görsel bulunamadı, manuel yükleme: ${questionImgSrc}`);
                 questionImgElement = `<img class="question-image" src="${questionImgSrc}" alt="Örnek soru" 
                     onerror="console.error('Demo soru görseli yüklenemedi: ${questionImgSrc}'); this.style.background='#f0f0f0'; this.style.border='2px dashed #ccc'; this.alt='Görsel yüklenemedi';">`;
             }
@@ -1828,17 +1826,15 @@
             showScreen('exampleScreen');
             
             const example = testData.examples[testState.currentExampleIndex];
-            const basePath = `${example.folder}`;
+            const basePath = `/cognitive-tests/akil-mantik/${example.folder}`;
             
             // Soru görselini güvenli yükle
             const questionImgSrc = `${basePath}/soru.png`;
             const questionImg = document.getElementById('exampleQuestionImg');
             
             if (preloadedImages.has(questionImgSrc)) {
-                console.log(`✅ Preloaded örnek soru görseli: ${questionImgSrc}`);
                 questionImg.src = questionImgSrc;
             } else {
-                console.warn(`⚠️ Preloaded örnek soru bulunamadı: ${questionImgSrc}`);
                 questionImg.src = questionImgSrc;
                 questionImg.onerror = function() {
                     console.error(`❌ Örnek soru görseli yüklenemedi: ${questionImgSrc}`);
@@ -1900,10 +1896,8 @@
                 // Preloaded görsel kontrolü
                 let imgElement = '';
                 if (preloadedImages.has(imgSrc)) {
-                    console.log(`✅ Preloaded seçenek görseli: ${imgSrc}`);
                     imgElement = `<img src="${imgSrc}" alt="Seçenek ${i}">`;
                 } else {
-                    console.warn(`⚠️ Preloaded seçenek bulunamadı: ${imgSrc}`);
                     imgElement = `<img src="${imgSrc}" alt="Seçenek ${i}" 
                         onerror="console.error('Seçenek görseli yüklenemedi: ${imgSrc}'); this.style.background='#f0f0f0'; this.style.border='2px dashed #ccc'; this.alt='Görsel yüklenemedi';">`;
                 }
@@ -2114,17 +2108,15 @@
             
             // Progress bar artık otomatik animasyonla ilerliyor
             
-            const basePath = `${question.folder}`;
+            const basePath = `/cognitive-tests/akil-mantik/${question.folder}`;
             
             // Soru görselini güvenli yükle
             const questionImgSrc = `${basePath}/soru.png`;
             const mainQuestionImg = document.getElementById('mainQuestionImg');
             
             if (preloadedImages.has(questionImgSrc)) {
-                console.log(`✅ Preloaded ana test görseli: ${questionImgSrc}`);
                 mainQuestionImg.src = questionImgSrc;
             } else {
-                console.warn(`⚠️ Preloaded ana test görseli bulunamadı: ${questionImgSrc}`);
                 mainQuestionImg.src = questionImgSrc;
                 mainQuestionImg.onerror = function() {
                     console.error(`❌ Ana test görseli yüklenemedi: ${questionImgSrc}`);
@@ -2195,10 +2187,8 @@
                 // Preloaded görsel kontrolü
                 let imgElement = '';
                 if (preloadedImages.has(imgSrc)) {
-                    console.log(`✅ Preloaded ana test seçenek: ${imgSrc}`);
                     imgElement = `<img src="${imgSrc}" alt="Seçenek ${i}">`;
                 } else {
-                    console.warn(`⚠️ Preloaded ana test seçenek bulunamadı: ${imgSrc}`);
                     imgElement = `<img src="${imgSrc}" alt="Seçenek ${i}" 
                         onerror="console.error('Ana test seçenek görseli yüklenemedi: ${imgSrc}'); this.style.background='#f0f0f0'; this.style.border='2px dashed #ccc'; this.alt='Görsel yüklenemedi';">`;
                 }

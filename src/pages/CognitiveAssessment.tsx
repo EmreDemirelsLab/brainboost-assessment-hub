@@ -1,14 +1,19 @@
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { CognitiveAssessmentTest } from "@/components/cognitive-assessment/CognitiveAssessmentTest";
 
 export default function CognitiveAssessment() {
   const { user, switchRole, logout } = useAuth();
+  const navigate = useNavigate();
 
   const handleRoleSwitch = (role: any) => {
     switchRole(role);
+    // State güncellemesi tamamlanması için kısa bir gecikme
+    setTimeout(() => {
+      navigate('/dashboard');
+    }, 100);
   };
 
   const handleLogout = () => {

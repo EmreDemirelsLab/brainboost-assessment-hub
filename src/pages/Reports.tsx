@@ -1041,6 +1041,10 @@ export default function Reports() {
 
   const handleRoleSwitch = (role: any) => {
     switchRole(role);
+    // State güncellemesi tamamlanması için kısa bir gecikme
+    setTimeout(() => {
+      navigate('/dashboard');
+    }, 100);
   };
 
   const handleLogout = () => {

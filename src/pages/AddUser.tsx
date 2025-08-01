@@ -1,5 +1,8 @@
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { CreateUserModal } from "@/components/admin/CreateUserModal";
+import { UserDetailModal } from "@/components/admin/UserDetailModal";
+import { UserEditModal } from "@/components/admin/UserEditModal";
+import { DeleteUserDialog } from "@/components/admin/DeleteUserDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -7,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Search, Users, Plus, Eye, Edit, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,9 +32,16 @@ interface User {
 export default function AddUser() {
   const { user, switchRole, logout, isLoading } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
+  
+  // Modal states
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   // Auth yüklenene kadar bekle
   if (isLoading) {
@@ -75,6 +85,10 @@ export default function AddUser() {
 
   const handleRoleSwitch = (role: any) => {
     switchRole(role);
+    // State güncellemesi tamamlanması için kısa bir gecikme
+    setTimeout(() => {
+      navigate('/dashboard');
+    }, 100);
   };
 
   const handleLogout = () => {
@@ -130,6 +144,33 @@ export default function AddUser() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Modal handlers
+  const handleShowDetail = (user: User) => {
+    setSelectedUser(user);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDeleteUser = (user: User) => {
+    setSelectedUser(user);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleCloseModals = () => {
+    setSelectedUser(null);
+    setIsDetailModalOpen(false);
+    setIsEditModalOpen(false);
+    setIsDeleteDialogOpen(false);
+  };
+
+  const handleUserUpdated = () => {
+    fetchUsers(); // Kullanıcı güncellendikten sonra listeyi yenile
   };
 
   const getFilteredUsers = () => {
@@ -352,13 +393,29 @@ export default function AddUser() {
                         <TableCell>{formatDate(user.created_at)}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleShowDetail(user)}
+                              title="Detayları Görüntüle"
+                            >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleEditUser(user)}
+                              title="Düzenle"
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                              onClick={() => handleDeleteUser(user)}
+                              title="Sil"
+                            >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
@@ -372,6 +429,27 @@ export default function AddUser() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal'lar */}
+      <UserDetailModal
+        user={selectedUser}
+        isOpen={isDetailModalOpen}
+        onClose={handleCloseModals}
+      />
+
+      <UserEditModal
+        user={selectedUser}
+        isOpen={isEditModalOpen}
+        onClose={handleCloseModals}
+        onUserUpdated={handleUserUpdated}
+      />
+
+      <DeleteUserDialog
+        user={selectedUser}
+        isOpen={isDeleteDialogOpen}
+        onClose={handleCloseModals}
+        onUserDeleted={handleUserUpdated}
+      />
     </DashboardLayout>
   );
 }

@@ -35,6 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [currentRole, setCurrentRole] = useState<UserRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [justLoggedIn, setJustLoggedIn] = useState(false);
 
   // Fetch user profile and roles
   const fetchUserProfile = async (authUser: User) => {
@@ -47,9 +48,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single();
 
       if (profileError) {
-        // PGRST116 = no rows found - normal yeni kullanıcı oluşturma sırasında
+        // PGRST116 = no rows found - silinmiş kullanıcı veya yeni kullanıcı oluşturma sırasında
         if (profileError.code === 'PGRST116') {
-          console.log('👤 Profile not found (likely new user being created):', authUser.email);
+          console.log('👤 Profile not found (deleted user or new user being created):', authUser.email);
         } else {
           console.error('Error fetching profile:', profileError);
         }
@@ -79,6 +80,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       const primaryRole = determineRoleCategory(roles);
       
+      // Stored role'ü kontrol et, eğer user'ın rollerinde varsa onu kullan
+      const storedRole = localStorage.getItem('currentRole') as UserRole;
+      const currentRole = (storedRole && roles.includes(storedRole)) ? storedRole : primaryRole;
+      
       // User profile and roles loaded successfully
 
       const authUserData: AuthUser = {
@@ -90,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         avatarUrl: profile.avatar_url,
         isActive: profile.is_active,
         roles,
-        currentRole: primaryRole
+        currentRole: currentRole
       };
 
       return authUserData;
@@ -114,11 +119,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (userData) {
               setUser(userData);
               setCurrentRole(userData.currentRole);
+              
+              // Sadece gerçek giriş işleminde success mesajı ver
+              if (justLoggedIn) {
+                toast.success('Başarıyla giriş yapıldı!');
+                setJustLoggedIn(false); // Flag'i reset et
+              }
+            } else {
+              // Profil bulunamadı - muhtemelen silinmiş kullanıcı
+              console.log('🚫 User profile not found, signing out user:', session.user.email);
+              toast.error('Kullanıcı hesabınız sistemden kaldırılmış. Lütfen yöneticinizle iletişime geçin.');
+              await supabase.auth.signOut();
+              setUser(null);
+              setCurrentRole(null);
+              setSession(null);
+              setJustLoggedIn(false); // Flag'i reset et
+              // localStorage'dan currentRole'ü temizle
+              localStorage.removeItem('currentRole');
             }
           }, 0);
         } else {
           setUser(null);
           setCurrentRole(null);
+          setJustLoggedIn(false); // Çıkış durumunda flag'i reset et
+          // localStorage'dan currentRole'ü temizle
+          localStorage.removeItem('currentRole');
         }
         
         setIsLoading(false);
@@ -136,10 +161,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (userData) {
             setUser(userData);
             setCurrentRole(userData.currentRole);
+          } else {
+            // Profil bulunamadı - muhtemelen silinmiş kullanıcı
+            console.log('🚫 User profile not found, signing out user:', session.user.email);
+            toast.error('Kullanıcı hesabınız sistemden kaldırılmış. Lütfen yöneticinizle iletişime geçin.');
+            await supabase.auth.signOut();
+            setUser(null);
+            setCurrentRole(null);
+            setSession(null);
+            setJustLoggedIn(false); // Flag'i reset et
+            // localStorage'dan currentRole'ü temizle
+            localStorage.removeItem('currentRole');
           }
           setIsLoading(false);
         }, 0);
       } else {
+        setUser(null);
+        setCurrentRole(null);
+        setSession(null);
+        setJustLoggedIn(false);
+        // localStorage'dan currentRole'ü temizle
+        localStorage.removeItem('currentRole');
         setIsLoading(false);
       }
     });
@@ -158,6 +200,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: error.message };
       }
 
+      // Başarılı giriş için flag'i set et
+      setJustLoggedIn(true);
       return {};
     } catch (error) {
       return { error: 'Giriş yapılırken beklenmeyen bir hata oluştu.' };
@@ -319,6 +363,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setSession(null);
       setCurrentRole(null);
+      setJustLoggedIn(false); // Flag'i reset et
+      // localStorage'dan currentRole'ü temizle
+      localStorage.removeItem('currentRole');
       toast.success('Başarıyla çıkış yapıldı');
     } catch (error) {
       console.error('Error during logout:', error);
@@ -348,6 +395,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (user && user.roles.includes(role)) {
       setCurrentRole(role);
       setUser({ ...user, currentRole: role });
+      // Seçilen role'ü localStorage'a kaydet
+      localStorage.setItem('currentRole', role);
       toast.success(`Rol değiştirildi: ${role}`);
     } else {
       toast.error('Bu role geçiş yapma yetkiniz yok');

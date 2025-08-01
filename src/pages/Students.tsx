@@ -52,12 +52,15 @@ class StudentsErrorBoundary extends React.Component<
   }
 }
 import { useAuth } from "@/contexts/AuthContext";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { CreateUserModal } from "@/components/admin/CreateUserModal";
 import { TrainerAddStudentModal } from "@/components/admin/TrainerAddStudentModal";
+import { UserDetailModal } from "@/components/admin/UserDetailModal";
+import { UserEditModal } from "@/components/admin/UserEditModal";
+import { DeleteUserDialog } from "@/components/admin/DeleteUserDialog";
 
 interface Student {
   id: string;
@@ -76,9 +79,16 @@ interface Student {
 function StudentsInner() {
   const { user, switchRole, logout, isLoading } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(false);
+  
+  // Modal states
+  const [selectedUser, setSelectedUser] = useState<Student | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   // Auth yüklenene kadar bekle
   if (isLoading) {
@@ -229,8 +239,39 @@ function StudentsInner() {
     }
   };
 
+  // Modal handlers
+  const handleShowDetail = (student: Student) => {
+    setSelectedUser(student);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleEditUser = (student: Student) => {
+    setSelectedUser(student);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDeleteUser = (student: Student) => {
+    setSelectedUser(student);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleCloseModals = () => {
+    setSelectedUser(null);
+    setIsDetailModalOpen(false);
+    setIsEditModalOpen(false);
+    setIsDeleteDialogOpen(false);
+  };
+
+  const handleUserUpdated = () => {
+    fetchStudents(); // Kullanıcı güncellendikten sonra listeyi yenile
+  };
+
   const handleRoleSwitch = (role: any) => {
     switchRole(role);
+    // State güncellemesi tamamlanması için kısa bir gecikme
+    setTimeout(() => {
+      navigate('/dashboard');
+    }, 100);
   };
 
   const handleLogout = () => {
@@ -436,13 +477,29 @@ function StudentsInner() {
                         </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleShowDetail(student)}
+                            title="Detayları Görüntüle"
+                          >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleEditUser(student)}
+                            title="Düzenle"
+                          >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="outline" size="sm" className="text-destructive">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                            onClick={() => handleDeleteUser(student)}
+                            title="Sil"
+                          >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
@@ -496,6 +553,27 @@ function StudentsInner() {
           </Card>
         </div>
       </div>
+
+      {/* Modal'lar */}
+      <UserDetailModal
+        user={selectedUser}
+        isOpen={isDetailModalOpen}
+        onClose={handleCloseModals}
+      />
+
+      <UserEditModal
+        user={selectedUser}
+        isOpen={isEditModalOpen}
+        onClose={handleCloseModals}
+        onUserUpdated={handleUserUpdated}
+      />
+
+      <DeleteUserDialog
+        user={selectedUser}
+        isOpen={isDeleteDialogOpen}
+        onClose={handleCloseModals}
+        onUserDeleted={handleUserUpdated}
+      />
     </DashboardLayout>
   );
 }

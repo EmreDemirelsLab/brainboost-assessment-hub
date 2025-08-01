@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Mail, Users, FileText, Send } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -29,6 +29,7 @@ interface Test {
 export default function TestManagement() {
   const { user, switchRole, logout, isLoading } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [selectedTest, setSelectedTest] = useState<string>("");
   const [students, setStudents] = useState<Student[]>([]);
@@ -162,6 +163,10 @@ export default function TestManagement() {
 
   const handleRoleSwitch = (role: any) => {
     switchRole(role);
+    // State güncellemesi tamamlanması için kısa bir gecikme
+    setTimeout(() => {
+      navigate('/dashboard');
+    }, 100);
   };
 
   const handleLogout = () => {

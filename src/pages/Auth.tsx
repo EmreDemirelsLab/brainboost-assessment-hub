@@ -38,7 +38,7 @@ export default function Auth() {
       if (error) {
         setLoginError(error);
       } else {
-        toast.success("Başarıyla giriş yapıldı!");
+        // Success mesajı AuthContext'te profil yüklendikten sonra verilecek
         navigate("/dashboard");
       }
     } catch (err) {
