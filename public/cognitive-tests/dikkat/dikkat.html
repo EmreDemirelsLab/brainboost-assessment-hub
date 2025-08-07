@@ -2305,8 +2305,10 @@
            },
 
            // Sonuç hesaplama - EXCEL UYUMLU DETAYLI VERSİYON
-           calculateResults() {
+           async calculateResults() {
                try {
+                   console.log('🧮 Sonuçlar hesaplanıyor...');
+                   
                    const totalTestDuration = Date.now() - testState.mainStartTime;
                    const maxPossibleTime = CONFIG.MAIN_TIME_LIMIT;
                    
@@ -2358,6 +2360,9 @@
                    
                    // Doğruluk skoru: Doğru Sayısı / Toplam Soru x 100
                    const accuracyScore = (basicStats.mainScore / basicStats.mainTotal) * 100;
+
+                   // *** ESKİ KAYIT SİSTEMİ DEVRE DIŞI - Sadece yeni mapping sistemi kullanılıyor ***
+                   console.log('💾 Yeni mapping sistemi ile Supabase\'e kaydediliyor...');
                    
                    // EXCEL BEKLENTİSİNE UYGUN DETAYLI SONUÇLAR
                    const detailedResults = {
@@ -2548,6 +2553,232 @@
                }
            },
 
+           // Supabase kayıt fonksiyonu - Dikkat testi için
+           async sendResultsToSupabase(resultsData) {
+               try {
+                   console.log('🚀 Dikkat Test Supabase kayıt başlatılıyor...');
+                   
+                   // Supabase client'ı başlat
+                   const supabaseUrl = 'https://gamjzzomkosvqhficabt.supabase.co';
+                   const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhbWp6em9ta29zdnFoZmljYWJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI4ODc3MDAsImV4cCI6MjA2ODQ2MzcwMH0.r8KkywdhNSP1hxzSAlKo8SB5jOEb0KQRUBfZ9Va0p9I';
+                   
+                   const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+                   
+                   // Authentication kontrolü
+                   const { data: { user }, error: authError } = await supabase.auth.getUser();
+                   
+                   if (authError || !user) {
+                       console.warn('⚠️ Kullanıcı giriş yapmamış, localStorage\'a kaydediliyor');
+                       localStorage.setItem('pendingAttentionResults', JSON.stringify(resultsData));
+                       return false;
+                   }
+                   
+                   console.log('👤 Aktif kullanıcı:', user.email);
+                   
+                   // Kullanıcı bilgilerini al
+                   const { data: userData, error: userError } = await supabase
+                       .from('users')
+                       .select('id, first_name, last_name, roles, supervisor_id')
+                       .eq('auth_user_id', user.id)
+                       .single();
+                   
+                   if (userError || !userData) {
+                       console.error('❌ Kullanıcı bilgileri alınamadı:', userError);
+                       localStorage.setItem('pendingAttentionResults', JSON.stringify(resultsData));
+                       return false;
+                   }
+                   
+                   // Role kontrolü
+                   const userRole = this.getUserRole(userData.roles);
+                   console.log(`👤 Kullanıcı rolü: ${userRole}`);
+                   
+                   if (!['admin', 'temsilci', 'beyin_antrenoru', 'kullanici'].includes(userRole)) {
+                       console.warn('⚠️ Geçersiz kullanıcı rolü - pending olarak kaydediliyor');
+                       localStorage.setItem('pendingAttentionResults', JSON.stringify(resultsData));
+                       return false;
+                   }
+                   
+                   // Test edilen öğrenci ID'sini al (giriş yapan kullanıcı)
+                   const studentId = userData.id;
+                   
+                   // conducted_by belirleme
+                   let conductedBy;
+                   if (userData.supervisor_id) {
+                       conductedBy = userData.supervisor_id;
+                       console.log(`👨‍🏫 Dikkat Test yapan kişi: Supervisor (ID: ${conductedBy}) - Öğrenci: ${userData.first_name} ${userData.last_name}`);
+                   } else {
+                       conductedBy = userData.id;
+                       console.log(`👨‍🏫 Dikkat Test yapan kişi: ${userData.first_name} ${userData.last_name} - ID: ${conductedBy}`);
+                   }
+                   
+                   // Test süresini ISO string'e çevir
+                   const testStartTime = new Date(testState.mainStartTime).toISOString();
+                   const testEndTime = new Date().toISOString();
+                   const testDurationSeconds = Math.round(resultsData.totalTestDuration / 1000);
+                   
+                   // Dikkat test sonuçları için final data - attention_test_results tablosuna uygun
+                   const finalData = {
+                       student_id: studentId,
+                       conducted_by: conductedBy,
+                       test_start_time: testStartTime,
+                       test_end_time: testEndTime,
+                       test_duration_seconds: testDurationSeconds,
+                       completion_status: testState.incompleteAtQuestion ? 'incomplete' : 'completed',
+                       
+                       // Ana performans metrikleri
+                       total_correct: resultsData.basicStats.mainScore,
+                       total_wrong: resultsData.basicStats.mainTotal - resultsData.basicStats.mainScore,
+                       total_missed: testState.incompleteAtQuestion ? (50 - resultsData.basicStats.mainTotal) : 0,
+                       accuracy_percentage: Math.round(resultsData.accuracyScore * 100) / 100,
+                       average_response_time_ms: Math.min(999999, Math.round(resultsData.basicStats.averageReactionTime)),
+                       
+                       // Dikkat-specific alanlar
+                       attention_span_score: Math.round(resultsData.accuracyScore), // Doğruluk skoru olarak
+                       focus_stability: Math.round(resultsData.speedScore), // Hız skoru olarak
+                       vigilance_score: Math.round((resultsData.accuracyScore + resultsData.speedScore) / 2), // Ortalama
+                       
+                       // Tepki süresi analizi
+                       fastest_response_ms: Math.min(999999, testState.reactionTimes.length > 0 ? Math.min(...testState.reactionTimes) : 0),
+                       slowest_response_ms: Math.min(999999, testState.reactionTimes.length > 0 ? Math.max(...testState.reactionTimes) : 0),
+                       response_time_variance: Math.min(999999, this.calculateVariance(testState.reactionTimes)),
+                       
+                       // Hata analizi
+                       false_positive_count: testState.wrongSelections.length,
+                       false_negative_count: testState.incompleteAtQuestion ? (50 - resultsData.basicStats.mainTotal) : 0,
+                       omission_errors: testState.incompleteAtQuestion ? (50 - resultsData.basicStats.mainTotal) : 0,
+                       commission_errors: testState.wrongSelections.length,
+                       
+                       // Zaman bazlı performans
+                       performance_decline_rate: this.calculatePerformanceDecline(),
+                       fatigue_index: Math.max(0, Math.min(100, (testDurationSeconds / 180) * 100)), // 3 dakikaya göre yorgunluk
+                       
+                       // Detaylı veriler (JSONB)
+                       detailed_responses: JSON.stringify({
+                           mainAnswers: testState.mainAnswers,
+                           practiceAnswers: testState.practiceAnswers,
+                           reactionTimes: testState.reactionTimes
+                       }),
+                       time_series_analysis: JSON.stringify({
+                           sectionStats: resultsData.sectionStats,
+                           sectionStartTimes: testState.sectionStartTimes,
+                           sectionEndTimes: testState.sectionEndTimes
+                       }),
+                       performance_trends: JSON.stringify({
+                           questionTypeMistakes: testState.questionTypeMistakes,
+                           typeStats: resultsData.typeStats,
+                           wrongSelections: testState.wrongSelections
+                       }),
+                       error_patterns: JSON.stringify({
+                           numberTypeErrors: testState.wrongSelections.filter(w => w.questionType === 's'),
+                           letterTypeErrors: testState.wrongSelections.filter(w => w.questionType === 'h'),
+                           mixedTypeErrors: testState.wrongSelections.filter(w => w.questionType === 's/h')
+                       }),
+                       
+                       notes: testState.incompleteAtQuestion ? 
+                           `Test ${testState.incompleteAtQuestion}. soruda yarıda kaldı` : 
+                           'Test başarıyla tamamlandı'
+                   };
+                   
+                   console.log('📝 Supabase\'e kaydedilecek Dikkat test verisi:', finalData);
+                   
+                   // Supabase'e kaydet
+                   const { data: insertData, error: insertError } = await supabase
+                       .from('attention_test_results')
+                       .insert([finalData])
+                       .select();
+                   
+                   if (insertError) {
+                       console.error('❌ Dikkat test Supabase kayıt hatası:', insertError);
+                       
+                       // Hata detayları
+                       if (insertError.code === '23503') {
+                           console.error('🔗 Foreign key hatası - Student veya User ID geçersiz');
+                       } else if (insertError.code === '42501') {
+                           console.error('🔒 Yetki hatası - RLS policy ihlali');
+                       }
+                       
+                       // Hata durumunda localStorage'a kaydet
+                       localStorage.setItem('failedAttentionResults', JSON.stringify({
+                           data: finalData,
+                           error: insertError,
+                           timestamp: new Date().toISOString()
+                       }));
+                       
+                       return false;
+                   }
+                   
+                   console.log('✅ Dikkat test Supabase kayıt başarılı!', insertData);
+                   
+                   // Başarılı kayıt sonrası temizlik
+                   localStorage.removeItem('pendingAttentionResults');
+                   localStorage.removeItem('failedAttentionResults');
+                   localStorage.removeItem('attentionTestStatus');
+                   localStorage.removeItem('attentionTestProgressSave');
+                   localStorage.removeItem('attentionTestStartTime');
+                   localStorage.setItem('lastTestedStudent', finalData.student_id);
+                   
+                   // Başarı mesajı
+                   console.log('🎉 DİKKAT TESTİ PRODUCTION\'A KAYDEDILDI!');
+                   console.log(`📊 Test ID: ${insertData[0]?.id}`);
+                   console.log(`👤 Test Alan Kullanıcı ID: ${finalData.student_id}`);
+                   console.log(`👨‍🏫 Test Yöneten: ${userData.first_name} ${userData.last_name}`);
+                   console.log(`📊 Test Sonuçları:`, {
+                       doğru: finalData.total_correct,
+                       yanlış: finalData.total_wrong,
+                       kaçırılan: finalData.total_missed,
+                       doğruluk_oranı: finalData.accuracy_percentage,
+                       ortalama_tepki_süresi: finalData.average_response_time_ms + 'ms'
+                   });
+                   
+                   return true;
+                   
+               } catch (error) {
+                   console.error('❌ Dikkat test Supabase kayıt genel hatası:', error);
+                   
+                   // Genel hata durumunda localStorage'a kaydet
+                   localStorage.setItem('failedAttentionResults', JSON.stringify({
+                       error: error.message,
+                       timestamp: new Date().toISOString()
+                   }));
+                   
+                   return false;
+               }
+           },
+
+           // Helper fonksiyonlar
+           getUserRole(roles) {
+               if (!roles || !Array.isArray(roles) || roles.length === 0) {
+                   return 'kullanici'; // Default role
+               }
+               
+               // Öncelik sırası: admin > temsilci > beyin_antrenoru > kullanici
+               if (roles.includes('admin')) return 'admin';
+               if (roles.includes('temsilci')) return 'temsilci';
+               if (roles.includes('beyin_antrenoru')) return 'beyin_antrenoru';
+               if (roles.includes('kullanici')) return 'kullanici';
+               
+               return 'kullanici'; // Fallback
+           },
+
+           calculatePerformanceDecline() {
+               if (testState.reactionTimes.length < 10) return 0;
+               
+               const firstHalf = testState.reactionTimes.slice(0, Math.floor(testState.reactionTimes.length / 2));
+               const secondHalf = testState.reactionTimes.slice(Math.floor(testState.reactionTimes.length / 2));
+               
+               const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
+               const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
+               
+               return Math.round(((secondAvg - firstAvg) / firstAvg) * 100);
+           },
+
+           calculateVariance(numbers) {
+               if (numbers.length === 0) return 0;
+               const mean = numbers.reduce((a, b) => a + b, 0) / numbers.length;
+               const variance = numbers.reduce((sum, num) => sum + Math.pow(num - mean, 2), 0) / numbers.length;
+               return Math.round(variance);
+           },
+
            // 🎯 DATABASE MAPPING FONKSİYONU - HTML → DATABASE
            mapResultsToDatabase(htmlResults) {
                try {
@@ -2560,45 +2791,40 @@
                    console.log(`📊 Reaction times bulundu: ${reactionTimesArray.length} adet`);
                    
                    const mappedData = {
-                       // ✅ TEMEL VERİLER - Mapping ile
-                       total_questions_attempted: rawData.mainTotal || 0,
-                       total_correct_answers: rawData.mainScore || 0,
+                       // ✅ TEMEL VERİLER - Tablo kolonlarına uygun mapping
+                       total_correct: rawData.mainScore || 0,
+                       total_wrong: (rawData.mainTotal || 0) - (rawData.mainScore || 0),
+                       total_missed: 0, // Dikkat testinde kaçırılan soru yok
                        accuracy_percentage: Math.round((rawData.accuracyScore || 0) * 100) / 100,
-                       speed_score: Math.round((rawData.speedScore || 0) * 100) / 100,
-                       average_reaction_time: Math.round(rawData.averageReactionTime || 0),
+                       attention_span_score: Math.round((rawData.speedScore || 0) * 100) / 100,
+                       average_response_time_ms: Math.min(999999, Math.round(rawData.averageReactionTime || 0)),
                        test_duration_seconds: Math.round((rawData.testDuration || 0) / 1000), // ms → saniye
                        completion_status: rawData.incompleteAtQuestion ? 'incomplete' : 'completed',
                        
-                       // ✅ BÖLÜM VERİLERİ - Mapping ile
-                       section1_correct: sections?.section1?.correctCount || 0,
-                       section1_total: sections?.section1?.totalCount || 0,
-                       section1_accuracy: Math.round((sections?.section1?.accuracy || 0) * 100) / 100,
+                       // ✅ EKSİK KOLONLAR - Eski sistemden taşınan hesaplamalar
+                       focus_stability: Math.round(rawData.accuracyScore || 0), // Doğruluk = Focus %
+                       vigilance_score: Math.round(((rawData.mainScore || 0) / (rawData.mainTotal || 1)) * 100), // Genel başarı %
+                       fastest_response_ms: Math.min(999999, reactionTimesArray.length > 0 ? Math.min(...reactionTimesArray) : 0),
+                       slowest_response_ms: Math.min(999999, reactionTimesArray.length > 0 ? Math.max(...reactionTimesArray) : 0),
+                       response_time_variance: Math.min(999999, this.calculateVariance(reactionTimesArray)),
+                       false_positive_count: (rawData.mainTotal || 0) - (rawData.mainScore || 0), // Yanlış cevaplar
+                       false_negative_count: 0, // Dikkat testinde kaçırılan yok
+                       omission_errors: 0, // Dikkat testinde omission yok
+                       commission_errors: (rawData.mainTotal || 0) - (rawData.mainScore || 0), // Yanlış seçimler
+                       performance_decline_rate: this.calculatePerformanceDecline(sections),
+                       fatigue_index: this.calculateFatigueIndex(sections, reactionTimesArray),
                        
-                       section2_correct: sections?.section2?.correctCount || 0,
-                       section2_total: sections?.section2?.totalCount || 0,
-                       section2_accuracy: Math.round((sections?.section2?.accuracy || 0) * 100) / 100,
-                       
-                       section3_correct: sections?.section3?.correctCount || 0,
-                       section3_total: sections?.section3?.totalCount || 0,
-                       section3_accuracy: Math.round((sections?.section3?.accuracy || 0) * 100) / 100,
-                       
-                       // ✅ SORU TİPİ VERİLERİ - Doğrudan uyumlu
-                       number_questions_correct: questionTypes?.numberQuestions?.correct || 0,
-                       number_questions_total: (questionTypes?.numberQuestions?.correct || 0) + (questionTypes?.numberQuestions?.wrong || 0),
-                       number_questions_accuracy: Math.round((questionTypes?.numberQuestions?.accuracy || 0) * 100) / 100,
-                       
-                       letter_questions_correct: questionTypes?.letterQuestions?.correct || 0,
-                       letter_questions_total: (questionTypes?.letterQuestions?.correct || 0) + (questionTypes?.letterQuestions?.wrong || 0),
-                       letter_questions_accuracy: Math.round((questionTypes?.letterQuestions?.accuracy || 0) * 100) / 100,
-                       
-                       mixed_questions_correct: questionTypes?.mixedQuestions?.correct || 0,
-                       mixed_questions_total: (questionTypes?.mixedQuestions?.correct || 0) + (questionTypes?.mixedQuestions?.wrong || 0),
-                       mixed_questions_accuracy: Math.round((questionTypes?.mixedQuestions?.accuracy || 0) * 100) / 100,
-                       
-                       // ✅ JSONB VERİLER - Mapping ile
-                       detailed_answers: questionDetails || [],
-                       wrong_answers: errorDetails?.wrongSelections || [],
-                       reaction_times: reactionTimesArray,
+                       // ✅ JSONB VERİLER - Tablo kolonlarına uygun mapping
+                       detailed_responses: questionDetails || [],
+                       time_series_analysis: {
+                           reaction_times: reactionTimesArray,
+                           response_patterns: errorDetails?.wrongSelections || []
+                       },
+                       performance_trends: {
+                           sections: sections || {},
+                           question_types: questionTypes || {}
+                       },
+                       error_patterns: errorDetails || {},
                        
                        // ✅ ZAMAN DAMGALARI
                        test_start_time: new Date(Date.now() - (rawData.testDuration || 0)).toISOString(),
@@ -2609,13 +2835,14 @@
                    };
                    
                    // Validation - Kritik alanları kontrol et
+                   const totalQuestions = (mappedData.total_correct || 0) + (mappedData.total_wrong || 0) + (mappedData.total_missed || 0);
                    const validationResults = {
-                       totalQuestions: mappedData.total_questions_attempted > 0,
-                       hasCorrectAnswers: mappedData.total_correct_answers >= 0,
+                       totalQuestions: totalQuestions > 0,
+                       hasCorrectAnswers: mappedData.total_correct >= 0,
                        hasAccuracy: mappedData.accuracy_percentage >= 0,
-                       hasSpeed: mappedData.speed_score >= 0,
-                       hasSections: mappedData.section1_total > 0 || mappedData.section2_total > 0 || mappedData.section3_total > 0,
-                       hasQuestionTypes: mappedData.number_questions_total > 0 || mappedData.letter_questions_total > 0 || mappedData.mixed_questions_total > 0,
+                       hasSpeed: mappedData.attention_span_score >= 0,
+                       hasSections: mappedData.performance_trends && Object.keys(mappedData.performance_trends.sections || {}).length > 0,
+                       hasQuestionTypes: mappedData.performance_trends && Object.keys(mappedData.performance_trends.question_types || {}).length > 0,
                        hasReactionTimes: reactionTimesArray.length > 0
                    };
                    
@@ -2628,14 +2855,14 @@
                    
                    // Mapping özeti
                    console.log('📋 MAPPING ÖZETİ:');
-                   console.log(`  🔢 Toplam soru: ${mappedData.total_questions_attempted}`);
-                   console.log(`  ✅ Doğru: ${mappedData.total_correct_answers}`);
+                   console.log(`  🔢 Toplam soru: ${totalQuestions}`);
+                   console.log(`  ✅ Doğru: ${mappedData.total_correct}`);
                    console.log(`  📊 Doğruluk: %${mappedData.accuracy_percentage}`);
-                   console.log(`  ⚡ Hız puanı: %${mappedData.speed_score}`);
+                   console.log(`  ⚡ Hız puanı: %${mappedData.attention_span_score}`);
                    console.log(`  ⏱️ Süre: ${mappedData.test_duration_seconds} saniye`);
                    console.log(`  🎯 Tepki sayısı: ${reactionTimesArray.length}`);
-                   console.log(`  📂 Detay cevap: ${mappedData.detailed_answers.length} adet`);
-                   console.log(`  ❌ Yanlış cevap: ${mappedData.wrong_answers.length} adet`);
+                   console.log(`  📂 Detay cevap: ${mappedData.detailed_responses.length} adet`);
+                   console.log(`  ❌ Yanlış cevap: ${mappedData.total_wrong} adet`);
                    
                                        return mappedData;
                     
@@ -2692,7 +2919,37 @@
                 return labels[role] || role;
             },
 
-            // 🔍 GEÇERLİ KULLANICI ID BULMA FONKSİYONU (YENİ UNIFIED SYSTEM)
+            // 📊 HELPER FONKSIYONLARI - İstatistiksel hesaplamalar
+            calculateVariance(values) {
+                if (!values || values.length === 0) return 0;
+                const mean = values.reduce((a, b) => a + b, 0) / values.length;
+                const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
+                return Math.round(variance * 100) / 100;
+            },
+
+            calculatePerformanceDecline(sections) {
+                if (!sections || !sections.section1 || !sections.section3) return 0;
+                const firstSectionAccuracy = sections.section1.accuracy || 0;
+                const lastSectionAccuracy = sections.section3.accuracy || 0;
+                const decline = firstSectionAccuracy - lastSectionAccuracy;
+                return Math.round(decline * 100) / 100;
+            },
+
+            calculateFatigueIndex(sections, reactionTimes) {
+                if (!sections || !reactionTimes || reactionTimes.length === 0) return 0;
+                const midPoint = Math.floor(reactionTimes.length / 2);
+                const firstHalf = reactionTimes.slice(0, midPoint);
+                const secondHalf = reactionTimes.slice(midPoint);
+                
+                if (firstHalf.length === 0 || secondHalf.length === 0) return 0;
+                
+                const firstHalfAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
+                const secondHalfAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
+                const fatigueIndex = ((secondHalfAvg - firstHalfAvg) / firstHalfAvg) * 100;
+                return Math.round(fatigueIndex * 100) / 100;
+            },
+
+            // 🔍 GEÇERLİ KULLANICI ID BULMA FONKSİYONU - BASİTLEŞTİRİLMİŞ VERSİYON (BURDON/D2 GİBİ)
             async findValidStudentId() {
                 try {
                     const supabase = window.supabase.createClient(
@@ -2715,54 +2972,20 @@
                             const userRole = this.getUserRole(userData.roles);
                             console.log(`👤 Aktif kullanıcı: ${userData.first_name} ${userData.last_name} (${this.getDisplayLabel(userRole)})`);
                             
-                            if (userRole === 'kullanici') {
-                                // Kullanıcı rolü ise kendi ID'sini kullan
-                                console.log('✅ Kullanıcı kendi testini yapıyor:', userData.id);
-                                localStorage.setItem('currentStudentId', userData.id);
-                                return userData.id;
-                            } else {
-                                // Admin/Temsilci/Beyin Antrenörü ise seçilen kullanıcı ID'sini al
-                                const selectedUserId = localStorage.getItem('selectedUserId') || 
-                                                     new URLSearchParams(window.location.search).get('userId');
-                                
-                                if (selectedUserId) {
-                                    // Seçilen kullanıcının geçerli olduğunu kontrol et
-                                    const { data: selectedUser } = await supabase
-                                        .from('users')
-                                        .select('id, first_name, last_name, roles')
-                                        .eq('id', selectedUserId)
-                                        .single();
-                                        
-                                    if (selectedUser && selectedUser.roles.includes('kullanici')) {
-                                        console.log(`✅ ${this.getDisplayLabel(userRole)} seçilen kullanıcı için test yapıyor: ${selectedUser.first_name} ${selectedUser.last_name}`);
-                                        localStorage.setItem('currentStudentId', selectedUserId);
-                                        return selectedUserId;
-                                    }
-                                }
-                                
-                                console.warn(`⚠️ ${this.getDisplayLabel(userRole)} için test yapılacak kullanıcı seçilmemiş`);
-                                return null;
-                            }
-                        }
-                    }
-                    
-                    // Fallback: localStorage'dan al
-                    let studentId = localStorage.getItem('currentStudentId');
-                    
-                    if (studentId) {
-                        const { data: user } = await supabase
-                            .from('users')
-                            .select('id, first_name, last_name')
-                            .eq('id', studentId)
-                            .single();
+                            // ✅ HER KULLANICI BİR STUDENT - Giriş yapan kullanıcının kendi testini yapıyor (HER ZAMAN)
+                            console.log(`👤 Giriş yapan kullanıcının kendi dikkat testi: ${userData.first_name} ${userData.last_name}`);
+                            console.log(`🎯 Student ID = Giriş yapan kullanıcı ID: ${userData.id}`);
                             
-                        if (user) {
-                            console.log('✅ localStorage\'dan kullanıcı ID geçerli:', `${user.first_name} ${user.last_name}`);
-                            return studentId;
+                            // localStorage cache'ini temizle (eski veri karışmasın)
+                            localStorage.removeItem('selectedStudentId');
+                            localStorage.removeItem('currentStudentId'); 
+                            localStorage.removeItem('lastTestedStudent');
+                            
+                            return userData.id; // Her zaman giriş yapan kullanıcının ID'si
                         }
                     }
                     
-                    console.warn('⚠️ Geçerli kullanıcı ID bulunamadı - Test çalışır ama kaydedilemez');
+                    console.error('❌ Kullanıcı bilgisi alınamadı');
                     return null;
                     
                 } catch (error) {
@@ -2776,71 +2999,47 @@
                 try {
                     console.log('🚀 Supabase Production kayıt başlatılıyor...');
                     
-                    // Supabase client'ı başlat
-                    const supabaseUrl = 'https://gamjzzomkosvqhficabt.supabase.co';
-                    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhbWp6em9ta29zdnFoZmljYWJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI4ODc3MDAsImV4cCI6MjA2ODQ2MzcwMH0.r8KkywdhNSP1hxzSAlKo8SB5jOEb0KQRUBfZ9Va0p9I';
+                    // localStorage'dan session bilgilerini al
+                    const sessionId = localStorage.getItem('bb-session-id');
+                    const studentId = localStorage.getItem('bb-student-id');
+                    const conductedBy = localStorage.getItem('bb-conducted-by');
+                    const supabaseUrl = localStorage.getItem('sb-url');
+                    const supabaseKey = localStorage.getItem('sb-anon-key');
+                    
+                    console.log('📦 localStorage bridge bilgileri:', {
+                        sessionId: sessionId ? sessionId.slice(0, 8) + '...' : 'YOK',
+                        studentId: studentId ? studentId.slice(0, 8) + '...' : 'YOK',
+                        conductedBy: conductedBy ? conductedBy.slice(0, 8) + '...' : 'YOK',
+                        hasSupabaseConfig: !!(supabaseUrl && supabaseKey)
+                    });
+                    
+                    if (!sessionId || !studentId || !conductedBy || !supabaseUrl || !supabaseKey) {
+                        console.error('❌ localStorage bridge eksik - gerekli bilgiler bulunamadı');
+                        console.error('Eksik bilgiler:', {
+                            sessionId: !sessionId,
+                            studentId: !studentId,
+                            conductedBy: !conductedBy,
+                            supabaseUrl: !supabaseUrl,
+                            supabaseKey: !supabaseKey
+                        });
+                        localStorage.setItem('pendingAttentionResults', JSON.stringify(mappedData));
+                        return false;
+                    }
                     
                     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
                     
-                    // Authentication kontrolü
-                    const { data: { user }, error: authError } = await supabase.auth.getUser();
+                    // localStorage bridge kullanarak session bilgilerini kullan
+                    console.log('✅ localStorage bridge aktif - session bilgileri kullanılıyor');
+                    console.log(`🆔 Session ID: ${sessionId.slice(0, 8)}...`);
+                    console.log(`👤 Student ID: ${studentId.slice(0, 8)}...`);
+                    console.log(`👨‍🏫 Conducted By: ${conductedBy.slice(0, 8)}...`);
                     
-                    if (authError || !user) {
-                        console.warn('⚠️ Kullanıcı giriş yapmamış, localStorage\'a kaydediliyor');
-                        localStorage.setItem('pendingAttentionResults', JSON.stringify(mappedData));
-                        return false;
-                    }
-                    
-                    console.log('👤 Aktif kullanıcı:', user.email);
-                    
-                    // Kullanıcı bilgilerini al ve yetki kontrolü yap
-                    const { data: userData, error: userError } = await supabase
-                        .from('users')
-                        .select('id, first_name, last_name, roles, supervisor_id')
-                        .eq('auth_user_id', user.id)
-                        .single();
-                    
-                    if (userError || !userData) {
-                        console.error('❌ Kullanıcı bilgileri alınamadı:', userError);
-                        localStorage.setItem('pendingAttentionResults', JSON.stringify(mappedData));
-                        return false;
-                    }
-                    
-                    // Role kontrolü - Tüm roller test yapabilir
-                    const userRole = this.getUserRole(userData.roles);
-                    console.log(`👤 Kullanıcı rolü: ${userRole} (${this.getDisplayLabel(userRole)})`);
-                    
-                    if (!['admin', 'temsilci', 'beyin_antrenoru', 'kullanici'].includes(userRole)) {
-                        console.warn('⚠️ Geçersiz kullanıcı rolü - pending olarak kaydediliyor');
-                        localStorage.setItem('pendingAttentionResults', JSON.stringify(mappedData));
-                        return false;
-                    }
-                    
-                    // Test edilen öğrenci ID'sini al (localStorage'dan veya context'ten)
-                    let studentId = await this.findValidStudentId();
-                    
-                    if (!studentId) {
-                        console.error('❌ Geçerli öğrenci ID bulunamadı');
-                        return false;
-                    }
-                    
-                    // conducted_by belirleme - Doğru mantık: supervisor varsa supervisor, yoksa kendisi
-                    let conductedBy;
-                    if (userData.supervisor_id) {
-                        // Kullanıcının supervisor'ı varsa, test yapan supervisor'dür
-                        conductedBy = userData.supervisor_id;
-                        console.log(`👨‍🏫 Test yapan kişi: Supervisor (ID: ${conductedBy}) - Öğrenci: ${userData.first_name} ${userData.last_name}`);
-                    } else {
-                        // Supervisor yoksa (admin/trainer kendisi), kendisi yapmıştır
-                        conductedBy = userData.id;
-                        console.log(`👨‍🏫 Test yapan kişi: ${userData.first_name} ${userData.last_name} (${this.getDisplayLabel(userRole)}) - ID: ${conductedBy}`);
-                    }
-                    
-                    // Final kayıt verisi
+                    // Final kayıt verisi - localStorage bridge ile
                     const finalData = {
                         ...mappedData,
-                        student_id: studentId,
-                        conducted_by: conductedBy,
+                        session_id: sessionId,  // 🆔 Session ID eklendi
+                        student_id: studentId,   // localStorage'dan
+                        conducted_by: conductedBy, // localStorage'dan
                         test_start_time: mappedData.test_start_time,
                         test_end_time: mappedData.test_end_time || new Date().toISOString()
                     };
@@ -2880,25 +3079,18 @@
                     localStorage.removeItem('failedAttentionResults');
                     localStorage.setItem('lastTestedStudent', finalData.student_id);
                     
-                    // Role'e göre başarı mesajı
-                    if (userRole === 'admin' || userRole === 'temsilci' || userRole === 'beyin_antrenoru') {
-                        // Yönetici roller için detaylı bilgi
-                        console.log('🎉 DİKKAT TESTİ PRODUCTION\'A KAYDEDILDI!');
-                        console.log(`📊 Test ID: ${insertData[0]?.id}`);
-                        console.log(`👤 Test Alan Kullanıcı ID: ${finalData.student_id}`);
-                        console.log(`👨‍🏫 Test Yöneten: ${userData.first_name} ${userData.last_name} (${this.getDisplayLabel(userRole)})`);
-                        console.log(`🔗 Foreign Key İlişkileri Doğrulandı ✅`);
-                        console.log(`📊 Test Sonuçları:`, {
+                    // Başarı mesajı
+                    console.log('🎉 DİKKAT TESTİ PRODUCTION\'A KAYDEDILDI!');
+                    console.log(`📊 Test ID: ${insertData[0]?.id}`);
+                    console.log(`👤 Test Alan Kullanıcı ID: ${finalData.student_id}`);
+                    console.log(`👨‍🏫 Test Yöneten: ${finalData.conducted_by}`);
+                    console.log(`🔗 Foreign Key İlişkileri Doğrulandı ✅`);
+                    console.log(`📊 Test Sonuçları:`, {
                             doğru: finalData.total_correct_answers,
                             toplam: finalData.total_questions_attempted,
                             başarı: `%${finalData.accuracy_percentage}`,
                             hız: `%${finalData.speed_score}`
-                        });
-                    } else {
-                        // Kullanıcı için sınırlı bilgi
-                        console.log('✅ Test tamamlandı ve kaydedildi!');
-                        console.log('📋 Sonuçlarınız sorumlu kişiniz tarafından değerlendirilecek.');
-                    }
+                    });
                     
                     return true;
                     

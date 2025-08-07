@@ -62,8 +62,8 @@ export default function Dashboard() {
   }
 
   useEffect(() => {
-    // Sadece admin/trainer rolü olanlar dashboard verilerini görebilir
-    if (user?.roles && !user.roles.includes('kullanici')) {
+    // Sadece admin/trainer/temsilci/beyin_antrenoru rolündeki kullanıcılar dashboard verilerini görebilir
+    if (user && user.currentRole && user.currentRole !== 'kullanici') {
       fetchDashboardData();
     } else {
       setLoading(false);
@@ -80,8 +80,12 @@ export default function Dashboard() {
         .select('id')
         .contains('roles', '["kullanici"]');
 
+      // Admin tüm kullanıcıları görebilir - herhangi bir filtreleme yok
+      if (user?.roles?.includes('admin')) {
+        // Admin için filtreleme yok, tüm kullanıcıları getir
+      }
       // Temsilci sadece kendi altındaki beyin antrenörlerinin öğrencilerini görebilir
-      if (user?.roles?.includes('temsilci')) {
+      else if (user?.roles?.includes('temsilci')) {
         // Önce kendi altındaki beyin antrenörlerini bul
         const { data: trainersData } = await supabase
           .from('users')
@@ -98,7 +102,7 @@ export default function Dashboard() {
         }
       }
       // Beyin antrenörü sadece kendi altındaki öğrencileri görebilir
-      else if (user?.roles?.includes('beyin_antrenoru') && !user?.roles?.includes('admin')) {
+      else if (user?.roles?.includes('beyin_antrenoru')) {
         studentsQuery = studentsQuery.eq('supervisor_id', user.id);
       }
 
@@ -121,20 +125,41 @@ export default function Dashboard() {
         const testTables = [
           'attention_test_results',
           'memory_test_results', 
-          'd2_test_results',
-          'stroop_test_results'
+          'stroop_test_results',
+          'puzzle_test_results'
         ] as const;
 
         for (const table of testTables) {
           try {
+            console.log(`🔍 ${table} tablosundan veri çekiliyor...`);
+            
+            // Her test türü için doğru kolon adlarını kullan
+            let accuracyColumn = 'accuracy_percentage';
+            if (table === 'stroop_test_results') {
+              accuracyColumn = 'overall_accuracy';
+            } else if (table === 'd2_test_results') {
+              accuracyColumn = 'accuracy_percentage'; // D2'de bu kolon var mı kontrol edilecek
+            } else if (table === 'puzzle_test_results') {
+              accuracyColumn = 'accuracy_percentage';
+            }
+            
             const { data, error } = await (supabase as any)
               .from(table)
-              .select('id, user_id, created_at, test_result')
-              .in('user_id', studentIds)
+              .select(`id, student_id, created_at, ${accuracyColumn}`)
+              .in('student_id', studentIds)
               .gte('created_at', startOfMonth.toISOString());
             
+            console.log(`📊 ${table} verileri:`, data);
+            console.log(`❌ ${table} hatası:`, error);
+            
             if (!error && data) {
-              allTestsData.push(...data);
+              // Veriyi normalize et - accuracy_percentage olarak kaydet
+              const normalizedData = data.map(item => ({
+                ...item,
+                accuracy_percentage: item[accuracyColumn]
+              }));
+              allTestsData.push(...normalizedData);
+              console.log(`✅ ${table}'dan ${data.length} kayıt eklendi`);
             }
           } catch (err) {
             console.warn(`Error fetching from ${table}:`, err);
@@ -150,16 +175,26 @@ export default function Dashboard() {
         
         for (const table of testTables) {
           try {
+            // Her test türü için doğru kolon adlarını kullan
+            let accuracyColumn = 'accuracy_percentage';
+            if (table === 'stroop_test_results') {
+              accuracyColumn = 'overall_accuracy';
+            } else if (table === 'd2_test_results') {
+              accuracyColumn = 'accuracy_percentage';
+            } else if (table === 'puzzle_test_results') {
+              accuracyColumn = 'accuracy_percentage';
+            }
+            
             const { data, error } = await (supabase as any)
               .from(table)
               .select(`
                 id,
-                user_id,
+                student_id,
                 created_at,
-                test_result,
-                users!${table}_user_id_fkey(first_name, last_name)
+                ${accuracyColumn},
+                users!${table}_student_id_fkey(first_name, last_name)
               `)
-              .in('user_id', studentIds)
+              .in('student_id', studentIds)
               .order('created_at', { ascending: false })
               .limit(3);
             
@@ -168,8 +203,8 @@ export default function Dashboard() {
                 const testName = {
                   'attention_test_results': 'Dikkat Testi',
                   'memory_test_results': 'Hafıza Testi',
-                  'd2_test_results': 'D2 Dikkat Testi',
-                  'stroop_test_results': 'Stroop Testi'
+                  'stroop_test_results': 'Stroop Testi',
+                  'puzzle_test_results': 'Puzzle Testi'
                 }[table] || 'Test';
 
                 const studentName = activity.users 
@@ -177,15 +212,15 @@ export default function Dashboard() {
                   : 'Bilinmeyen Öğrenci';
                 
                 let score = null;
-                if (activity.test_result) {
+                const accuracyValue = activity[accuracyColumn] || activity.accuracy_percentage;
+                if (accuracyValue) {
                   try {
-                    const result = typeof activity.test_result === 'string' 
-                      ? JSON.parse(activity.test_result) 
-                      : activity.test_result;
-                    score = result.successRate || result.accuracy || result.score || null;
-                    if (score) score = Math.round(score);
+                    const accuracy = typeof accuracyValue === 'string' 
+                      ? parseFloat(accuracyValue) 
+                      : accuracyValue;
+                    score = accuracy ? Math.round(accuracy) : null;
                   } catch (err) {
-                    console.warn('Test result parse error:', err);
+                    console.warn('Accuracy parse error:', err);
                   }
                 }
                 
@@ -217,19 +252,18 @@ export default function Dashboard() {
         let validTests = 0;
         
         allTestsData.forEach(test => {
-          if (test.test_result) {
+          if (test.accuracy_percentage) {
             try {
-              const result = typeof test.test_result === 'string' 
-                ? JSON.parse(test.test_result) 
-                : test.test_result;
+              const accuracy = typeof test.accuracy_percentage === 'string' 
+                ? parseFloat(test.accuracy_percentage) 
+                : test.accuracy_percentage;
               
-              // Test sonucundan başarı oranını çıkar
-              if (result.successRate || result.accuracy || result.score) {
-                totalScore += (result.successRate || result.accuracy || result.score);
+              if (accuracy && !isNaN(accuracy)) {
+                totalScore += accuracy;
                 validTests++;
               }
             } catch (err) {
-              console.warn('Test result parse error:', err);
+              console.warn('Accuracy parse error:', err);
             }
           }
         });

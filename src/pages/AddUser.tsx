@@ -116,15 +116,18 @@ export default function AddUser() {
           is_active
         `);
 
+      // Admin tüm kullanıcıları görebilir - herhangi bir filtreleme yok
+      if (user?.roles?.includes('admin')) {
+        // Admin için filtreleme yok, tüm kullanıcıları getir
+      }
       // Temsilci rolündeki kullanıcılar sadece kendi altındaki beyin antrenörlerini görebilir
-      if (user?.roles?.includes('temsilci')) {
+      else if (user?.roles?.includes('temsilci')) {
         query = query
           .contains('roles', '["beyin_antrenoru"]')
           .eq('supervisor_id', user.id);
       }
-      
       // Beyin antrenörü rolündeki kullanıcılar sadece kendi altındaki kullanıcıları görebilir
-      if (user?.roles?.includes('beyin_antrenoru') && !user?.roles?.includes('admin')) {
+      else if (user?.roles?.includes('beyin_antrenoru')) {
         query = query.eq('supervisor_id', user.id);
       }
       
@@ -288,12 +291,15 @@ export default function AddUser() {
             <div>
               <h1 className="text-3xl font-bold flex items-center gap-2">
                 <Users className="h-8 w-8 text-primary" />
-                {user?.roles?.includes('temsilci') ? 'Beyin Antrenörü Yönetimi' 
+                {user?.roles?.includes('admin') ? 'Tüm Kullanıcı Yönetimi'
+                  : user?.roles?.includes('temsilci') ? 'Beyin Antrenörü Yönetimi' 
                   : user?.roles?.includes('beyin_antrenoru') ? 'Öğrenci Yönetimi'
                   : 'Kullanıcı Yönetimi'}
               </h1>
               <p className="text-muted-foreground">
-                {user?.roles?.includes('temsilci') 
+                {user?.roles?.includes('admin')
+                  ? 'Tüm sistemdeki kullanıcıları görüntüleyebilir ve istediğiniz rolde yeni kullanıcı ekleyebilirsiniz.'
+                  : user?.roles?.includes('temsilci') 
                   ? 'Beyin antrenörlerini görüntüleyebilir ve yeni beyin antrenörü ekleyebilirsiniz.'
                   : user?.roles?.includes('beyin_antrenoru')
                   ? 'Kendi öğrencilerinizi görüntüleyebilir ve yeni öğrenci ekleyebilirsiniz.'
@@ -306,7 +312,8 @@ export default function AddUser() {
             trigger={
               <Button size="lg" className="bg-primary hover:bg-primary/90 text-white px-6 py-3">
                 <Plus className="h-5 w-5 mr-2" />
-                {user?.roles?.includes('temsilci') ? 'Beyin Antrenörü Ekle' 
+                {user?.roles?.includes('admin') ? 'Kullanıcı Ekle'
+                  : user?.roles?.includes('temsilci') ? 'Beyin Antrenörü Ekle' 
                   : user?.roles?.includes('beyin_antrenoru') ? 'Yeni Öğrenci Ekle'
                   : 'Yeni Kullanıcı Ekle'}
               </Button>
@@ -318,12 +325,15 @@ export default function AddUser() {
         <Card>
           <CardHeader>
             <CardTitle>
-              {user?.roles?.includes('temsilci') ? 'Beyin Antrenörü Arama' 
+              {user?.roles?.includes('admin') ? 'Tüm Kullanıcı Arama'
+                : user?.roles?.includes('temsilci') ? 'Beyin Antrenörü Arama' 
                 : user?.roles?.includes('beyin_antrenoru') ? 'Öğrenci Arama'
                 : 'Kullanıcı Arama'}
             </CardTitle>
             <CardDescription>
-              {user?.roles?.includes('temsilci') 
+              {user?.roles?.includes('admin')
+                ? 'Sistemdeki tüm kullanıcıları (Admin, Temsilci, Beyin Antrenörü, Kullanıcı) arayabilir ve yönetebilirsiniz.'
+                : user?.roles?.includes('temsilci') 
                 ? 'Beyin antrenörlerini arayabilir ve yönetebilirsiniz.'
                 : user?.roles?.includes('beyin_antrenoru')
                 ? 'Kendi öğrencilerinizi arayabilir ve yönetebilirsiniz.'

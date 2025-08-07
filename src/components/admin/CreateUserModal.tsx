@@ -34,15 +34,21 @@ const activeRoles: UserRole[] = ['admin', 'beyin_antrenoru', 'temsilci', 'kullan
 export function CreateUserModal({ trigger, onUserCreated }: CreateUserModalProps) {
   const { createUser, user } = useAuth();
   
-  // Temsilci sadece beyin antrenörü, beyin antrenörü sadece öğrenci ekleyebilir
+  // Rol bazlı kullanıcı ekleme yetkileri
   const getAvailableRoles = () => {
+    // Admin tüm rolleri ekleyebilir
+    if (user?.roles?.includes('admin')) {
+      return activeRoles;
+    }
+    // Temsilci sadece beyin antrenörü ekleyebilir
     if (user?.roles?.includes('temsilci')) {
       return ['beyin_antrenoru'];
     }
-    if (user?.roles?.includes('beyin_antrenoru') && !user?.roles?.includes('admin')) {
+    // Beyin antrenörü sadece öğrenci ekleyebilir
+    if (user?.roles?.includes('beyin_antrenoru')) {
       return ['kullanici'];
     }
-    return activeRoles;
+    return [];
   };
   
   const [open, setOpen] = useState(false);

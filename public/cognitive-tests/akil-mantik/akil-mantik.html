@@ -4,6 +4,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ForTest Akıl ve Mantık Testi</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" onload="window.__initSupabase && window.__initSupabase()"></script>
+    <script>
+      (function () {
+        const MAX_TRIES = 15;
+        const DELAY_MS = 300;
+        let tries = 0;
+
+        function ns() { return window.supabase || window.Supabase || null; }
+
+        function tryInit() {
+          try {
+            const url = localStorage.getItem('sb-url');
+            const key = localStorage.getItem('sb-anon-key');
+            if (!url || !key) return false;
+            const lib = ns();
+            if (!lib || typeof lib.createClient !== 'function') return false;
+            if (!window.supabaseClient) {
+              window.supabaseClient = lib.createClient(url, key);
+              console.log('✅ Supabase client (Akıl-Mantık) oluşturuldu');
+            }
+            return true;
+          } catch { return false; }
+        }
+
+        window.__initSupabase = function () {
+          if (tryInit()) return;
+          const t = setInterval(() => {
+            tries++;
+            if (tryInit() || tries >= MAX_TRIES) clearInterval(t);
+          }, DELAY_MS);
+        };
+        if (!window.supabaseClient) setTimeout(() => window.__initSupabase && window.__initSupabase(), 0);
+      })();
+    </script>
     <style>
         :root {
             --primary: #60a5fa;
@@ -2503,86 +2537,276 @@
             });
         }
 
-        // ==================== VERİTABANI KAYIT ====================
+        // ==================== VERİTABANI KAYIT (Supabase) ====================
         async function saveTestResults(results) {
-            try {
-                
-                const payload = {
-                    testType: 'Akil_Mantik_Testi',
-                    
-                    // Test zamanları
-                    test_start_time: testState.testStartTime,
-                    test_end_time: Date.now(),
-                    test_elapsed_time_seconds: results.totalTime,
-                    
-                    // Genel sonuçlar
-                    total_questions: results.totalQuestions,
-                    answered_questions: results.answeredQuestions,
-                    correct_answers: results.correctAnswers,
-                    wrong_answers: results.wrongAnswers,
-                    unanswered_questions: results.unansweredQuestions,
-                    success_rate: results.successRate,
-                    
-                    // İşlem hızı
-                    speed_score: results.speedScore,
-                    avg_response_time: results.avgResponseTime,
-                    total_response_time: results.totalResponseTime,
-                    
-                    // Bölüm bazlı analiz
-                    section_results: results.sectionResults,
-                    
-                    // Detaylı cevaplar
-                    detailed_answers: results.detailedAnswers,
-                    
-                    // Örnek test sonuçları
-                    example_attempts: results.exampleAttempts,
-                    example_correct_count: results.exampleCorrectCount,
-                    
-                    // Ek analizler
-                    impulsivity_warning: results.impulsivityWarning, // Geriye uyumluluk
-                    impulsivity_analysis: results.impulsivityAnalysis,
-                    detailed_statistics: results.detailedStatistics,
-                    last_question_reached: results.lastQuestionReached
-                };
-                
-                // Veritabanı kayıt logu
-                console.log(`\n💾 ================= VERİTABANI KAYIT =================`);
-                console.log(`📊 Payload Boyutu: ${JSON.stringify(payload).length} karakter`);
-                console.log(`📋 Test Türü: ${payload.testType}`);
-                console.log(`📅 Kayıt Zamanı: ${new Date().toLocaleString('tr-TR')}`);
-                
-                const response = await fetch('/api/fortest-akil-mantik-sonuclari', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    console.log(`\n✅ ================= KAYIT BAŞARILI =================`);
-                    console.log(`🆔 Submission ID: ${result.submissionId}`);
-                    console.log(`📅 Kayıt Zamanı: ${new Date().toLocaleString('tr-TR')}`);
-                    console.log(`🎉 Durum: BAŞARILI`);
-                    showNotification('Test sonuçlarınız başarıyla kaydedildi!', 'success');
-                } else {
-                    throw new Error(result.message);
-                }
-                
-            } catch (error) {
-                console.log(`\n❌ ================= KAYIT HATASI =================`);
-                console.log(`🚨 Hata: ${error.message}`);
-                console.log(`📋 Tür: ${error.name}`);
-                console.log(`📅 Zaman: ${new Date().toLocaleString('tr-TR')}`);
-                if (error.stack) {
-                    console.log(`🔍 Stack: ${error.stack.substring(0, 200)}...`);
-                }
-                showNotification('Test sonuçları kaydedilirken bir hata oluştu.', 'error');
+          try {
+            console.log('\n💾 AKIL-MANTIK → Supabase kayıt başlıyor');
+
+            let supabase = window.supabaseClient;
+            if (!supabase) {
+              const url = localStorage.getItem('sb-url');
+              const key = localStorage.getItem('sb-anon-key');
+              if (!url || !key || !window.supabase) {
+                console.error('Supabase config/UMD eksik; sonuçlar pendingAkilMantik olarak saklanıyor');
+                localStorage.setItem('pendingAkilMantik', JSON.stringify(results));
+                showNotification('Oturum kapalı veya bağlantı yok. Sonuçlar geçici kaydedildi.', 'warning');
+                return false;
+              }
+              supabase = window.supabase.createClient(url, key);
             }
+
+            // localStorage bridge - session bilgilerini al
+            console.log('🔍 AKIL-MANTIK: localStorage bridge kontrol...');
+            const sessionId = localStorage.getItem('bb-session-id');
+            const studentId = localStorage.getItem('bb-student-id');
+            const conductedBy = localStorage.getItem('bb-conducted-by');
+            
+            console.log('📦 localStorage bridge bilgileri:', {
+                sessionId: sessionId ? sessionId.slice(0, 8) + '...' : 'YOK',
+                studentId: studentId ? studentId.slice(0, 8) + '...' : 'YOK',
+                conductedBy: conductedBy ? conductedBy.slice(0, 8) + '...' : 'YOK'
+            });
+            
+            if (!sessionId || !studentId || !conductedBy) {
+                console.error('❌ AKIL-MANTIK HATA: localStorage bridge eksik');
+                console.error('Eksik bilgiler:', {
+                    sessionId: !sessionId,
+                    studentId: !studentId,
+                    conductedBy: !conductedBy
+                });
+                localStorage.setItem('pendingAkilMantik', JSON.stringify(results));
+                showNotification('Session bilgileri eksik. Sonuçlar geçici kaydedildi.', 'warning');
+                return false;
+            }
+            
+            console.log('✅ AKIL-MANTIK: localStorage bridge aktif');
+            console.log(`🆔 Session ID: ${sessionId.slice(0, 8)}...`);
+            console.log(`👤 Student ID: ${studentId.slice(0, 8)}...`);
+            console.log(`👨‍🏫 Conducted By: ${conductedBy.slice(0, 8)}...`);
+
+            const sr = results.sectionResults || {};
+            function secVal(s, k, def = 0) {
+              const v = sr[s]?.[k];
+              return typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) || def : def);
+            }
+
+            const mapped = {
+              session_id: sessionId,  // 🆔 Session ID eklendi
+              student_id: studentId,   // localStorage'dan
+              conducted_by: conductedBy, // localStorage'dan
+              test_start_time: new Date(testState.testStartTime).toISOString(),
+              test_end_time: new Date().toISOString(),
+              test_duration_seconds: Math.round(results.totalTime || 0),
+              total_questions: 23,
+              answered_questions: results.answeredQuestions || 0,
+              correct_answers: results.correctAnswers || 0,
+              wrong_answers: results.wrongAnswers || 0,
+              unanswered_questions: results.unansweredQuestions || 0,
+              success_rate: Number((results.successRate || 0).toFixed(2)),
+              speed_score: Number((results.speedScore || 0).toFixed(2)),
+              avg_response_time_ms: Math.round((results.avgResponseTime || 0) * 1000),
+              total_response_time_ms: Math.round((results.totalResponseTime || 0) * 1000),
+
+              dortlu_yatay_correct: sr[1]?.correct || 0,
+              dortlu_yatay_wrong: (sr[1]?.total || 0) - (sr[1]?.correct || 0),
+              dortlu_yatay_total: sr[1]?.total || 8,
+              dortlu_yatay_accuracy_percentage: Number((sr[1]?.accuracy_percentage || 0).toFixed(2)),
+              dortlu_yatay_avg_response_time_ms: Math.round((sr[1]?.avg_response_time_per_question || 0) * 1000),
+              dortlu_yatay_completion_time_seconds: Math.round(sr[1]?.time || 0),
+
+              dortlu_kare_correct: sr[2]?.correct || 0,
+              dortlu_kare_wrong: (sr[2]?.total || 0) - (sr[2]?.correct || 0),
+              dortlu_kare_total: sr[2]?.total || 6,
+              dortlu_kare_accuracy_percentage: Number((sr[2]?.accuracy_percentage || 0).toFixed(2)),
+              dortlu_kare_avg_response_time_ms: Math.round((sr[2]?.avg_response_time_per_question || 0) * 1000),
+              dortlu_kare_completion_time_seconds: Math.round(sr[2]?.time || 0),
+
+              altili_kare_correct: sr[3]?.correct || 0,
+              altili_kare_wrong: (sr[3]?.total || 0) - (sr[3]?.correct || 0),
+              altili_kare_total: sr[3]?.total || 3,
+              altili_kare_accuracy_percentage: Number((sr[3]?.accuracy_percentage || 0).toFixed(2)),
+              altili_kare_avg_response_time_ms: Math.round((sr[3]?.avg_response_time_per_question || 0) * 1000),
+              altili_kare_completion_time_seconds: Math.round(sr[3]?.time || 0),
+
+              l_format_correct: sr[4]?.correct || 0,
+              l_format_wrong: (sr[4]?.total || 0) - (sr[4]?.correct || 0),
+              l_format_total: sr[4]?.total || 3,
+              l_format_accuracy_percentage: Number((sr[4]?.accuracy_percentage || 0).toFixed(2)),
+              l_format_avg_response_time_ms: Math.round((sr[4]?.avg_response_time_per_question || 0) * 1000),
+              l_format_completion_time_seconds: Math.round(sr[4]?.time || 0),
+
+              dokuzlu_format_correct: sr[5]?.correct || 0,
+              dokuzlu_format_wrong: (sr[5]?.total || 0) - (sr[5]?.correct || 0),
+              dokuzlu_format_total: sr[5]?.total || 3,
+              dokuzlu_format_accuracy_percentage: Number((sr[5]?.accuracy_percentage || 0).toFixed(2)),
+              dokuzlu_format_avg_response_time_ms: Math.round((sr[5]?.avg_response_time_per_question || 0) * 1000),
+              dokuzlu_format_completion_time_seconds: Math.round(sr[5]?.time || 0),
+
+              last_question_reached: results.lastQuestionReached || 0,
+              example_attempts: results.exampleAttempts || 0,
+              example_correct_count: results.exampleCorrectCount || 0,
+
+              section_results: results.sectionResults || {},
+              detailed_answers: results.detailedAnswers || [],
+              impulsivity_analysis: results.impulsivityAnalysis || {},
+              detailed_statistics: results.detailedStatistics || {}
+            };
+
+            console.log('📝 Akıl-Mantık Supabase insert payload:', mapped);
+
+            const { data: ins, error: insErr } = await supabase
+              .from('akil_mantik_test_results')
+              .insert([mapped])
+              .select();
+
+            if (insErr) {
+              console.error('❌ Supabase insert hatası:', insErr);
+              localStorage.setItem('failedAkilMantik', JSON.stringify({ mapped, error: insErr, at: new Date().toISOString() }));
+              showNotification('Kayıt sırasında hata oluştu.', 'error');
+              return false;
+            }
+
+            console.log('🎉 Akıl-Mantık Supabase kayıt başarılı:', ins);
+            localStorage.removeItem('pendingAkilMantik');
+            localStorage.removeItem('failedAkilMantik');
+            
+            // 🔥 SON TEST - AGGREGATOR ÇAĞRISI
+            console.log('🔍 AGGREGATOR: Son test tamamlandı, aggregator çağrılıyor...');
+            try {
+              // Session end time'ı set et
+              localStorage.setItem('bb-session-end', new Date().toISOString());
+              
+              // Aggregator'ı çağır
+              await callAggregator();
+              
+              showNotification('Tüm test sonuçlarınız başarıyla kaydedildi ve analiz edildi!', 'success');
+            } catch (aggError) {
+              console.error('❌ Aggregator hatası:', aggError);
+              showNotification('Test sonuçları kaydedildi ancak analiz sırasında hata oluştu.', 'warning');
+            }
+            
+            return true;
+
+          } catch (error) {
+            console.error('❌ Akıl-Mantık genel kayıt hatası:', error);
+            localStorage.setItem('failedAkilMantik', JSON.stringify({ error: String(error), at: new Date().toISOString() }));
+            showNotification('Test sonuçları kaydedilirken bir hata oluştu.', 'error');
+            return false;
+          }
         }
 
+        // 🔥 AGGREGATOR ÇAĞRISI FONKSİYONU
+        async function callAggregator() {
+          console.log('🚀 AGGREGATOR: Başlatılıyor...');
+          
+          try {
+            // Supabase client kontrolü
+            const sbUrl = localStorage.getItem('sb-url');
+            const sbKey = localStorage.getItem('sb-anon-key');
+            
+            if (!sbUrl || !sbKey) {
+              throw new Error('Supabase config eksik');
+            }
+            
+            // Session bilgileri kontrolü
+            const sessionId = localStorage.getItem('bb-session-id');
+            const studentId = localStorage.getItem('bb-student-id');
+            const conductedBy = localStorage.getItem('bb-conducted-by');
+            
+            if (!sessionId || !studentId || !conductedBy) {
+              throw new Error('Session bilgileri eksik');
+            }
+            
+            console.log('📊 AGGREGATOR: Tüm test sonuçları toplanıyor...');
+            console.log(`🆔 Session ID: ${sessionId.slice(0, 8)}...`);
+            
+            // Aggregator logic - inline implementation
+            const supabase = window.supabase.createClient(sbUrl, sbKey);
+            
+            // 5 test sonucunu oku
+            console.log('📖 Test sonuçları okunuyor...');
+            const [attResult, memResult, strResult, pzlResult, logicResult] = await Promise.all([
+              supabase.from('attention_test_results').select('*').eq('session_id', sessionId).order('test_end_time', { ascending: false }).limit(1).maybeSingle(),
+              supabase.from('memory_test_results').select('*').eq('session_id', sessionId).order('test_end_time', { ascending: false }).limit(1).maybeSingle(),
+              supabase.from('stroop_test_results').select('*').eq('session_id', sessionId).order('test_end_time', { ascending: false }).limit(1).maybeSingle(),
+              supabase.from('puzzle_test_results').select('*').eq('session_id', sessionId).order('test_end_time', { ascending: false }).limit(1).maybeSingle(),
+              supabase.from('akil_mantik_test_results').select('*').eq('session_id', sessionId).order('test_end_time', { ascending: false }).limit(1).maybeSingle()
+            ]);
+            
+            // Hata kontrolü
+            if (attResult.error || memResult.error || strResult.error || pzlResult.error || logicResult.error) {
+              throw new Error('Test sonuçları okunamadı');
+            }
+            
+            if (!attResult.data || !memResult.data || !strResult.data || !pzlResult.data || !logicResult.data) {
+              throw new Error('Bazı test sonuçları bulunamadı');
+            }
+            
+            console.log('✅ Tüm test sonuçları bulundu');
+            
+            // Basit skorlama - DOĞRU FIELD İSİMLERİ
+            const scores = {
+              dikkat_skoru: Math.round((attResult.data.accuracy_percentage || 0) * 100) / 100,
+              hafiza_skoru: Math.round((memResult.data.accuracy_percentage || 0) * 100) / 100,
+              isleme_hizi_skoru: Math.round(((100 - (strResult.data.average_response_time_ms || 1000) / 10) || 0) * 100) / 100,
+              gorsel_isleme_skoru: Math.round(((pzlResult.data.four_piece_score || 0) + (pzlResult.data.six_piece_score || 0)) / 2 * 100) / 100,
+              akil_mantik_yurutme_skoru: Math.round((logicResult.data.success_rate || 0) * 100) / 100,
+              bilissel_esneklik_skoru: Math.round(((strResult.data.accuracy_percentage || 0) + (pzlResult.data.cognitive_flexibility_score || 0)) / 2 * 100) / 100
+            };
+            
+            console.log('🧠 Bilişsel skorlar hesaplandı:', scores);
+            
+            // cognitive_test_result tablosuna kaydet
+            const startTime = localStorage.getItem('bb-session-start') || new Date().toISOString();
+            const endTime = localStorage.getItem('bb-session-end') || new Date().toISOString();
+            const duration = Math.round((new Date(endTime).getTime() - new Date(startTime).getTime()) / 1000);
+            
+            const cognitiveResult = {
+              session_id: sessionId,
+              student_id: studentId,
+              conducted_by: conductedBy,
+              test_start_time: startTime,
+              test_end_time: endTime,
+              duration_seconds: duration,
+              ...scores,
+              alt_test_ozetleri: {
+                attention: attResult.data,
+                memory: memResult.data,
+                stroop: strResult.data,
+                puzzle: pzlResult.data,
+                logic: logicResult.data
+              }
+            };
+            
+            console.log('💾 Bilişsel test sonucu kaydediliyor...');
+            const { data: insertData, error: insertError } = await supabase
+              .from('cognitive_test_result')
+              .insert([cognitiveResult])
+              .select();
+            
+            if (insertError) {
+              console.error('❌ Bilişsel test sonucu kayıt hatası:', insertError);
+              throw insertError;
+            }
+            
+            console.log('🎉 AGGREGATOR: Başarıyla tamamlandı!', insertData);
+            
+            // Session temizleme
+            console.log('🧹 Session temizleniyor...');
+            localStorage.removeItem('bb-session-id');
+            localStorage.removeItem('bb-session-start');
+            localStorage.removeItem('bb-session-end');
+            localStorage.removeItem('bb-student-id');
+            localStorage.removeItem('bb-conducted-by');
+            
+            return { ok: true, id: insertData[0].id, scores };
+            
+          } catch (error) {
+            console.error('❌ AGGREGATOR HATASI:', error);
+            throw error;
+          }
+        }
+        
         // Örnek uygulama tekrar fonksiyonu
         function retryExampleFromFail() {
             console.log('🔄 Örnek uygulama tekrar edilecek...');
@@ -2878,4 +3102,4 @@
         });
     </script>
 </body>
-</html> 
+</html>

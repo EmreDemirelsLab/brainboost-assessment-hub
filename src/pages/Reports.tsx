@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Download, FileText, Search, Filter, ArrowLeft, FileSpreadsheet, Eye } from "lucide-react";
+import { Download, FileText, Search, Filter, ArrowLeft, Brain, Eye, FileSpreadsheet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,6 +15,7 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import BurdonReportModal from "@/components/reports/BurdonReportModal";
 import D2ReportModal from "@/components/reports/D2ReportModal";
+import CognitiveReportModal from "@/components/reports/CognitiveReportModal";
 
 // Burdon test results interface
 interface BurdonTestResult {
@@ -45,13 +46,35 @@ interface D2TestResult {
   [key: string]: any;
 }
 
+// Cognitive test results interface
+interface CognitiveTestResult {
+  id: string;
+  session_id: string;
+  student_id: string;
+  conducted_by: string;
+  test_start_time: string;
+  test_end_time: string;
+  duration_seconds: number;
+  dikkat_skoru: number;
+  hafiza_skoru: number;
+  isleme_hizi_skoru: number;
+  gorsel_isleme_skoru: number;
+  akil_mantik_yurutme_skoru: number;
+  bilissel_esneklik_skoru: number;
+  alt_test_ozetleri?: any;
+  created_at: string;
+  student_name?: string;
+  conducted_by_name?: string;
+  [key: string]: any;
+}
+
 export default function Reports() {
   const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
   const [selectedTest, setSelectedTest] = useState<string | null>(null);
   const [students, setStudents] = useState<any[]>([]);
   const [burdonResults, setBurdonResults] = useState<BurdonTestResult[]>([]);
   const [d2Results, setD2Results] = useState<D2TestResult[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedResult, setSelectedResult] = useState<BurdonTestResult | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -62,6 +85,12 @@ export default function Reports() {
   const [selectedD2Result, setSelectedD2Result] = useState<D2TestResult | null>(null);
   const [d2ModalOpen, setD2ModalOpen] = useState(false);
   const [selectedD2ModalData, setSelectedD2ModalData] = useState<{student: any, testResult: any} | null>(null);
+  
+  // Cognitive Modal states
+  const [cognitiveResults, setCognitiveResults] = useState<CognitiveTestResult[]>([]);
+  const [selectedCognitiveResult, setSelectedCognitiveResult] = useState<CognitiveTestResult | null>(null);
+  const [cognitiveModalOpen, setCognitiveModalOpen] = useState(false);
+  const [selectedCognitiveModalData, setSelectedCognitiveModalData] = useState<{student: any, testResult: any} | null>(null);
   const { toast } = useToast();
   const { user, switchRole, logout, isLoading } = useAuth();
   const navigate = useNavigate();
@@ -395,6 +424,77 @@ export default function Reports() {
     }
   };
 
+  const fetchCognitiveResults = async (studentId?: string) => {
+    const targetStudentId = studentId || selectedStudent?.id;
+    if (!targetStudentId) return;
+    
+    try {
+      setLoading(true);
+      console.log('🔍 Fetching cognitive results for student:', targetStudentId);
+      
+      const { data: results, error: resultsError } = await supabase
+        .from('cognitive_test_result' as any)
+        .select('*')
+        .eq('student_id', targetStudentId)
+        .order('created_at', { ascending: false });
+
+      console.log('📊 Cognitive results query response:', { results, error: resultsError });
+
+      if (resultsError) throw resultsError;
+
+      const formattedResults = [];
+      
+      for (const result of results || []) {
+        let studentName = 'Bilinmeyen Öğrenci';
+        let conductorName = 'Bilinmeyen';
+
+        // Öğrenci bilgisini al
+        if (result.student_id) {
+          const { data: studentData } = await supabase
+            .from('users')
+            .select('first_name, last_name')
+            .eq('id', result.student_id)
+            .single();
+          
+          if (studentData) {
+            studentName = `${studentData.first_name} ${studentData.last_name}`;
+          }
+        }
+
+        // Test yapan kişi bilgisini al
+        if (result.conducted_by) {
+          const { data: conductorData } = await supabase
+            .from('users')
+            .select('first_name, last_name')
+            .eq('id', result.conducted_by)
+            .single();
+          
+          if (conductorData) {
+            conductorName = `${conductorData.first_name} ${conductorData.last_name}`;
+          }
+        }
+
+        formattedResults.push({
+          ...result,
+          student_name: studentName,
+          conducted_by_name: conductorName
+        } as any);
+      }
+
+      console.log('✅ Formatted cognitive results:', formattedResults);
+      setCognitiveResults(formattedResults);
+    } catch (error: any) {
+      console.error('❌ Error fetching cognitive results:', error);
+      toast({
+        title: "Hata",
+        description: `Bilişsel beceri test sonuçları yüklenirken bir hata oluştu: ${error.message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchModalData = async (resultId: string) => {
     try {
       setLoading(true);
@@ -564,6 +664,94 @@ export default function Reports() {
       toast({
         title: "Hata",
         description: "D2 rapor verileri yüklenirken bir hata oluştu.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCognitiveModalData = async (resultId: string) => {
+    try {
+      setLoading(true);
+      
+      // Cognitive test sonucunu çek
+      const { data: testResult, error: testError } = await supabase
+        .from('cognitive_test_result' as any)
+        .select('*')
+        .eq('id', resultId)
+        .single();
+
+      if (testError) throw testError;
+      const cognitiveResult = testResult as any;
+
+      // Student bilgilerini çek
+      const { data: studentData, error: studentError } = await supabase
+        .from('users')
+        .select(`
+          id,
+          first_name,
+          last_name,
+          demographic_info
+        `)
+        .eq('id', cognitiveResult.student_id)
+        .single();
+
+      if (studentError) throw studentError;
+
+      // Supervisor/Trainer ismini çek
+      let trainerName = 'Beyin Antrenörü';
+      if (testResult.conducted_by) {
+        const { data: trainerData } = await supabase
+          .from('users')
+          .select('first_name, last_name')
+          .eq('id', testResult.conducted_by)
+          .single();
+        
+        if (trainerData) {
+          trainerName = `${trainerData.first_name} ${trainerData.last_name}`;
+        }
+      }
+
+      // Student verisini format et
+      const demographicInfo = studentData.demographic_info as any;
+      const formattedStudent = {
+        id: studentData.id,
+        name: `${studentData.first_name} ${studentData.last_name}`,
+        birth_date: demographicInfo?.birth_date || '1990-01-01',
+        gender: demographicInfo?.gender || 'male',
+        trainer_name: trainerName
+      };
+
+      // Cognitive test sonucunu format et
+      const formattedTestResult = {
+        id: testResult.id,
+        session_id: testResult.session_id,
+        student_id: testResult.student_id,
+        conducted_by: testResult.conducted_by,
+        test_start_time: testResult.test_start_time,
+        test_end_time: testResult.test_end_time,
+        duration_seconds: testResult.duration_seconds,
+        dikkat_skoru: testResult.dikkat_skoru || 0,
+        hafiza_skoru: testResult.hafiza_skoru || 0,
+        isleme_hizi_skoru: testResult.isleme_hizi_skoru || 0,
+        gorsel_isleme_skoru: testResult.gorsel_isleme_skoru || 0,
+        akil_mantik_yurutme_skoru: testResult.akil_mantik_yurutme_skoru || 0,
+        bilissel_esneklik_skoru: testResult.bilissel_esneklik_skoru || 0,
+        alt_test_ozetleri: testResult.alt_test_ozetleri,
+        created_at: testResult.created_at
+      };
+
+      setSelectedCognitiveModalData({
+        student: formattedStudent,
+        testResult: formattedTestResult
+      });
+
+    } catch (error) {
+      console.error('Error fetching Cognitive modal data:', error);
+      toast({
+        title: "Hata",
+        description: "Bilişsel Beceriler rapor verileri yüklenirken bir hata oluştu.",
         variant: "destructive",
       });
     } finally {
@@ -1064,7 +1252,10 @@ export default function Reports() {
         onLogout={handleLogout}
       >
         <div className="flex items-center justify-center h-64">
-          <div className="text-lg">Yükleniyor...</div>
+          <div className="flex items-center space-x-3">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+            <div className="text-lg">Raporlar yükleniyor...</div>
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -1382,6 +1573,27 @@ export default function Reports() {
                 </Button>
               </CardContent>
             </Card>
+
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={async () => {
+              console.log('Cognitive card clicked for student:', selectedStudent.id);
+              await fetchCognitiveResults(selectedStudent.id);
+              setSelectedTest('cognitive');
+            }}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Brain className="h-5 w-5" />
+                  Bilişsel Beceri Testi
+                </CardTitle>
+                <CardDescription>
+                  Kapsamlı bilişsel beceri testi sonuçlarını görüntüleyin ve analiz edin.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="outline" className="w-full">
+                  Raporları Görüntüle
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </DashboardLayout>
@@ -1482,18 +1694,6 @@ export default function Reports() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              console.log('Detay button clicked for result:', result.id);
-                              setSelectedResultId(result.id);
-                              setModalOpen(true);
-                            }}
-                          >
-                            <Eye className="h-4 w-4 mr-2" />
-                            Detay
-                          </Button>
                           <Button
                             variant="outline"
                             size="sm"
@@ -1684,18 +1884,6 @@ export default function Reports() {
                               variant="outline"
                               size="sm"
                               onClick={async () => {
-                                // D2 modal'ı aç - Detay
-                                await fetchD2ModalData(result.id);
-                                setD2ModalOpen(true);
-                              }}
-                            >
-                              <Eye className="h-4 w-4 mr-2" />
-                              Detay
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={async () => {
                                 // D2 modal'ı aç ve print et
                                 await fetchD2ModalData(result.id);
                                 setD2ModalOpen(true);
@@ -1774,6 +1962,200 @@ export default function Reports() {
               }}
               student={selectedD2ModalData.student}
               testResult={selectedD2ModalData.testResult}
+            />
+          )}
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Cognitive test seçildiyse
+  if (selectedTest === 'cognitive') {
+    const filteredCognitiveResults = cognitiveResults.filter(result => {
+      const searchLower = searchTerm.toLowerCase();
+      return result.student_name?.toLowerCase().includes(searchLower) ||
+             result.conducted_by_name?.toLowerCase().includes(searchLower) ||
+             result.id.toLowerCase().includes(searchLower);
+    });
+
+    return (
+      <DashboardLayout
+        user={user ? {
+          name: `${user.firstName} ${user.lastName}`,
+          email: user.email,
+          roles: user.roles,
+          currentRole: user.currentRole,
+        } : undefined}
+        onRoleSwitch={handleRoleSwitch}
+        onLogout={handleLogout}
+      >
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button variant="outline" onClick={() => setSelectedTest(null)}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Test Seçimi
+              </Button>
+              <div>
+                <h1 className="text-3xl font-bold">{selectedStudent.full_name} - Bilişsel Beceri Test Raporları</h1>
+                <p className="text-muted-foreground">
+                  Kapsamlı bilişsel beceri testi sonuçlarını görüntüleyebilir ve indirebilirsiniz.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Bilişsel Beceri Test Sonuçları</CardTitle>
+              <CardDescription>
+                {selectedStudent.full_name} öğrencisine ait bilişsel beceri testi sonuçları
+              </CardDescription>
+              <div className="mt-3 p-3 bg-muted rounded-md">
+                <div className="text-xs text-muted-foreground font-mono grid grid-cols-3 gap-4">
+                  <div><strong>Dikkat:</strong> Dikkat ve odaklanma becerisi</div>
+                  <div><strong>Hafıza:</strong> Bellek ve hatırlama becerisi</div>
+                  <div><strong>İşleme Hızı:</strong> Bilgi işleme hızı</div>
+                  <div><strong>Görsel İşleme:</strong> Görsel-uzamsal işleme</div>
+                  <div><strong>Akıl Yürütme:</strong> Mantıksal düşünme</div>
+                  <div><strong>Bilişsel Esneklik:</strong> Zihinsel esneklik</div>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Arama yapın..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 w-64"
+                    />
+                  </div>
+                </div>
+                <Badge variant="outline">
+                  Toplam: {filteredCognitiveResults.length} sonuç
+                </Badge>
+              </div>
+
+              {filteredCognitiveResults.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">Bilişsel beceri testi sonucu bulunamadı.</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Test Tarihi</TableHead>
+                      <TableHead className="text-center">Dikkat</TableHead>
+                      <TableHead className="text-center">Hafıza</TableHead>
+                      <TableHead className="text-center">İşleme Hızı</TableHead>
+                      <TableHead className="text-center">Görsel İşleme</TableHead>
+                      <TableHead className="text-center">Akıl Yürütme</TableHead>
+                      <TableHead className="text-center">Bilişsel Esneklik</TableHead>
+                      <TableHead>Test Yapan</TableHead>
+                      <TableHead>İşlemler</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCognitiveResults.map((result) => {
+                      return (
+                        <TableRow key={result.id}>
+                          <TableCell>
+                            {new Date(result.created_at).toLocaleDateString('tr-TR')}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="font-mono text-sm font-medium">{result.dikkat_skoru || 0}</div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="font-mono text-sm font-medium">{result.hafiza_skoru || 0}</div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="font-mono text-sm font-medium">{result.isleme_hizi_skoru || 0}</div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="font-mono text-sm font-medium">{result.gorsel_isleme_skoru || 0}</div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="font-mono text-sm font-medium">{result.akil_mantik_yurutme_skoru || 0}</div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="font-mono text-sm font-medium">{result.bilissel_esneklik_skoru || 0}</div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">
+                              <div className="font-medium">{result.conducted_by_name}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  // Cognitive report HTML sayfasını aç
+                                  const reportUrl = `/coginitiveetemp.html?session_id=${result.session_id}`;
+                                  window.open(reportUrl, '_blank');
+                                }}
+                              >
+                                <FileText className="h-4 w-4 mr-2" />
+                                PDF
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  const csvContent = [
+                                    ['Bilişsel Beceri Test Sonuçları', 'Değer'],
+                                    ['Test Tarihi', new Date(result.created_at).toLocaleDateString('tr-TR')],
+                                    ['Öğrenci', result.student_name || 'Bilinmeyen'],
+                                    ['Test Yapan', result.conducted_by_name || 'Bilinmeyen'],
+                                    ['Dikkat Skoru', result.dikkat_skoru || 0],
+                                    ['Hafıza Skoru', result.hafiza_skoru || 0],
+                                    ['İşleme Hızı Skoru', result.isleme_hizi_skoru || 0],
+                                    ['Görsel İşleme Skoru', result.gorsel_isleme_skoru || 0],
+                                    ['Akıl Yürütme Skoru', result.akil_mantik_yurutme_skoru || 0],
+                                    ['Bilişsel Esneklik Skoru', result.bilissel_esneklik_skoru || 0],
+                                    ['Test Süresi (saniye)', result.duration_seconds || 0]
+                                  ].map(row => row.join(',')).join('\n');
+                                  
+                                  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                                  const link = document.createElement('a');
+                                  const url = URL.createObjectURL(blob);
+                                  link.setAttribute('href', url);
+                                  link.setAttribute('download', `Cognitive_test_${result.student_name}_${new Date(result.created_at).toLocaleDateString('tr-TR')}.csv`);
+                                  link.style.visibility = 'hidden';
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                }}
+                              >
+                                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                                CSV
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Cognitive Report Modal */}
+          {selectedCognitiveModalData && (
+            <CognitiveReportModal 
+              isOpen={cognitiveModalOpen}
+              onClose={() => {
+                setCognitiveModalOpen(false);
+                setSelectedCognitiveModalData(null);
+              }}
+              student={selectedCognitiveModalData.student}
+              testResult={selectedCognitiveModalData.testResult}
             />
           )}
         </div>
