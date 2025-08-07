@@ -2011,16 +2011,6 @@ export default function Reports() {
               <CardDescription>
                 {selectedStudent.full_name} öğrencisine ait bilişsel beceri testi sonuçları
               </CardDescription>
-              <div className="mt-3 p-3 bg-muted rounded-md">
-                <div className="text-xs text-muted-foreground font-mono grid grid-cols-3 gap-4">
-                  <div><strong>Dikkat:</strong> Dikkat ve odaklanma becerisi</div>
-                  <div><strong>Hafıza:</strong> Bellek ve hatırlama becerisi</div>
-                  <div><strong>İşleme Hızı:</strong> Bilgi işleme hızı</div>
-                  <div><strong>Görsel İşleme:</strong> Görsel-uzamsal işleme</div>
-                  <div><strong>Akıl Yürütme:</strong> Mantıksal düşünme</div>
-                  <div><strong>Bilişsel Esneklik:</strong> Zihinsel esneklik</div>
-                </div>
-              </div>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between mb-4">
