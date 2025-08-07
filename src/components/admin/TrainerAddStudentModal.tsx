@@ -38,8 +38,8 @@ export function TrainerAddStudentModal({ trigger, onStudentCreated }: TrainerAdd
   const [parentEmail, setParentEmail] = useState("");
   const [notes, setNotes] = useState("");
 
-  // Beyin antrenörleri (trainer, beyin_antrenoru) öğrenci ekleyebilir
-  const canAddStudents = user?.currentRole === 'trainer' || user?.currentRole === 'beyin_antrenoru';
+  // Beyin antrenörleri öğrenci ekleyebilir
+  const canAddStudents = user?.currentRole === 'beyin_antrenoru';
 
   if (!canAddStudents) {
     return null;

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types/auth';
@@ -36,6 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentRole, setCurrentRole] = useState<UserRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [justLoggedIn, setJustLoggedIn] = useState(false);
+  const isCreatingUserRef = useRef(false); // Kullanıcı oluşturma flag'i - useRef ile global
 
   // Fetch user profile and roles
   const fetchUserProfile = async (authUser: User) => {
@@ -126,16 +127,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setJustLoggedIn(false); // Flag'i reset et
               }
             } else {
-              // Profil bulunamadı - muhtemelen silinmiş kullanıcı
-              console.log('🚫 User profile not found, signing out user:', session.user.email);
-              toast.error('Kullanıcı hesabınız sistemden kaldırılmış. Lütfen yöneticinizle iletişime geçin.');
-              await supabase.auth.signOut();
-              setUser(null);
-              setCurrentRole(null);
-              setSession(null);
-              setJustLoggedIn(false); // Flag'i reset et
-              // localStorage'dan currentRole'ü temizle
-              localStorage.removeItem('currentRole');
+              // Kullanıcı oluşturma sırasında bu kontrolü atla
+              if (!isCreatingUserRef.current) {
+                // Profil bulunamadı - muhtemelen silinmiş kullanıcı
+                console.log('🚫 User profile not found, signing out user:', session.user.email);
+                toast.error('Kullanıcı hesabınız sistemden kaldırılmış. Lütfen yöneticinizle iletişime geçin.');
+                await supabase.auth.signOut();
+                setUser(null);
+                setCurrentRole(null);
+                setSession(null);
+                setJustLoggedIn(false); // Flag'i reset et
+                // localStorage'dan currentRole'ü temizle
+                localStorage.removeItem('currentRole');
+              } else {
+                console.log('👤 Profile not found (new user being created):', session.user.email);
+              }
             }
           }, 0);
         } else {
@@ -221,6 +227,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const originalCurrentRole = currentRole;
     
     try {
+      // Kullanıcı oluşturma flag'ini set et
+      isCreatingUserRef.current = true;
       console.log('🔄 Creating auth user for:', email);
       console.log('💾 Current session preserved for:', originalUser?.email);
       
@@ -244,6 +252,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(originalUser);
           setCurrentRole(originalCurrentRole);
         }
+        isCreatingUserRef.current = false; // Hata durumunda flag'i resetle
         return { error: authError.message };
       }
 
@@ -253,6 +262,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (currentSession.data.session) {
           await supabase.auth.setSession(currentSession.data.session);
         }
+        isCreatingUserRef.current = false; // Hata durumunda flag'i resetle
         return { error: 'Kullanıcı oluşturulamadı.' };
       }
 
@@ -311,6 +321,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(originalUser);
           setCurrentRole(originalCurrentRole);
         }
+        isCreatingUserRef.current = false; // Hata durumunda flag'i resetle
         return { error: 'Kullanıcı profili oluşturulamadı: ' + userError.message };
       }
 
@@ -321,6 +332,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(originalUser);
           setCurrentRole(originalCurrentRole);
         }
+        isCreatingUserRef.current = false; // Hata durumunda flag'i resetle
         return { error: 'Kullanıcı ID alınamadı.' };
       }
 
@@ -340,7 +352,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setCurrentRole(originalCurrentRole);
         console.log('✅ Original session restored successfully');
       }
-
+      
+      // Başarıyla tamamlandı - flag'i resetle
+      setTimeout(() => {
+        isCreatingUserRef.current = false;
+      }, 2000); // 2 saniye bekle
       return {};
     } catch (error) {
       console.error('Kullanıcı oluşturma hatası:', error);
@@ -353,6 +369,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setCurrentRole(originalCurrentRole);
       }
       
+      // Hata durumunda flag'i resetle
+      isCreatingUserRef.current = false;
       return { error: 'Kullanıcı oluşturulurken beklenmeyen bir hata oluştu.' };
     }
   };

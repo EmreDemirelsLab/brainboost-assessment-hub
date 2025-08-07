@@ -207,17 +207,17 @@ export default function AddUser() {
       }
       
       // Beyin antrenörü kontrolü - role değerine bak
-      if (role === 'beyin_antrenoru' || role === 'trainer') {
+      if (role === 'beyin_antrenoru') {
         return { label: 'Beyin Antrenörü', variant: 'default' as const };
       }
       
       // Temsilci kontrolü
-      if (role === 'representative' || role === 'temsilci') {
+      if (role === 'temsilci') {
         return { label: 'Temsilci', variant: 'secondary' as const };
       }
       
       // Kullanıcı kontrolü
-      if (role === 'kullanici' || role === 'user') {
+      if (role === 'kullanici') {
         return { label: 'Kullanıcı', variant: 'secondary' as const };
       }
       

@@ -19,12 +19,9 @@ interface CreateUserModalProps {
 }
 
 const roleLabels: Record<UserRole, string> = {
-  admin: "Sistem Yöneticisi",
-  trainer: "Beyin Antrenörü",
+  admin: "Admin",
   beyin_antrenoru: "Beyin Antrenörü",
-  representative: "Temsilci",
   temsilci: "Temsilci",
-  user: "Kullanıcı",
   kullanici: "Kullanıcı"
 };
 
@@ -84,7 +81,7 @@ export function CreateUserModal({ trigger, onUserCreated }: CreateUserModalProps
   });
 
   // Admin, trainer, temsilci ve beyin antrenörü kullanıcı oluşturabilir
-  const canCreateUsers = user?.roles.includes('admin') || user?.roles.includes('trainer') || user?.roles.includes('temsilci') || user?.roles.includes('beyin_antrenoru');
+  const canCreateUsers = user?.roles.includes('admin') || user?.roles.includes('temsilci') || user?.roles.includes('beyin_antrenoru');
 
   if (!canCreateUsers) {
     return null;
@@ -120,7 +117,7 @@ export function CreateUserModal({ trigger, onUserCreated }: CreateUserModalProps
 
     try {
       // Öğrenci rolü varsa demografik bilgileri hazırla
-      const isStudent = selectedRoles.includes('kullanici') || selectedRoles.includes('user');
+      const isStudent = selectedRoles.includes('kullanici');
       const finalDemographicInfo = isStudent ? {
         ...demographicInfo,
         student_number: `STU-${Date.now().toString().slice(-8)}`
@@ -245,7 +242,8 @@ export function CreateUserModal({ trigger, onUserCreated }: CreateUserModalProps
                     placeholder="Ad"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 notranslate"
+                    translate="no"
                     required
                   />
                 </div>
@@ -258,6 +256,8 @@ export function CreateUserModal({ trigger, onUserCreated }: CreateUserModalProps
                   placeholder="Soyad"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
+                  className="notranslate"
+                  translate="no"
                   required
                 />
               </div>
@@ -309,7 +309,7 @@ export function CreateUserModal({ trigger, onUserCreated }: CreateUserModalProps
                   </Button>
                 </div>
                 <Button type="button" variant="outline" onClick={generatePassword}>
-                  Oluştur
+                  <span className="notranslate" translate="no">Oluştur</span>
                 </Button>
               </div>
             </div>
@@ -338,7 +338,7 @@ export function CreateUserModal({ trigger, onUserCreated }: CreateUserModalProps
             </div>
 
             {/* Demografik Bilgiler - Sadece öğrenci rolü seçildiğinde görünür */}
-            {(selectedRoles.includes('kullanici') || selectedRoles.includes('user')) && (
+            {selectedRoles.includes('kullanici') && (
               <div className="space-y-3 border-t pt-3 mt-4">
                 <Label className="text-sm font-medium text-muted-foreground">Öğrenci Bilgileri (Opsiyonel)</Label>
                 

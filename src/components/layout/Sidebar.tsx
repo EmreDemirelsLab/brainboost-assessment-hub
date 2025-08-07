@@ -24,25 +24,25 @@ const mainMenuItems = [
     icon: Brain,
     label: "Bilişsel Beceri\nDeğerlendirme",
     href: "/cognitive-assessment",
-    roles: ["admin", "trainer", "beyin_antrenoru", "representative", "temsilci", "user", "kullanici"] as UserRole[]
+    roles: ["admin", "beyin_antrenoru", "temsilci", "kullanici"] as UserRole[]
   },
   {
     icon: BookOpen,
     label: "Etkin ve\nAnlayarak Okuma",
     href: "/reading-exercises",
-    roles: ["admin", "trainer", "beyin_antrenoru", "representative", "temsilci", "user", "kullanici"] as UserRole[]
+    roles: ["admin", "beyin_antrenoru", "temsilci", "kullanici"] as UserRole[]
   },
   {
     icon: GraduationCap,
     label: "Uluslararası\nAlan Testleri",
     href: "/international-tests",
-    roles: ["admin", "trainer", "beyin_antrenoru", "representative", "temsilci", "user", "kullanici"] as UserRole[]
+    roles: ["admin", "beyin_antrenoru", "temsilci", "kullanici"] as UserRole[]
   },
   {
     icon: FileText,
     label: "Formlar",
     href: "/forms",
-    roles: ["admin", "trainer", "beyin_antrenoru", "representative", "temsilci", "user", "kullanici"] as UserRole[]
+    roles: ["admin", "beyin_antrenoru", "temsilci", "kullanici"] as UserRole[]
   }
 ];
 
@@ -51,7 +51,7 @@ const managementItems = [
     icon: Users,
     label: "Öğrenciler",
     href: "/students",
-    roles: ["admin", "trainer", "beyin_antrenoru"] as UserRole[]
+    roles: ["admin", "beyin_antrenoru", "temsilci"] as UserRole[]
   },
   {
     icon: UserCheck,
@@ -78,13 +78,13 @@ const quickAccessItems = [
     icon: Settings,
     label: "Ayarlar",
     href: "/settings",
-    roles: ["admin", "trainer", "beyin_antrenoru", "representative", "temsilci", "user", "kullanici"] as UserRole[]
+    roles: ["admin", "beyin_antrenoru", "temsilci", "kullanici"] as UserRole[]
   },
   {
     icon: HelpCircle,
     label: "Yardım",
     href: "/help",
-    roles: ["admin", "trainer", "beyin_antrenoru", "representative", "temsilci", "user", "kullanici"] as UserRole[]
+    roles: ["admin", "beyin_antrenoru", "temsilci", "kullanici"] as UserRole[]
   }
 ];
 

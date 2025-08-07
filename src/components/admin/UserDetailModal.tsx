@@ -102,20 +102,13 @@ export function UserDetailModal({ user, isOpen, onClose }: UserDetailModalProps)
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <DialogTitle className="text-2xl flex items-center gap-2">
-                <User className="h-6 w-6 text-primary" />
-                {user.first_name} {user.last_name}
-              </DialogTitle>
-              <DialogDescription className="mt-2">
-                Kullanıcının detaylı bilgileri ve sistem verileri
-              </DialogDescription>
-            </div>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+          <DialogTitle className="text-2xl flex items-center gap-2">
+            <User className="h-6 w-6 text-primary" />
+            {user.first_name} {user.last_name}
+          </DialogTitle>
+          <DialogDescription className="mt-2">
+            Kullanıcının detaylı bilgileri ve sistem verileri
+          </DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">

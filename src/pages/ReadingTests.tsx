@@ -77,8 +77,8 @@ export default function ReadingTests() {
       
       // Dinamik rol kategorisi belirleme
       const isAdminRole = user.currentRole === 'admin';
-      const isTrainerRole = ['trainer', 'beyin_antrenoru'].includes(user.currentRole);
-      const isRepresentativeRole = ['representative', 'temsilci'].includes(user.currentRole);
+      const isTrainerRole = user.currentRole === 'beyin_antrenoru';
+      const isRepresentativeRole = user.currentRole === 'temsilci';
       
       // Dinamik query builder - role göre filtering
       let query = supabase
