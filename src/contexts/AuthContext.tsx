@@ -31,9 +31,26 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  // localStorage'dan cached user'ı oku
+  const getCachedUser = (): AuthUser | null => {
+    try {
+      const cached = localStorage.getItem('cachedAuthUser');
+      if (cached) {
+        return JSON.parse(cached);
+      }
+    } catch (error) {
+      console.error('Error reading cached user:', error);
+      localStorage.removeItem('cachedAuthUser');
+    }
+    return null;
+  };
+
+  const [user, setUser] = useState<AuthUser | null>(getCachedUser());
   const [session, setSession] = useState<Session | null>(null);
-  const [currentRole, setCurrentRole] = useState<UserRole | null>(null);
+  const [currentRole, setCurrentRole] = useState<UserRole | null>(() => {
+    const cachedUser = getCachedUser();
+    return cachedUser?.currentRole || null;
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [justLoggedIn, setJustLoggedIn] = useState(false);
   const isCreatingUserRef = useRef(false); // Kullanıcı oluşturma flag'i - useRef ile global
@@ -99,6 +116,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         currentRole: currentRole
       };
 
+      // User profilini localStorage'a kaydet
+      try {
+        localStorage.setItem('cachedAuthUser', JSON.stringify(authUserData));
+      } catch (error) {
+        console.error('Error caching user data:', error);
+      }
+
       return authUserData;
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
@@ -148,11 +172,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
           setCurrentRole(null);
           setJustLoggedIn(false); // Çıkış durumunda flag'i reset et
-          // localStorage'dan currentRole'ü temizle
+          // localStorage'dan currentRole ve cachedAuthUser'ı temizle
           localStorage.removeItem('currentRole');
+          localStorage.removeItem('cachedAuthUser');
+          setIsLoading(false);
         }
-        
-        setIsLoading(false);
       }
     );
 
@@ -162,32 +186,61 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       setSession(session);
       if (session?.user) {
-        setTimeout(async () => {
-          const userData = await fetchUserProfile(session.user);
-          if (userData) {
-            setUser(userData);
-            setCurrentRole(userData.currentRole);
-          } else {
-            // Profil bulunamadı - muhtemelen silinmiş kullanıcı
-            console.log('🚫 User profile not found, signing out user:', session.user.email);
-            toast.error('Kullanıcı hesabınız sistemden kaldırılmış. Lütfen yöneticinizle iletişime geçin.');
-            await supabase.auth.signOut();
-            setUser(null);
-            setCurrentRole(null);
-            setSession(null);
-            setJustLoggedIn(false); // Flag'i reset et
-            // localStorage'dan currentRole'ü temizle
-            localStorage.removeItem('currentRole');
-          }
-          setIsLoading(false);
-        }, 0);
+        // Eğer cached user varsa ve session user ID'si eşleşiyorsa, hızlı yükleme yap
+        const cachedUser = getCachedUser();
+        if (cachedUser && session.user.email === cachedUser.email) {
+          // Cached user'ı kullan, arka planda güncelle
+          setUser(cachedUser);
+          setCurrentRole(cachedUser.currentRole);
+          setIsLoading(false); // Hemen yüklemeyi bitir - flash önlenir!
+          
+          // Arka planda profili güncelle (sessizce)
+          fetchUserProfile(session.user).then(userData => {
+            if (userData) {
+              setUser(userData);
+              setCurrentRole(userData.currentRole);
+            } else {
+              // Profil bulunamadı - muhtemelen silinmiş kullanıcı
+              console.log('🚫 User profile not found, signing out user:', session.user.email);
+              toast.error('Kullanıcı hesabınız sistemden kaldırılmış. Lütfen yöneticinizle iletişime geçin.');
+              supabase.auth.signOut();
+              setUser(null);
+              setCurrentRole(null);
+              setSession(null);
+              localStorage.removeItem('currentRole');
+              localStorage.removeItem('cachedAuthUser');
+            }
+          });
+        } else {
+          // Cache yok veya eşleşmiyor, normal yükleme yap
+          setTimeout(async () => {
+            const userData = await fetchUserProfile(session.user);
+            if (userData) {
+              setUser(userData);
+              setCurrentRole(userData.currentRole);
+            } else {
+              // Profil bulunamadı - muhtemelen silinmiş kullanıcı
+              console.log('🚫 User profile not found, signing out user:', session.user.email);
+              toast.error('Kullanıcı hesabınız sistemden kaldırılmış. Lütfen yöneticinizle iletişime geçin.');
+              await supabase.auth.signOut();
+              setUser(null);
+              setCurrentRole(null);
+              setSession(null);
+              setJustLoggedIn(false);
+              localStorage.removeItem('currentRole');
+              localStorage.removeItem('cachedAuthUser');
+            }
+            setIsLoading(false);
+          }, 0);
+        }
       } else {
         setUser(null);
         setCurrentRole(null);
         setSession(null);
         setJustLoggedIn(false);
-        // localStorage'dan currentRole'ü temizle
+        // localStorage'dan currentRole ve cachedAuthUser'ı temizle
         localStorage.removeItem('currentRole');
+        localStorage.removeItem('cachedAuthUser');
         setIsLoading(false);
       }
     });
@@ -382,8 +435,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(null);
       setCurrentRole(null);
       setJustLoggedIn(false); // Flag'i reset et
-      // localStorage'dan currentRole'ü temizle
+      // localStorage'dan currentRole ve cachedAuthUser'ı temizle
       localStorage.removeItem('currentRole');
+      localStorage.removeItem('cachedAuthUser');
       toast.success('Başarıyla çıkış yapıldı');
     } catch (error) {
       console.error('Error during logout:', error);
@@ -411,10 +465,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const switchRole = (role: UserRole) => {
     if (user && user.roles.includes(role)) {
+      const updatedUser = { ...user, currentRole: role };
       setCurrentRole(role);
-      setUser({ ...user, currentRole: role });
-      // Seçilen role'ü localStorage'a kaydet
+      setUser(updatedUser);
+      // Seçilen role'ü ve güncel user'ı localStorage'a kaydet
       localStorage.setItem('currentRole', role);
+      try {
+        localStorage.setItem('cachedAuthUser', JSON.stringify(updatedUser));
+      } catch (error) {
+        console.error('Error updating cached user:', error);
+      }
       toast.success(`Rol değiştirildi: ${role}`);
     } else {
       toast.error('Bu role geçiş yapma yetkiniz yok');

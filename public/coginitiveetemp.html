@@ -1032,7 +1032,9 @@
     <script>
         // Modern Vertical Bar Chart Animation
         function animateVerticalBars() {
-            const bars = document.querySelectorAll('.bar');
+            const page2 = document.querySelectorAll('.page')[1];
+            const scope = page2 || document;
+            const bars = scope.querySelectorAll('.vertical-bar-chart .bar');
             bars.forEach((bar, index) => {
                 setTimeout(() => {
                     const targetHeight = bar.getAttribute('data-height');
@@ -1043,80 +1045,64 @@
 
         // OLD RADAR CHART FUNCTION REMOVED - Using clean version below
 
-        // Bar Chart - Son sayfadaki grafik
-        // NOTE: This simple template chart conflicts with the dynamic chart below.
-        // It is kept but will be guarded by a global destroy mechanism.
-        // REFERENCE-BASED WORKING BAR CHART
+        // Bar Chart - Son sayfa (STATIK GORSEL BAR)
+        // Bu grafik database verisi kullanmaz; sabit değerlerle render edilir
         function createBarChart() {
             const ctx = document.getElementById('barChart');
             if (!ctx) return;
 
-            // Simple destroy
+            // Mevcut grafiği güvenli şekilde yok et
             try { Chart.getChart(ctx)?.destroy(); } catch(e) {}
+
+            // Görseldeki düzene benzer sabit veri setleri (12 kategori)
+            const labels = ['1','2','3','4','5','6','7','8','9','10','11','12'];
+            const seriesRed =  [48,35,45,40,65,52,45,40,44,63,41,55]; // kırmızı
+            const seriesBlue = [25,18,22,15, 8,12,25,28,20,15,25,18]; // koyu gri/mavi
 
             new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
+                    labels,
                     datasets: [
                         {
-                            label: '',
-                            data: [48, 35, 45, 40, 65, 52, 45, 40, 44, 64, 42, 55],
-                            backgroundColor: 'rgba(231, 76, 60, 0.8)',
-                            borderColor: 'rgba(231, 76, 60, 1)',
-                            borderWidth: 1
+                            label: 'A',
+                            data: seriesRed,
+                            backgroundColor: 'rgba(255, 99, 132, 0.8)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 1,
+                            borderRadius: 6
                         },
                         {
-                            label: '',
-                            data: [25, 18, 22, 15, 8, 12, 25, 28, 20, 15, 25, 18],
-                            backgroundColor: 'rgba(52, 73, 94, 0.8)',
-                            borderColor: 'rgba(52, 73, 94, 1)',
-                            borderWidth: 1
+                            label: 'B',
+                            data: seriesBlue,
+                            backgroundColor: 'rgba(55, 71, 79, 0.9)',
+                            borderColor: 'rgba(38, 50, 56, 1)',
+                            borderWidth: 1,
+                            borderRadius: 6
                         }
                     ]
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
-                        legend: {
-                            display: false
-                        },
+                        legend: { display: false },
                         tooltip: {
                             enabled: true,
-                            backgroundColor: 'rgba(0,0,0,0.8)',
-                            titleColor: '#fff',
-                            bodyColor: '#fff',
-                            borderColor: 'rgba(52, 73, 94, 1)',
-                            borderWidth: 1,
-                            displayColors: true,
                             callbacks: {
-                                label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    if (context.datasetIndex === 0) {
-                                        label = 'Kırmızı';
-                                    } else if (context.datasetIndex === 1) {
-                                        label = 'Mavi';
-                                    }
-                                    return label + ': ' + context.parsed.y;
-                                }
+                                label: (ctx) => `${ctx.dataset.label}: %${ctx.parsed.y}`
                             }
                         }
                     },
                     scales: {
                         x: {
-                            grid: {
-                                display: false
-                            }
+                            grid: { display: false }
                         },
                         y: {
                             beginAtZero: true,
                             max: 100,
-                            ticks: {
-                                stepSize: 20
-                            },
-                            grid: {
-                                color: '#E0E0E0'
-                            }
+                            ticks: { stepSize: 20 },
+                            grid: { color: '#E0E0E0' }
                         }
                     }
                 }
@@ -1662,10 +1648,12 @@
             ];
 
             // Target only the vertical bar chart on Page 2
-            const barItems = document.querySelectorAll('.page:nth-of-type(2) .vertical-bar-chart .bar-item');
+            const page2 = document.querySelectorAll('.page')[1];
+            if (!page2) return;
+            const barItems = page2.querySelectorAll('.vertical-bar-chart .bar-item');
 
             // Decide max height based on current CSS height of container, fallback to 200
-            const container = document.querySelector('.page:nth-of-type(2) .vertical-bar-chart');
+            const container = page2.querySelector('.vertical-bar-chart');
             let maxHeight = 200;
             if (container) {
                 const computed = window.getComputedStyle(container);
@@ -1711,13 +1699,60 @@
             logger.log('🔍 Loading cognitive data for session ID:', sessionId);
             
             try {
-                // Initialize Supabase client
-                const supabaseUrl = 'https://gamjzzomkosvqhficabt.supabase.co';
-                const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhbWp6em9ta29zdnFoZmljYWJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI4ODc3MDAsImV4cCI6MjA2ODQ2MzcwMH0.r8KkywdhNSP1hxzSAlKo8SB5jOEb0KQRUBfZ9Va0p9I';
-                
-                // Create Supabase client (using CDN version)
-                const { createClient } = window.supabase;
-                const supabase = createClient(supabaseUrl, supabaseKey);
+                // Initialize Supabase client securely (no hardcoded secrets)
+                async function resolveSupabaseConfig() {
+                    // 1) URL params (e.g., ?anon_key=...&supabase_url=...)
+                    const params = new URLSearchParams(window.location.search);
+                    const urlFromParam = params.get('supabase_url') || params.get('sb_url');
+                    const keyFromParam = params.get('anon_key') || params.get('supabase_key');
+
+                    // 2) localStorage bridge
+                    const urlFromStorage = (() => { try { return localStorage.getItem('sb-url'); } catch (_) { return null; } })();
+                    const keyFromStorage = (() => { try { return localStorage.getItem('sb-anon-key'); } catch (_) { return null; } })();
+
+                    // 3) window.__SUPABASE_CONFIG support
+                    const urlFromWindow = (window.__SUPABASE_CONFIG && window.__SUPABASE_CONFIG.url) || null;
+                    const keyFromWindow = (window.__SUPABASE_CONFIG && window.__SUPABASE_CONFIG.anon_key) || null;
+
+                    let url = urlFromParam || urlFromStorage || urlFromWindow || null;
+                    let key = keyFromParam || keyFromStorage || keyFromWindow || null;
+
+                    // 4) Optional: fetch host from public/production_api_info.json
+                    if (!url) {
+                        try {
+                            const resp = await fetch('/production_api_info.json', { cache: 'no-store' });
+                            if (resp.ok) {
+                                const data = await resp.json();
+                                if (data && data.host) {
+                                    url = `https://${data.host}`;
+                                }
+                            }
+                        } catch (_) { /* ignore */ }
+                    }
+
+                    if (!url || !key) {
+                        throw new Error('Missing Supabase URL or anon key (provide via localStorage, URL params, or window.__SUPABASE_CONFIG)');
+                    }
+
+                    // Persist bridge for other static HTMLs
+                    try {
+                        localStorage.setItem('sb-url', url);
+                        localStorage.setItem('sb-anon-key', key);
+                    } catch (_) { /* ignore */ }
+
+                    return { url, key };
+                }
+
+                // Create Supabase client (using CDN UMD build)
+                const supabaseLib = window.supabase || window.Supabase;
+                if (!supabaseLib || typeof supabaseLib.createClient !== 'function') {
+                    logger.error('❌ Supabase library not loaded');
+                    alert('Supabase kütüphanesi yüklenemedi. Lütfen sayfayı yenileyin.');
+                    return false;
+                }
+
+                const { url: supabaseUrl, key: supabaseKey } = await resolveSupabaseConfig();
+                const supabase = supabaseLib.createClient(supabaseUrl, supabaseKey);
                 
                 logger.log('🔗 Supabase client initialized');
                 
@@ -1766,7 +1801,15 @@
                     akil_mantik_yurutme_skoru: cognitiveResult.akil_mantik_yurutme_skoru || 0,
                     bilissel_esneklik_skoru: cognitiveResult.bilissel_esneklik_skoru || 0
                 };
-                logger.log('✅ Scores updated:', cognitiveData.scores);
+                logger.log('✅ Scores updated from DATABASE:', cognitiveData.scores);
+                console.log('🔍 DATABASE VALUES LOADED:', {
+                    dikkat: cognitiveData.scores.dikkat_skoru,
+                    hafiza: cognitiveData.scores.hafiza_skoru,
+                    isleme_hizi: cognitiveData.scores.isleme_hizi_skoru,
+                    gorsel: cognitiveData.scores.gorsel_isleme_skoru,
+                    akil: cognitiveData.scores.akil_mantik_yurutme_skoru,
+                    esneklik: cognitiveData.scores.bilissel_esneklik_skoru
+                });
                 
                 // STEP 2: Update student and conductor info from database (directly from users)
                 logger.log('👤 Updating student and conductor info...');
@@ -1978,6 +2021,7 @@
                                 
                                 // Update charts with real database data
                                 logger.log('📈 Updating charts with database data...');
+                                createBarChart(); // Use the original/simple bar chart implementation
                                 createRadarChart(); // Update radar chart with real data
                                 logger.log('✅ Charts updated with database data');
                             } catch (chartError) {
@@ -1991,101 +2035,240 @@
             });
         }
 
-        // Chart creation functions
+        // Chart creation functions - COMPLETELY REDESIGNED
         function createVerticalBarChart() {
-            const ctx = document.getElementById('verticalBarChart');
-            if (ctx) {
-                // Safely destroy existing chart if it exists
-                try {
-                    if (barChartInstance && typeof barChartInstance.destroy === 'function') {
-                        barChartInstance.destroy();
-                    }
-                } catch (e) {
-                    console.warn('Warning destroying bar chart instance:', e);
-                }
-                
-                // Also guard against any globally registered chart on this canvas id
-                try {
-                    const existing = Chart.getChart('verticalBarChart');
-                    if (existing && typeof existing.destroy === 'function') {
-                        existing.destroy();
-                    }
-                } catch (e) {
-                    console.warn('Warning destroying existing vertical bar chart:', e);
-                }
+            console.log('🎨 Creating NEW Vertical Bar Chart with scores:', cognitiveData.scores);
+            const ctx = document.getElementById('barChart');
+            if (!ctx) {
+                console.error('Canvas element not found for vertical bar chart');
+                return;
+            }
 
-                const scores = cognitiveData.scores;
-                barChartInstance = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: ['Dikkat', 'Hafıza', 'İşleme Hızı', 'Görsel İşleme', 'Akıl Yürütme', 'Bilişsel Esneklik'],
-                        datasets: [{
-                            data: [
-                                scores.dikkat_skoru,
-                                scores.hafiza_skoru,
-                                scores.isleme_hizi_skoru,
-                                scores.gorsel_isleme_skoru,
-                                scores.akil_mantik_yurutme_skoru,
-                                scores.bilissel_esneklik_skoru
-                            ],
-                            backgroundColor: ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD'],
-                            borderWidth: 0
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: {
-                                display: false
+            // Safely destroy existing chart
+            try {
+                const existingChart = Chart.getChart(ctx);
+                if (existingChart) {
+                    existingChart.destroy();
+                }
+            } catch (e) {
+                console.warn('Could not destroy existing chart:', e);
+            }
+
+            const scores = cognitiveData.scores || {};
+            
+            // Prepare data with values and colors
+            const chartData = [
+                { 
+                    label: 'Dikkat', 
+                    value: scores.dikkat_skoru || 0,
+                    color: 'rgba(255, 99, 132, 0.8)',
+                    borderColor: 'rgba(255, 99, 132, 1)'
+                },
+                { 
+                    label: 'Hafıza', 
+                    value: scores.hafiza_skoru || 0,
+                    color: 'rgba(54, 162, 235, 0.8)',
+                    borderColor: 'rgba(54, 162, 235, 1)'
+                },
+                { 
+                    label: 'İşleme Hızı', 
+                    value: scores.isleme_hizi_skoru || 0,
+                    color: 'rgba(255, 206, 86, 0.8)',
+                    borderColor: 'rgba(255, 206, 86, 1)'
+                },
+                { 
+                    label: 'Görsel İşleme', 
+                    value: scores.gorsel_isleme_skoru || 0,
+                    color: 'rgba(75, 192, 192, 0.8)',
+                    borderColor: 'rgba(75, 192, 192, 1)'
+                },
+                { 
+                    label: 'Akıl Yürütme', 
+                    value: scores.akil_mantik_yurutme_skoru || 0,
+                    color: 'rgba(153, 102, 255, 0.8)',
+                    borderColor: 'rgba(153, 102, 255, 1)'
+                },
+                { 
+                    label: 'Bilişsel Esneklik', 
+                    value: scores.bilissel_esneklik_skoru || 0,
+                    color: 'rgba(255, 159, 64, 0.8)',
+                    borderColor: 'rgba(255, 159, 64, 1)'
+                }
+            ];
+
+            console.log('Chart data prepared:', chartData);
+            console.log('Raw scores from DB:', {
+                dikkat: scores.dikkat_skoru,
+                hafiza: scores.hafiza_skoru,
+                isleme_hizi: scores.isleme_hizi_skoru,
+                gorsel: scores.gorsel_isleme_skoru,
+                akil: scores.akil_mantik_yurutme_skoru,
+                esneklik: scores.bilissel_esneklik_skoru
+            });
+
+            // Create new chart with animations
+            barChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Dikkat', 'Hafıza', 'İşleme Hızı', 'Görsel İşleme', 'Akıl Yürütme', 'Bil. Esneklik'],
+                    datasets: [{
+                        label: 'Beceri Skorları',
+                        data: chartData.map(d => d.value),
+                        backgroundColor: chartData.map(d => d.color),
+                        borderColor: chartData.map(d => d.borderColor),
+                        borderWidth: 2,
+                        borderRadius: 10,
+                        borderSkipped: false,
+                        barPercentage: 0.7,
+                        categoryPercentage: 0.8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 2000,
+                        easing: 'easeInOutQuart',
+                        delay: (context) => {
+                            let delay = 0;
+                            if (context.type === 'data' && context.mode === 'default') {
+                                delay = context.dataIndex * 300;
                             }
+                            return delay;
+                        }
+                    },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
                         },
-                        scales: {
-                            x: {
-                                grid: {
-                                    display: false
-                                }
-                            },
-                            y: {
-                                beginAtZero: true,
-                                max: 100,
-                                ticks: {
-                                    stepSize: 20
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: 'rgba(255, 255, 255, 0.3)',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            padding: 15,
+                            displayColors: true,
+                            callbacks: {
+                                title: function(context) {
+                                    return '🎯 ' + context[0].label;
                                 },
-                                grid: {
-                                    color: '#E0E0E0'
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    return 'Skor: %' + value;
+                                },
+                                afterLabel: function(context) {
+                                    const value = context.parsed.y;
+                                    if (value >= 80) return '✨ Mükemmel!';
+                                    if (value >= 60) return '👍 İyi';
+                                    if (value >= 40) return '📊 Orta';
+                                    return '⚠️ Geliştirilmeli';
                                 }
                             }
                         }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#333',
+                                font: {
+                                    size: 12,
+                                    weight: '600'
+                                }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                stepSize: 20,
+                                color: '#666',
+                                font: {
+                                    size: 11
+                                },
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)',
+                                drawBorder: false
+                            }
+                        }
+                    },
+                    onHover: (event, activeElements) => {
+                        ctx.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
                     }
-                });
-            }
+                },
+                plugins: [{
+                    afterDatasetsDraw: function(chart) {
+                        const ctx = chart.ctx;
+                        chart.data.datasets.forEach((dataset, i) => {
+                            const meta = chart.getDatasetMeta(i);
+                            meta.data.forEach((bar, index) => {
+                                const data = dataset.data[index];
+                                ctx.save();
+                                ctx.fillStyle = '#333';
+                                ctx.font = 'bold 14px Arial';
+                                ctx.textAlign = 'center';
+                                ctx.textBaseline = 'bottom';
+                                ctx.fillText('%' + data, bar.x, bar.y - 5);
+                                ctx.restore();
+                            });
+                        });
+                    }
+                }]
+            });
+
+            console.log('✅ Vertical Bar Chart created successfully');
         }
 
-        // REFERENCE-BASED WORKING RADAR CHART WITH TOOLTIPS
+        // SIMPLE AND FUNCTIONAL RADAR CHART
         function createRadarChart() {
+            console.log('📊 Creating Simple Radar Chart with scores:', cognitiveData.scores);
             const ctx = document.getElementById('radarChart');
-            if (!ctx) return;
+            if (!ctx) {
+                console.error('Canvas element not found for radar chart');
+                return;
+            }
 
-            // Simple destroy
-            try { Chart.getChart(ctx)?.destroy(); } catch(e) {}
+            // Destroy existing chart
+            try {
+                const existingChart = Chart.getChart(ctx);
+                if (existingChart) {
+                    existingChart.destroy();
+                }
+            } catch (e) {}
 
-            // Get real data or use defaults from reference
+            // Get real data from database
             const scores = cognitiveData?.scores || {};
             const data = [
-                scores.dikkat_skoru || 81,
-                scores.hafiza_skoru || 68,
-                scores.isleme_hizi_skoru || 89,
-                scores.gorsel_isleme_skoru || 32,
-                scores.akil_mantik_yurutme_skoru || 17,
-                scores.bilissel_esneklik_skoru || 57
+                scores.dikkat_skoru || 0,
+                scores.hafiza_skoru || 0,
+                scores.isleme_hizi_skoru || 0,
+                scores.gorsel_isleme_skoru || 0,
+                scores.akil_mantik_yurutme_skoru || 0,
+                scores.bilissel_esneklik_skoru || 0
             ];
 
-            new Chart(ctx, {
+            console.log('Radar data values:', data);
+
+            // Simple radar chart
+            radarChartInstance = new Chart(ctx, {
                 type: 'radar',
                 data: {
-                    labels: ['Dikkat', 'Hafıza', 'İşleme Hızı', 'Görsel İşleme', 'Akıl Mantık', 'Bilişsel Esneklik'],
+                    labels: ['Dikkat', 'Hafıza', 'İşleme Hızı', 'Görsel İşleme', 'Akıl Yürütme', 'Bilişsel Esneklik'],
                     datasets: [{
-                        label: 'Bilişsel Beceriler',
+                        label: 'Beceri Skorları',
                         data: data,
                         backgroundColor: 'rgba(44, 90, 160, 0.2)',
                         borderColor: 'rgba(44, 90, 160, 1)',
@@ -2094,16 +2277,15 @@
                         pointBorderColor: '#fff',
                         pointHoverBackgroundColor: '#fff',
                         pointHoverBorderColor: 'rgba(44, 90, 160, 1)',
-                        pointRadius: 5,
+                        pointRadius: 6,
                         pointHoverRadius: 8
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'point',
-                        intersect: true
+                    animation: {
+                        duration: 1000
                     },
                     plugins: {
                         legend: {
@@ -2111,12 +2293,9 @@
                         },
                         tooltip: {
                             enabled: true,
-                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
                             titleColor: '#fff',
                             bodyColor: '#fff',
-                            borderColor: 'rgba(44, 90, 160, 1)',
-                            borderWidth: 1,
-                            displayColors: false,
                             callbacks: {
                                 label: function(context) {
                                     return context.label + ': %' + context.parsed.r;
@@ -2129,12 +2308,22 @@
                             beginAtZero: true,
                             max: 100,
                             ticks: {
-                                stepSize: 20
+                                stepSize: 20,
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            },
+                            pointLabels: {
+                                font: {
+                                    size: 12
+                                }
                             }
                         }
                     }
                 }
             });
+
+            console.log('✅ Simple Radar Chart created successfully');
         }
 
         // OLD BAR CHART FUNCTION REMOVED - Using clean version above
@@ -2228,8 +2417,9 @@
                         try {
                             destroyAllCharts();
                             
-                            // Simple chart creation - reference based
-                            createRadarChart(); // Update with loaded data
+                            // Create both charts with loaded data
+                            createBarChart(); // Revert to original simple bar chart with data
+                            createRadarChart(); // Create radar chart with data
                             
                             logger.log('✅ Charts initialized successfully');
                         } catch (chartError) {

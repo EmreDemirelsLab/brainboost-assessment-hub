@@ -129,16 +129,15 @@ export default function Dashboard() {
           'puzzle_test_results'
         ] as const;
 
-        for (const table of testTables) {
+        // Tüm tabloları paralel olarak çek - daha hızlı yükleme
+        const fetchPromises = testTables.map(async (table) => {
           try {
-            console.log(`🔍 ${table} tablosundan veri çekiliyor...`);
-            
             // Her test türü için doğru kolon adlarını kullan
             let accuracyColumn = 'accuracy_percentage';
             if (table === 'stroop_test_results') {
               accuracyColumn = 'overall_accuracy';
             } else if (table === 'd2_test_results') {
-              accuracyColumn = 'accuracy_percentage'; // D2'de bu kolon var mı kontrol edilecek
+              accuracyColumn = 'accuracy_percentage';
             } else if (table === 'puzzle_test_results') {
               accuracyColumn = 'accuracy_percentage';
             }
@@ -149,9 +148,6 @@ export default function Dashboard() {
               .in('student_id', studentIds)
               .gte('created_at', startOfMonth.toISOString());
             
-            console.log(`📊 ${table} verileri:`, data);
-            console.log(`❌ ${table} hatası:`, error);
-            
             if (!error && data) {
               // Veriyi normalize et - accuracy_percentage olarak kaydet
               const normalizedData = data.map(item => ({
@@ -159,12 +155,14 @@ export default function Dashboard() {
                 accuracy_percentage: item[accuracyColumn]
               }));
               allTestsData.push(...normalizedData);
-              console.log(`✅ ${table}'dan ${data.length} kayıt eklendi`);
             }
           } catch (err) {
-            console.warn(`Error fetching from ${table}:`, err);
+            // Hata durumunda sessizce devam et
           }
-        }
+        });
+        
+        // Tüm sorguları paralel olarak bekle
+        await Promise.all(fetchPromises);
         
         // Recent activities için de aynı testTables'ı kullan
         formattedActivities = await fetchRecentActivities(studentIds, testTables);
@@ -173,7 +171,8 @@ export default function Dashboard() {
       async function fetchRecentActivities(studentIds: string[], testTables: readonly string[]): Promise<RecentActivity[]> {
         const recentActivities: RecentActivity[] = [];
         
-        for (const table of testTables) {
+        // Recent activities için de paralel sorgulama
+        const activityPromises = testTables.map(async (table) => {
           try {
             // Her test türü için doğru kolon adlarını kullan
             let accuracyColumn = 'accuracy_percentage';
@@ -220,7 +219,7 @@ export default function Dashboard() {
                       : accuracyValue;
                     score = accuracy ? Math.round(accuracy) : null;
                   } catch (err) {
-                    console.warn('Accuracy parse error:', err);
+                    // Sessizce devam et
                   }
                 }
                 
@@ -235,9 +234,12 @@ export default function Dashboard() {
               });
             }
           } catch (err) {
-            console.warn(`Error fetching recent activities from ${table}:`, err);
+            // Hata durumunda sessizce devam et
           }
-        }
+        });
+        
+        // Tüm aktivite sorgularını bekle
+        await Promise.all(activityPromises);
         
         // Son aktiviteleri tarihe göre sırala ve ilk 5'ini al
         return recentActivities
@@ -263,7 +265,7 @@ export default function Dashboard() {
                 validTests++;
               }
             } catch (err) {
-              console.warn('Accuracy parse error:', err);
+              // Sessizce devam et
             }
           }
         });
@@ -292,7 +294,6 @@ export default function Dashboard() {
       setRecentActivities(formattedActivities);
 
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
       toast({
         title: "Hata",
         description: "Dashboard verileri yüklenirken bir hata oluştu.",

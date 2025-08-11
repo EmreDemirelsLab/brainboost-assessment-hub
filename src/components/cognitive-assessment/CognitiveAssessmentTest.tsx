@@ -6,9 +6,12 @@ export function CognitiveAssessmentTest() {
   const [sessionId, setSessionId] = useState<string>('');
   const [isTestActive, setIsTestActive] = useState(false);
 
-  // Supabase configuration
-  const supabaseUrl = 'https://gamjzzomkosvqhficabt.supabase.co';
-  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhbWp6em9ta29zdnFoZmljYWJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI4ODc3MDAsImV4cCI6MjA2ODQ2MzcwMH0.r8KkywdhNSP1hxzSAlKo8SB5jOEb0KQRUBfZ9Va0p9I';
+  // Supabase configuration from env (Vite)
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
+  }
 
   useEffect(() => {
     // Generate session ID on component mount

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -26,8 +27,9 @@ const queryClient = new QueryClient();
 
 // Protected Route Component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
+  const { user, session, isLoading } = useAuth();
   
+  // Eğer hâlâ yükleniyorsa spinner göster
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -36,8 +38,19 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
   
-  if (!user) {
+  // Session yoksa auth'a yönlendir (user cache'den gelmiş olabilir ama session yoksa geçersiz)
+  if (!session && !user) {
     return <Navigate to="/auth" replace />;
+  }
+  
+  // Session var ama user henüz yüklenmemişse biraz daha bekle
+  // (Bu durum neredeyse hiç oluşmayacak çünkü cache'den hızlıca yükleniyor)
+  if (session && !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
   }
   
   return <>{children}</>;
@@ -45,8 +58,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 // Public Route Component (redirects to dashboard if logged in)
 function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
+  const { user, session, isLoading } = useAuth();
   
+  // Eğer hâlâ yükleniyorsa spinner göster
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -55,14 +69,36 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
     );
   }
   
-  if (user) {
+  // User veya session varsa dashboard'a yönlendir
+  if (user || session) {
     return <Navigate to="/dashboard" replace />;
   }
   
   return <>{children}</>;
 }
 
-const App = () => (
+const App = () => {
+  useEffect(() => {
+    // Chrome translate'i zorla kapat
+    document.documentElement.setAttribute('translate', 'no');
+    document.documentElement.setAttribute('lang', 'tr');
+    document.body.setAttribute('translate', 'no');
+    
+    // Ek olarak class ekle
+    document.documentElement.classList.add('notranslate');
+    document.body.classList.add('notranslate');
+    
+    // Meta tag kontrol et veya ekle
+    let metaGoogle = document.querySelector('meta[name="google"]');
+    if (!metaGoogle) {
+      metaGoogle = document.createElement('meta');
+      metaGoogle.setAttribute('name', 'google');
+      metaGoogle.setAttribute('content', 'notranslate');
+      document.head.appendChild(metaGoogle);
+    }
+  }, []);
+
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -153,6 +189,7 @@ const App = () => (
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;

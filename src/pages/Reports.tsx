@@ -2086,7 +2086,13 @@ export default function Reports() {
                                 size="sm"
                                 onClick={() => {
                                   // Cognitive report HTML sayfasını aç
-                                  const reportUrl = `/coginitiveetemp.html?session_id=${result.session_id}`;
+                                  // localStorage'dan anon_key'i al veya default key kullan
+                                  const anonKey = localStorage.getItem('sb-anon-key');
+                                  if (!anonKey) {
+                                    console.error('Anon key missing from localStorage');
+                                    return;
+                                  }
+                                  const reportUrl = `/coginitiveetemp.html?session_id=${result.session_id}&anon_key=${encodeURIComponent(anonKey)}`;
                                   window.open(reportUrl, '_blank');
                                 }}
                               >

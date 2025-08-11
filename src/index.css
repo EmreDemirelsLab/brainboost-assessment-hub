@@ -2,6 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Chrome Translate'i Engelle */
+html, body {
+  translate: no !important;
+  -webkit-locale: "tr" !important;
+}
+
+.notranslate {
+  translate: no !important;
+}
+
+/* Tüm sayfa için translate engelleme */
+* {
+  translate: no !important;
+}
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */
