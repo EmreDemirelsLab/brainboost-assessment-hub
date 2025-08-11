@@ -23,4 +23,3 @@ dist-ssr
 *.sln
 *.sw?
 .env
-public/production_api_info.json
