@@ -2,6 +2,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { 
   Brain, 
   BookOpen, 
@@ -136,8 +137,6 @@ export default function Dashboard() {
             let accuracyColumn = 'accuracy_percentage';
             if (table === 'stroop_test_results') {
               accuracyColumn = 'overall_accuracy';
-            } else if (table === 'd2_test_results') {
-              accuracyColumn = 'accuracy_percentage';
             } else if (table === 'puzzle_test_results') {
               accuracyColumn = 'accuracy_percentage';
             }
@@ -178,8 +177,6 @@ export default function Dashboard() {
             let accuracyColumn = 'accuracy_percentage';
             if (table === 'stroop_test_results') {
               accuracyColumn = 'overall_accuracy';
-            } else if (table === 'd2_test_results') {
-              accuracyColumn = 'accuracy_percentage';
             } else if (table === 'puzzle_test_results') {
               accuracyColumn = 'accuracy_percentage';
             }
@@ -387,12 +384,6 @@ export default function Dashboard() {
         <div className="space-y-6">
           <h2 className="text-xl font-semibold">Sistem Genel Bilgileri</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {loading ? (
-              <div className="col-span-4 text-center py-8">
-                <p>Yükleniyor...</p>
-              </div>
-            ) : (
-              <>
                 <Card className="shadow-card hover:shadow-primary transition-all duration-300">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -401,7 +392,7 @@ export default function Dashboard() {
                     <Users className="h-5 w-5 text-primary" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{stats.activeStudents}</div>
+                    <div className="text-2xl font-bold"><AnimatedCounter value={stats.activeStudents} /></div>
                     <p className="text-xs text-success">
                       Sistemdeki tüm kullanıcılar
                     </p>
@@ -415,7 +406,7 @@ export default function Dashboard() {
                     <Brain className="h-5 w-5 text-blue-500" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{stats.completedTests}</div>
+                    <div className="text-2xl font-bold"><AnimatedCounter value={stats.completedTests} /></div>
                     <p className="text-xs text-blue-600">
                       Tamamlanan testler
                     </p>
@@ -429,7 +420,7 @@ export default function Dashboard() {
                     <TrendingUp className="h-5 w-5 text-green-500" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{stats.averageSuccessRate}%</div>
+                    <div className="text-2xl font-bold"><AnimatedCounter value={stats.averageSuccessRate} suffix="%" /></div>
                     <p className="text-xs text-green-600">
                       Sistem geneli başarı
                     </p>
@@ -443,14 +434,12 @@ export default function Dashboard() {
                     <Activity className="h-5 w-5 text-orange-500" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{stats.weeklyExercises}</div>
+                    <div className="text-2xl font-bold"><AnimatedCounter value={stats.weeklyExercises} /></div>
                     <p className="text-xs text-orange-600">
                       Bu hafta yapılan egzersizler
                     </p>
                   </CardContent>
                 </Card>
-              </>
-            )}
           </div>
         </div>
         )}
@@ -459,12 +448,6 @@ export default function Dashboard() {
         <div className="space-y-6">
           <h2 className="text-xl font-semibold">Temsilci Bölge Bilgileri</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {loading ? (
-              <div className="col-span-3 text-center py-8">
-                <p>Yükleniyor...</p>
-              </div>
-            ) : (
-              <>
                 <Card className="shadow-card hover:shadow-primary transition-all duration-300">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -487,7 +470,7 @@ export default function Dashboard() {
                     <Users className="h-5 w-5 text-blue-500" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{stats.activeStudents}</div>
+                    <div className="text-2xl font-bold"><AnimatedCounter value={stats.activeStudents} /></div>
                     <p className="text-xs text-blue-600">
                       Bölgenizdeki aktif öğrenciler
                     </p>
@@ -501,14 +484,12 @@ export default function Dashboard() {
                     <BarChart3 className="h-5 w-5 text-green-500" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{stats.averageSuccessRate}%</div>
+                    <div className="text-2xl font-bold"><AnimatedCounter value={stats.averageSuccessRate} suffix="%" /></div>
                     <p className="text-xs text-green-600">
                       Bölge başarı ortalaması
                     </p>
                   </CardContent>
                 </Card>
-              </>
-            )}
           </div>
         </div>
         )}
@@ -517,12 +498,6 @@ export default function Dashboard() {
         <div className="space-y-6">
           <h2 className="text-xl font-semibold">Öğrenci Bilgileri</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {loading ? (
-              <div className="col-span-4 text-center py-8">
-                <p>Yükleniyor...</p>
-              </div>
-            ) : (
-              <>
                 <Card className="shadow-card hover:shadow-primary transition-all duration-300">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -531,7 +506,7 @@ export default function Dashboard() {
                     <Users className="h-5 w-5 text-primary" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{stats.activeStudents}</div>
+                    <div className="text-2xl font-bold"><AnimatedCounter value={stats.activeStudents} /></div>
                     <p className="text-xs text-success">
                       Size atanmış öğrenciler
                     </p>
@@ -545,7 +520,7 @@ export default function Dashboard() {
                     <Brain className="h-5 w-5 text-blue-500" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{stats.completedTests}</div>
+                    <div className="text-2xl font-bold"><AnimatedCounter value={stats.completedTests} /></div>
                     <p className="text-xs text-blue-600">
                       Öğrencilerimin tamamladığı testler
                     </p>
@@ -559,7 +534,7 @@ export default function Dashboard() {
                     <TrendingUp className="h-5 w-5 text-green-500" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{stats.averageSuccessRate}%</div>
+                    <div className="text-2xl font-bold"><AnimatedCounter value={stats.averageSuccessRate} suffix="%" /></div>
                     <p className="text-xs text-green-600">
                       Öğrencilerimin başarı ortalaması
                     </p>
@@ -573,14 +548,12 @@ export default function Dashboard() {
                     <Activity className="h-5 w-5 text-orange-500" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{stats.weeklyExercises}</div>
+                    <div className="text-2xl font-bold"><AnimatedCounter value={stats.weeklyExercises} /></div>
                     <p className="text-xs text-orange-600">
                       Bu hafta yapılan aktiviteler
                     </p>
                   </CardContent>
                 </Card>
-              </>
-            )}
           </div>
         </div>
         )}

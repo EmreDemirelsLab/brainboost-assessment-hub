@@ -9,6 +9,8 @@
  *   bb-session-id, bb-session-start, bb-session-end, bb-student-id, bb-conducted-by
  *   sb-url, sb-anon-key
  */
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+
 declare global {
   interface Window {
     supabase?: {
@@ -35,7 +37,7 @@ type AggregatorResult =
   | { ok: true; id: string; scores: CognitiveScores }
   | { ok: false; reason: string; details?: any };
 
-function getSupabaseClient(): SupabaseClient | null {
+function getSupabaseClient(): SupabaseClient | any | null {
   try {
     const url = localStorage.getItem('sb-url');
     const key = localStorage.getItem('sb-anon-key');
@@ -43,13 +45,23 @@ function getSupabaseClient(): SupabaseClient | null {
     // UMD global'i yüklenmemiş olabilir: hem window.supabase hem window.Supabase kontrol edilir
     const lib = (window as any).supabase || (window as any).Supabase;
     if (!url || !key) return null;
-    if (!lib || typeof lib.createClient !== 'function') return null;
 
-    if ((window as any).supabaseClient) {
+    // Önce UMD globali dene
+    if (lib && typeof lib.createClient === 'function') {
+      if ((window as any).supabaseClient) {
+        return (window as any).supabaseClient as SupabaseClient;
+      }
+      (window as any).supabaseClient = lib.createClient(url, key);
       return (window as any).supabaseClient as SupabaseClient;
     }
-    (window as any).supabaseClient = lib.createClient(url, key);
-    return (window as any).supabaseClient as SupabaseClient;
+
+    // ESM fallback: module import ile client oluştur
+    try {
+      const client = createSupabaseClient(url, key);
+      return client as any;
+    } catch {
+      return null;
+    }
   } catch {
     return null;
   }
@@ -236,25 +248,28 @@ async function insertCognitiveResult(
     alt_test_ozetleri?: any;
   }
 ) {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('cognitive_test_result')
-    .insert([
-      {
-        student_id: payload.student_id,
-        conducted_by: payload.conducted_by,
-        session_id: payload.session_id,
-        test_start_time: payload.test_start_time,
-        test_end_time: payload.test_end_time,
-        duration_seconds: payload.duration_seconds,
-        dikkat_skoru: payload.scores.dikkat_skoru,
-        hafiza_skoru: payload.scores.hafiza_skoru,
-        isleme_hizi_skoru: payload.scores.isleme_hizi_skoru,
-        gorsel_isleme_skoru: payload.scores.gorsel_isleme_skoru,
-        akil_mantik_yurutme_skoru: payload.scores.akil_mantik_yurutme_skoru,
-        bilissel_esneklik_skoru: payload.scores.bilissel_esneklik_skoru,
-        alt_test_ozetleri: payload.alt_test_ozetleri ?? {},
-      },
-    ])
+    .upsert(
+      [
+        {
+          student_id: payload.student_id,
+          conducted_by: payload.conducted_by,
+          session_id: payload.session_id,
+          test_start_time: payload.test_start_time,
+          test_end_time: payload.test_end_time,
+          duration_seconds: payload.duration_seconds,
+          dikkat_skoru: payload.scores.dikkat_skoru,
+          hafiza_skoru: payload.scores.hafiza_skoru,
+          isleme_hizi_skoru: payload.scores.isleme_hizi_skoru,
+          gorsel_isleme_skoru: payload.scores.gorsel_isleme_skoru,
+          akil_mantik_yurutme_skoru: payload.scores.akil_mantik_yurutme_skoru,
+          bilissel_esneklik_skoru: payload.scores.bilissel_esneklik_skoru,
+          alt_test_ozetleri: payload.alt_test_ozetleri ?? {},
+        },
+      ],
+      { onConflict: 'session_id' }
+    )
     .select()
     .limit(1);
 
@@ -286,35 +301,42 @@ export async function runCognitiveAggregator(): Promise<AggregatorResult> {
     const supabase = getSupabaseClient();
     if (!supabase) return { ok: false, reason: 'supabase_init_failed' };
 
-    // Auth doğrulaması: UMD client üzerinde auth.getUser yoksa veya kullanıcı yoksa reddet
+    // Auth doğrulaması (opsiyonel): Kullanıcı yoksa uyar, devam et
     try {
       const authRes = await (supabase as any).auth?.getUser?.();
       const authed = !!authRes?.data?.user?.id;
       if (!authed) {
-        return { ok: false, reason: 'unauthenticated' };
+        console.warn('Aggregator: no authenticated user; proceeding with anon key');
       }
     } catch (err) {
-      // bazı UMD versiyonlarında auth bağlamı anlık hazır olmayabilir
-      return { ok: false, reason: 'unauthenticated', details: String((err as any)?.message || err) };
+      console.warn('Aggregator: auth context unavailable; proceeding', err);
     }
 
-    // Alt testleri oku (son kaydı)
-    const [att, mem, str, pzl, logic] = await Promise.all([
-      readAttention(supabase, sessionId),
-      readMemory(supabase, sessionId),
-      readStroop(supabase, sessionId),
-      readPuzzle(supabase, sessionId),
-      readLogic(supabase, sessionId),
-    ]);
+    // Alt testleri oku (son kaydı) + kısa retry/backoff
+    const maxTries = 5;
+    const delayMs = 1000;
+    let att: any, mem: any, str: any, pzl: any, logic: any;
+    for (let attempt = 1; attempt <= maxTries; attempt++) {
+      [att, mem, str, pzl, logic] = await Promise.all([
+        readAttention(supabase, sessionId),
+        readMemory(supabase, sessionId),
+        readStroop(supabase, sessionId),
+        readPuzzle(supabase, sessionId),
+        readLogic(supabase, sessionId),
+      ]);
 
-    const missing: string[] = [];
-    if (att.error || !att.data) missing.push('attention');
-    if (mem.error || !mem.data) missing.push('memory');
-    if (str.error || !str.data) missing.push('stroop');
-    if (pzl.error || !pzl.data) missing.push('puzzle');
-    if (logic.error || !logic.data) missing.push('akil_mantik');
+      const missing: string[] = [];
+      if (att.error || !att.data) missing.push('attention');
+      if (mem.error || !mem.data) missing.push('memory');
+      if (str.error || !str.data) missing.push('stroop');
+      if (pzl.error || !pzl.data) missing.push('puzzle');
+      if (logic.error || !logic.data) missing.push('akil_mantik');
 
-    if (missing.length > 0) {
+      if (missing.length === 0) break;
+      if (attempt < maxTries) {
+        await new Promise((r) => setTimeout(r, delayMs));
+        continue;
+      }
       return {
         ok: false,
         reason: 'missing_subtests',

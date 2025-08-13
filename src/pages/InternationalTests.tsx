@@ -70,7 +70,7 @@ export default function InternationalTests() {
     {
       id: 1,
       title: "Burdon Dikkat Testi",
-      description: "Dikkat sürdürme, odaklanma ve seçici dikkat becerilerini değerlendiren uluslararası standart test",
+        description: "Seçici dikkat, sürdürülebilir dikkat, görsel işleme ve işleme hızını ölçen uluslararası standart bir testtir. Sonuçlar kişiye özel gelişim planına yön vermek için kullanılır.",
       grade: "Tüm Yaşlar",
       subject: "Psikometri",
       duration: "3 dakika",
@@ -84,7 +84,7 @@ export default function InternationalTests() {
     {
       id: 2,
       title: "d2 Dikkat Testi",
-      description: "Konsantrasyon performansı, işlem hızı ve dikkat kararlılığını ölçen altın standart d2 testi",
+        description: "Seçici dikkat, sürdürülebilir dikkat, görsel işleme ve işleme hızını ölçen uluslararası standart bir testtir. Sonuçlar kişiye özel gelişim planına yön vermek için kullanılır.",
       grade: "Tüm Yaşlar",
       subject: "Psikometri",
       duration: "5 dakika",

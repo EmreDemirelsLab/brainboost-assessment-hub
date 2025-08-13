@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { createClient } from '@supabase/supabase-js';
+import { finalizeAndAggregate } from './aggregator';
 
 export function CognitiveAssessmentTest() {
   const [sessionId, setSessionId] = useState<string>('');
@@ -21,6 +22,28 @@ export function CognitiveAssessmentTest() {
 
     // Listen for test completion messages
     const handleTestMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'run-aggregator') {
+        // Son test (akil-mantik) parent'tan aggregator'ı çalıştırmamızı istedi
+        (async () => {
+          console.log('🧩 Aggregator isteği alındı. Çalıştırılıyor...');
+          const res = await finalizeAndAggregate();
+          if (res.ok) {
+            console.log('✅ Aggregator başarılı. Cognitive result id:', res.id);
+            // Cleanup localStorage
+            localStorage.removeItem('bb-session-id');
+            localStorage.removeItem('bb-session-start');
+            localStorage.removeItem('bb-session-end');
+            localStorage.removeItem('bb-student-id');
+            localStorage.removeItem('bb-conducted-by');
+            setIsTestActive(false);
+            // Opsiyonel: test penceresine bilgi vermek istenirse burada ele alınabilir
+          } else {
+            console.error('❌ Aggregator başarısız:', res);
+            // İsteğe bağlı: kullanıcıya retry seçeneği sunulabilir
+          }
+        })();
+      }
+
       if (event.data?.type === 'all-tests-complete') {
         console.log('✅ All tests completed, cleaning up session');
         setIsTestActive(false);
@@ -116,8 +139,25 @@ export function CognitiveAssessmentTest() {
     // Test penceresi açma işlemi - tam ekran
     const screenWidth = window.screen.availWidth;
     const screenHeight = window.screen.availHeight;
-    
-    const testWindow = window.open('/cognitive-tests/dikkat/dikkat.html', '_blank', 
+
+    // URL parametrelerini hazırla
+    const bbSessionId = localStorage.getItem('bb-session-id') || '';
+    const bbStudentId = localStorage.getItem('bb-student-id') || '';
+    const bbConductedBy = localStorage.getItem('bb-conducted-by') || '';
+    const sbUrl = localStorage.getItem('sb-url') || '';
+    const sbAnon = localStorage.getItem('sb-anon-key') || '';
+
+    const params = new URLSearchParams({
+      session_id: bbSessionId,
+      student_id: bbStudentId,
+      conducted_by: bbConductedBy,
+      sb_url: sbUrl,
+      sb_anon: sbAnon,
+    });
+
+    const startUrl = `/cognitive-tests/dikkat/dikkat.html?${params.toString()}`;
+
+    const testWindow = window.open(startUrl, '_blank', 
       `width=${screenWidth},height=${screenHeight},left=0,top=0,toolbar=no,menubar=no,scrollbars=yes,resizable=yes,status=no,fullscreen=yes`);
 
     if (!testWindow) {

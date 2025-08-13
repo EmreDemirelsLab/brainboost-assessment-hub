@@ -46,17 +46,18 @@ const roleColors: Record<string, string> = {
 
 export function UserDetailModal({ user, isOpen, onClose }: UserDetailModalProps) {
   const [supervisor, setSupervisor] = useState<any>(null);
-  const [loadingSupervisor, setLoadingSupervisor] = useState(false);
+  const [loadingSupervisor, setLoadingSupervisor] = useState(true);
 
-  // Supervisor bilgisini fetch et
+  // Supervisor bilgisini modal açılmadan önce fetch et
   useEffect(() => {
     const fetchSupervisor = async () => {
       if (!user?.supervisor_id) {
         setSupervisor(null);
+        setLoadingSupervisor(false);
         return;
       }
 
-      setLoadingSupervisor(true);
+      // Modal açılacağı zaman hemen yüklemeye başla
       try {
         const { data: supervisorData, error } = await supabase
           .from('users')
@@ -78,12 +79,15 @@ export function UserDetailModal({ user, isOpen, onClose }: UserDetailModalProps)
       }
     };
 
-    if (isOpen && user?.supervisor_id) {
+    // User değiştiğinde veya modal açılacağında hemen fetch et
+    if (user) {
+      setLoadingSupervisor(true);
       fetchSupervisor();
     } else {
       setSupervisor(null);
+      setLoadingSupervisor(false);
     }
-  }, [user?.supervisor_id, isOpen]);
+  }, [user?.supervisor_id, user?.id]);
 
   if (!user) return null;
 
@@ -191,17 +195,17 @@ export function UserDetailModal({ user, isOpen, onClose }: UserDetailModalProps)
                 </div>
               </div>
 
-              {/* Supervisor Bilgisi */}
+              {/* Supervisor Bilgisi - Sabit yükseklik ile */}
               {user.supervisor_id && (
-                <div>
+                <div className="min-h-[100px]">
                   <p className="text-sm font-medium mb-2">Supervisor</p>
                   {loadingSupervisor ? (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg border h-[76px]">
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                      <span className="text-sm text-muted-foreground">Supervisor bilgisi yükleniyor...</span>
+                      <span className="text-sm text-muted-foreground">Yükleniyor...</span>
                     </div>
                   ) : supervisor ? (
-                    <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg border">
+                    <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg border min-h-[76px]">
                       <UserCheck className="h-4 w-4 text-muted-foreground" />
                       <div>
                         <p className="text-sm font-medium">
@@ -222,7 +226,9 @@ export function UserDetailModal({ user, isOpen, onClose }: UserDetailModalProps)
                       </div>
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground">Supervisor bilgisi bulunamadı</p>
+                    <div className="p-3 bg-muted/50 rounded-lg border h-[76px] flex items-center">
+                      <p className="text-sm text-muted-foreground">Supervisor bilgisi bulunamadı</p>
+                    </div>
                   )}
                 </div>
               )}

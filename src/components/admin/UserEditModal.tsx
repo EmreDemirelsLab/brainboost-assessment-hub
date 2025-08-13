@@ -168,20 +168,13 @@ export function UserEditModal({ user, isOpen, onClose, onUserUpdated }: UserEdit
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <DialogTitle className="text-2xl flex items-center gap-2">
-                <User className="h-6 w-6 text-primary" />
-                Kullanıcı Düzenle
-              </DialogTitle>
-              <DialogDescription className="mt-2">
-                {user.first_name} {user.last_name} kullanıcısının bilgilerini düzenleyin
-              </DialogDescription>
-            </div>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+          <DialogTitle className="text-2xl flex items-center gap-2">
+            <User className="h-6 w-6 text-primary" />
+            Kullanıcı Düzenle
+          </DialogTitle>
+          <DialogDescription className="mt-2">
+            {user.first_name} {user.last_name} kullanıcısının bilgilerini düzenleyin
+          </DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">

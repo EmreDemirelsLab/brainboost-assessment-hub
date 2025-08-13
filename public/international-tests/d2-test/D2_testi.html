@@ -54,12 +54,7 @@
         }
 
         /* === HEADER === */
-        header {
-            background-color: white;
-            box-shadow: var(--shadow-sm);
-            padding: 15px 0;
-            border-bottom: 1px solid var(--gray-light);
-        }
+        header { display: none; }
 
         .header-container {
             display: flex;
@@ -116,9 +111,13 @@
             font-weight: 600;
         }
 
-        h1 {
+        h1 { font-size: 2rem; color: var(--primary); }
+
+        .page-title {
             font-size: 2rem;
             color: var(--primary);
+            text-align: center;
+            margin: 0 0 8px 0;
         }
 
         p {
@@ -270,6 +269,10 @@
 
         .align-items-center {
             align-items: center;
+        }
+
+        .justify-content-end {
+            justify-content: flex-end;
         }
 
         .flex-column {
@@ -773,8 +776,8 @@
     <!-- Main Content -->
     <main>
         <div class="container">
-            <!-- Welcome Screen -->
-            <div id="welcome-screen" class="screens active">
+            <!-- Welcome Screen (removed) -->
+            <div id="welcome-screen" class="screens" style="display:none;">
                 <div class="card">
                     <div class="card-header">
                         <h1>d2 Dikkat Testine Hoş Geldiniz</h1>
@@ -791,17 +794,11 @@
             </div>
 
             <!-- Instructions Screen -->
-            <div id="instructions-screen" class="screens">
+            <div id="instructions-screen" class="screens active">
                 <div class="card">
-                    <div class="card-header">
-                        <h1>Test Yönergeleri</h1>
-                    </div>
+                    <h1 class="page-title">D2 Dikkat Testi</h1>
                     <div class="card-body">
-                        <p>Lütfen aşağıdaki yönergeleri dikkatlice okuyunuz.</p>
-                        <ul>
-                            <li>Test toplam <strong>14 satırdan</strong> oluşur ve her satırda <strong>47 karakter</strong> bulunur.</li>
-                            <li>Hedefiniz, üzerinde <strong>toplamda 2 adet çizgi/tırnak</strong> bulunan 'd' harflerini bulup işaretlemektir. Bu hedefler şunlardır:</li>
-                        </ul>
+                        <p>Aşağıda test ekranının nasıl görüneceğine dair bir örnek bulunmaktadır. Hedef harflerden birini işaretlemek için üzerine tıklayınız.</p>
                         
                         <div class="d-flex justify-content-center mt-3 mb-3">
                             <div class="target-example">
@@ -855,14 +852,14 @@
                             </div>
                         </div>
                         
-                        <h3 class="mt-4">İnteraktif Pratik Uygulama:</h3>
-                        <p>Aşağıdaki testte gerçek gibi çalışan bir deneme yapabilirsiniz. Bu bölüm puanlanmayacaktır.</p>
+                        <h3 class="mt-4">Örnek Uygulama</h3>
+                        <p>Aşağıda test ekranının nasıl görüneceğine dair bir örnek bulunmaktadır. Hedef harflerden birini işaretlemek için üzerine tıklayınız.</p>
                         
                         <div class="practice-container" id="practice-wrapper">
                             <!-- Practice info bar -->
                             <div class="info-bar">
                                 <div id="practice-line-info">Satır: 1/3</div>
-                                <div>Pratik Uygulama</div>
+                                <div>Örnek Uygulama</div>
                             </div>
                             
                             <!-- Practice progress bar -->
@@ -886,7 +883,7 @@
                             <!-- Practice ended overlay -->
                             <div id="practice-ended-overlay" class="practice-ended-overlay">
                                 <div class="practice-ended-message">
-                                    <h3>Pratik Uygulama Tamamlandı!</h3>
+                                    <h3>Örnek Uygulama Tamamlandı!</h3>
                                     <p>Artık gerçek teste hazırsınız.</p>
                                     <p>Aşağıdaki "Teste Başla" butonuna tıklayarak gerçek teste geçebilirsiniz.</p>
                                 </div>
@@ -894,11 +891,10 @@
                         </div>
                         
                         <div class="text-center mt-3">
-                            <button type="button" id="start-practice-btn" class="btn btn-success">Pratik Uygulamayı Başlat</button>
+                            <button type="button" id="start-practice-btn" class="btn btn-success">Örnek Uygulamayı Başlat</button>
                         </div>
                         
-                        <div class="d-flex justify-content-between mt-4">
-                            <button type="button" id="back-to-welcome-btn" class="btn btn-secondary">Geri</button>
+                        <div class="d-flex justify-content-end mt-4">
                             <button type="button" id="continue-to-test-btn" class="btn btn-lg">Teste Başla</button>
                         </div>
                     </div>
@@ -908,13 +904,7 @@
             <!-- Test Screen -->
             <div id="test-screen" class="screens">
                 <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h2>d2 Dikkat Testi</h2>
-                        <div>
-                            <strong>Hedef:</strong> 
-                            <span style="font-weight: bold; color: var(--primary); margin-left: 10px;">Toplamda 2 çizgili 'd' harfleri</span>
-                        </div>
-                    </div>
+                    <h1 class="page-title">D2 Dikkat Testi</h1>
                     <div class="card-body">
                         <div class="info-bar">
                             <div id="current-line-info">Satır: 1/14</div>
@@ -966,7 +956,7 @@
 
    <!-- Message Boxes -->
    <div id="warning-message" class="message-box warning-message">Lütfen bulunduğunuz (aktif) satırda işaretleme yapın.</div>
-   <div id="end-test-message" class="message-box success-message">Test tamamlandı! Sonuçlar hesaplanıyor...</div>
+   <div id="end-test-message" class="message-box success-message">Testi tamamladınız.</div>
 
    
 
@@ -2037,8 +2027,8 @@
             
             practiceRunning = true;
             practiceCurrentLine = 0;
-            buttons.startPractice.disabled = true;
-            buttons.startPractice.textContent = 'Pratik Devam Ediyor...';
+           buttons.startPractice.disabled = true;
+           buttons.startPractice.textContent = 'Örnek Uygulama Devam Ediyor...';
             
             // Overlay'i gizle
             practiceEndedOverlay.style.display = 'none';
@@ -2067,7 +2057,7 @@
            lineChangeGuide.style.display = 'none';*/
            
            buttons.startPractice.disabled = false;
-           buttons.startPractice.textContent = 'Pratik Uygulamayı Tekrar Başlat';
+           buttons.startPractice.textContent = 'Örnek Uygulamayı Tekrar Başlat';
            
            if (showOverlay) {
                practiceEndedOverlay.style.display = 'flex';
@@ -2102,92 +2092,121 @@
            startLineTimer();
        }
 
-       function calculateScores() {
-           let TN_val = 0;
-           const clickedItems = testCharacterData.filter(item => item.isClicked);
-           if (clickedItems.length > 0) {
-               TN_val = Math.max(...clickedItems.map(item => item.globalIndex)) + 1;
-           }
+        function calculateScores() {
+            // 1) Satır bazlı son işlenen karakter (lastProcessedPerLine) hesapla
+            const lastProcessedPerLine = new Array(TOTAL_LINES).fill(0);
 
-           let D = 0, E1 = 0, E2 = 0;
-           let itemsProcessedPerLineCounts = new Array(TOTAL_LINES).fill(0);
+            testCharacterData.forEach(item => {
+                if (!item.isClicked) return;
+                const lineStart = item.lineIndex * CHARS_PER_LINE;
+                const charIdxInLine = item.globalIndex - lineStart;
+                const processedPos = charIdxInLine + 1; // 1-47 aralığı
+                if (processedPos > lastProcessedPerLine[item.lineIndex]) {
+                    lastProcessedPerLine[item.lineIndex] = processedPos;
+                }
+            });
 
-           testCharacterData.forEach(item => {
-               if (item.isClicked) {
-                   if (item.globalIndex < TN_val) {
-                       if (item.isTarget) D++;
-                       else E1++;
-                   }
-               }
-               
-               if (item.globalIndex < TN_val) {
-                   if (item.isTarget && !item.isClicked) E2++;
-               }
-           });
-           
-           for(let i=0; i<TOTAL_LINES; i++) {
-               const firstCharGlobalIndexOfLine = i * CHARS_PER_LINE;
-               const endScanPointForLine = Math.min(TN_val, firstCharGlobalIndexOfLine + CHARS_PER_LINE);
-               
-               if (endScanPointForLine > firstCharGlobalIndexOfLine) {
-                   itemsProcessedPerLineCounts[i] = endScanPointForLine - firstCharGlobalIndexOfLine;
-               } else if (firstCharGlobalIndexOfLine >= TN_val) {
-                   itemsProcessedPerLineCounts[i] = 0;
-               }
-           }
+            // 2) TN = sum(lastProcessedPerLine)
+            const TN_val = lastProcessedPerLine.reduce((sum, v) => sum + v, 0);
 
-           const E = E1 + E2;
-           const CP = D - E1;
-           const TN_E = TN_val - E;
+            // 3) D, E1 (omission), E2 (commission) değerlerini satır bazlı hesapla ve satır başına tablo hazırla
+            let D = 0, E1 = 0, E2 = 0;
+            const perLineStats = new Array(TOTAL_LINES).fill(null).map((_, idx) => ({
+                line: idx + 1,
+                processed: lastProcessedPerLine[idx],
+                D: 0,
+                E1: 0,
+                E2: 0
+            }));
+            for (let i = 0; i < TOTAL_LINES; i++) {
+                const processed = lastProcessedPerLine[i];
+                const lineStart = i * CHARS_PER_LINE;
+                const lineEndExclusive = lineStart + processed;
+                let dLine = 0, e1Line = 0, e2Line = 0;
+                if (processed > 0) {
+                    for (let idx = lineStart; idx < lineEndExclusive; idx++) {
+                        const item = testCharacterData[idx];
+                        if (!item) continue;
+                        if (item.isTarget) {
+                            if (item.isClicked) dLine++;
+                            else e1Line++; // omission: hedef atlandı
+                        } else {
+                            if (item.isClicked) e2Line++; // commission: yanlış işaretleme
+                        }
+                    }
+                }
+                perLineStats[i].D = dLine;
+                perLineStats[i].E1 = e1Line;
+                perLineStats[i].E2 = e2Line;
+                D += dLine; E1 += e1Line; E2 += e2Line;
+            }
 
-           const relevantLineCountsForFR = itemsProcessedPerLineCounts.filter(count => count > 0);
-           const B_max = relevantLineCountsForFR.length > 0 ? Math.max(...relevantLineCountsForFR) : 0;
-           const B_min = relevantLineCountsForFR.length > 0 ? Math.min(...relevantLineCountsForFR) : 0;
-           const FR = (B_max > 0 && relevantLineCountsForFR.length >=1) ? B_max - B_min : 0;
+            const E = E1 + E2;
+            const TN_E = TN_val - E;
+            const CP = D - E2; // CP = D - commission
 
-           resultsTbody.innerHTML = `
-               <tr><td>Toplam İşlenen Madde (TN)</td><td>${TN_val}</td></tr>
-               <tr><td>Doğru Sayısı (D)</td><td>${D}</td></tr>
-               <tr><td>Yanlış İşaretleme (E1)</td><td>${E1}</td></tr>
-               <tr><td>Boş Bırakma (E2)</td><td>${E2}</td></tr>
-               <tr><td>Toplam Hata (E = E1+E2)</td><td>${E}</td></tr>
-               <tr><td>Konsantrasyon Performansı (CP = D-E1)</td><td>${CP}</td></tr>
-               <tr><td>TN - E</td><td>${TN_E}</td></tr>
-               <tr><td>Dalgalanma Oranı (FR = Bmax-Bmin)</td><td>${FR}</td></tr>
-           `;
-           
-           userInfoSummaryDiv.innerHTML = `
-               <div class="mb-3">
-                   <h3>Kullanıcı Bilgileri</h3>
-                   <p><strong>Ad Soyad:</strong> ${systemUserData ? systemUserData.name : 'N/A'}</p>
-                   <p><strong>Email:</strong> ${systemUserData ? systemUserData.email : 'N/A'}</p>
-               </div>
-           `;
-           
-           // 🔍 DEBUG: Test sonuçları console'da göster
-           console.log('🧪 D2 TEST SONUÇLARI HESAPLANDI:');
-           console.log('═══════════════════════════════════════');
-           console.log('📊 Temel Skorlar:');
-           console.log('  • Toplam İşlenen Madde (TN):', TN_val);
-           console.log('  • Doğru Sayısı (D):', D);
-           console.log('  • Yanlış İşaretleme (E1):', E1);
-           console.log('  • Boş Bırakma (E2):', E2);
-           console.log('  • Toplam Hata (E = E1+E2):', E);
-           console.log('  • Konsantrasyon Performansı (CP = D-E1):', CP);
-           console.log('  • TN - E:', TN_E);
-           console.log('  • Dalgalanma Oranı (FR = Bmax-Bmin):', FR);
-           console.log('═══════════════════════════════════════');
-           console.log('👤 Authentication Durumu:');
-           console.log('  • Giriş yapan kullanıcı:', systemUserData ? systemUserData.name : '❌ YOK');
-           console.log('  • Email:', systemUserData ? systemUserData.email : '❌ YOK');
-           console.log('  • Role:', systemUserData ? systemUserData.userRole : '❌ YOK');
-           console.log('═══════════════════════════════════════');
-           
-           // Test sonuçlarını backend'e gönder
-           saveD2TestResults(TN_val, D, E1, E2, E, CP, TN_E, FR);
-           
-           switchScreen('results');
-       }
+            // 4) FR = Bmax - Bmin (sadece işlenen satırlar)
+            const relevantLineCountsForFR = lastProcessedPerLine.filter(count => count > 0);
+            const B_max = relevantLineCountsForFR.length > 0 ? Math.max(...relevantLineCountsForFR) : 0;
+            const B_min = relevantLineCountsForFR.length > 0 ? Math.min(...relevantLineCountsForFR) : 0;
+            const FR = (B_max > 0 && relevantLineCountsForFR.length >= 1) ? B_max - B_min : 0;
+
+            // 5) Hata yüzdesi
+            const E_percent = TN_val > 0 ? Number(((E / TN_val) * 100).toFixed(2)) : 0;
+
+            resultsTbody.innerHTML = `
+                <tr><td>Toplam İşlenen Madde (TN)</td><td>${TN_val}</td></tr>
+                <tr><td>Doğru Sayısı (D)</td><td>${D}</td></tr>
+                <tr><td>Atlanan Doğru Hedef (E1 - Omission)</td><td>${E1}</td></tr>
+                <tr><td>Yanlış İşaretleme (E2 - Commission)</td><td>${E2}</td></tr>
+                <tr><td>Toplam Hata (E = E1+E2)</td><td>${E}</td></tr>
+                <tr><td>Hata Yüzdesi (E%)</td><td>${E_percent}</td></tr>
+                <tr><td>Konsantrasyon Performansı (CP = D - E2)</td><td>${CP}</td></tr>
+                <tr><td>TN - E</td><td>${TN_E}</td></tr>
+                <tr><td>Dalgalanma Oranı (FR = Bmax-Bmin)</td><td>${FR}</td></tr>
+            `;
+
+            userInfoSummaryDiv.innerHTML = `
+                <div class="mb-3">
+                    <h3>Kullanıcı Bilgileri</h3>
+                    <p><strong>Ad Soyad:</strong> ${systemUserData ? systemUserData.name : 'N/A'}</p>
+                    <p><strong>Email:</strong> ${systemUserData ? systemUserData.email : 'N/A'}</p>
+                </div>
+            `;
+
+            // 🔍 DEBUG: Test sonuçları console'da göster
+            console.log('🧪 D2 TEST SONUÇLARI HESAPLANDI:');
+            console.log('═══════════════════════════════════════');
+            console.log('📊 Temel Skorlar:');
+            console.log('  • Toplam İşlenen Madde (TN):', TN_val);
+            console.log('  • Doğru Sayısı (D):', D);
+            console.log('  • E1 (Omission - atlanan hedef):', E1);
+            console.log('  • E2 (Commission - yanlış işaretleme):', E2);
+            console.log('  • Toplam Hata (E = E1+E2):', E);
+            console.log('  • Hata Yüzdesi (E%):', E_percent);
+            console.log('  • Konsantrasyon Performansı (CP = D - E2):', CP);
+            console.log('  • TN - E:', TN_E);
+            console.log('  • Dalgalanma Oranı (FR = Bmax-Bmin):', FR, '(Bmax:', B_max, 'Bmin:', B_min, ')');
+            console.log('═══════════════════════════════════════');
+            console.log('📋 Satır Bazlı Sonuçlar (line, processed, D, E1, E2)');
+            try { console.table(perLineStats); } catch (e) { console.log(perLineStats); }
+            console.log('🧮 lastProcessedPerLine:', lastProcessedPerLine);
+            const sumsFromLines = perLineStats.reduce((acc, s) => ({ D: acc.D + s.D, E1: acc.E1 + s.E1, E2: acc.E2 + s.E2 }), { D: 0, E1: 0, E2: 0 });
+            console.log('🔎 Satır toplam kontrolü:', sumsFromLines, '=> D:', D, 'E1:', E1, 'E2:', E2);
+            console.log('═══════════════════════════════════════');
+            console.log('👤 Authentication Durumu:');
+            console.log('  • Giriş yapan kullanıcı:', systemUserData ? systemUserData.name : '❌ YOK');
+            console.log('  • Email:', systemUserData ? systemUserData.email : '❌ YOK');
+            console.log('  • Role:', systemUserData ? systemUserData.userRole : '❌ YOK');
+            console.log('═══════════════════════════════════════');
+
+            // Test sonuçlarını backend'e gönder
+            saveD2TestResults(TN_val, D, E1, E2, E, CP, TN_E, FR);
+
+            // switchScreen('results'); // Sonuçlar ekranını göstermiyoruz
+            // Yalnızca tamamlandığı bilgisini göster
+            showEndTestMsg('Testi tamamladınız.');
+        }
 
        function endTest() {
            clearInterval(lineTimerInterval);
@@ -2197,9 +2216,8 @@
            if(activeTestLine) activeTestLine.classList.remove('active');
            
            testProgressFill.style.width = '100%';
-           showEndTestMsg("Test tamamlandı! Sonuçlarınız hesaplanıyor...");
-           
-           setTimeout(calculateScores, 1500);
+            // Test tamamlandıktan hemen sonra puanları hesapla ve logla
+            setTimeout(() => { try { calculateScores(); } catch (e) { console.error('calculateScores error:', e); } }, 200);
        }
 
        // Ekran boyutuna göre test ızgarasını ayarla
@@ -2525,7 +2543,7 @@
        // Sayfa ilk yüklendiğinde
        document.addEventListener('DOMContentLoaded', async () => {
            initTestState();
-           switchScreen('welcome');
+           switchScreen('instructions');
            adjustTestGridToScreen();
            
            // Modern Supabase authentication ile sistem kullanıcı bilgilerini al
@@ -2536,22 +2554,28 @@
                switchScreen('instructions');
            });
            
-           buttons.backToWelcome.addEventListener('click', () => {
-               switchScreen('welcome');
-           });
+           if (buttons.backToWelcome) {
+               buttons.backToWelcome.addEventListener('click', () => {
+                   switchScreen('instructions');
+               });
+           }
            
            buttons.continueToTest.addEventListener('click', () => {
                switchScreen('test');
+               window.scrollTo(0, 0);
                startMainTest();
            });
            
-           buttons.restartTest.addEventListener('click', () => {
-               initTestState();
-               switchScreen('welcome');
-           });
+           if (buttons.restartTest) {
+               buttons.restartTest.addEventListener('click', () => {
+                   initTestState();
+                   switchScreen('instructions');
+               });
+           }
            
            buttons.startPractice.addEventListener('click', () => {
                startPractice();
+               buttons.startPractice.textContent = 'Örnek Uygulama Devam Ediyor...';
            });
            
            

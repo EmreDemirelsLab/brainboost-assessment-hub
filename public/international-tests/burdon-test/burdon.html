@@ -51,10 +51,7 @@
 
         /* === HEADER === */
         header {
-            background-color: white;
-            box-shadow: var(--shadow-sm);
-            padding: 15px 0;
-            border-bottom: 1px solid var(--gray-light);
+            display: none; /* Üst header kaldırıldı */
         }
 
         .header-container {
@@ -72,9 +69,8 @@
             align-items: center;
         }
 
-        .logo span {
-            margin-left: 10px;
-        }
+        .logo span { margin-left: 10px; }
+        .logo svg { display: none; } /* Başlıktaki şekil kaldırıldı */
 
 
 
@@ -92,6 +88,14 @@
         h1 {
             font-size: 2rem;
             color: var(--primary);
+        }
+
+        /* Sayfa başlığı */
+        .page-title {
+            font-size: 2rem;
+            color: var(--primary);
+            text-align: center;
+            margin: 0 0 8px 0; /* Başlık-alt içerik boşluğu küçültüldü */
         }
 
         p {
@@ -228,6 +232,10 @@
             align-items: center;
         }
 
+        .justify-content-end {
+            justify-content: flex-end;
+        }
+
         .flex-column {
             flex-direction: column;
         }
@@ -239,6 +247,44 @@
 
         .screens.active {
             display: block;
+        }
+        /* Practice Instructions (d2 stiline uygun) */
+        .practice-instructions {
+            background-color: #f0f7ff;
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+        .practice-instructions .step {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        .practice-instructions .step:last-child {
+            margin-bottom: 0;
+        }
+        .practice-instructions .step-number {
+            background-color: var(--primary);
+            color: #fff;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+        }
+        .practice-instructions .step-content { flex: 1; }
+        .highlight-text {
+            background-color: #ffeb3b;
+            padding: 2px 5px;
+        }
+        .arrow-indicator {
+            display: inline-block;
+            color: var(--primary);
+            margin-left: 6px;
         }
 
 
@@ -467,56 +513,46 @@
 
     <main>
         <div class="container">
-            <div id="welcome-screen" class="screens active">
-                <div class="card">
-                    <div class="card-header">
-                        <h1>Burdon Dikkat Testine Hoş Geldiniz</h1>
-                    </div>
-                    <div class="card-body">
-                        <p>Bu test, dikkat sürdürme, odaklanma ve seçici dikkat becerilerinizi değerlendirmek için tasarlanmıştır. Test sonucunda dikkat kapasiteniz ve performansınız hakkında ayrıntılı bir rapor alacaksınız.</p>
-                        
-                        <h3 class="mt-4">Nasıl Çalışır?</h3>
-                        <p>Bu test sırasında, ekranda gösterilen harfler arasından belirli hedef harfleri bulup işaretlemeniz istenecektir. Test toplam 5 dakika sürecek ve 3 bölümden oluşacaktır.</p>
-                        
-                        <h3 class="mt-4">Başlamadan Önce:</h3>
-                        <ul>
-                            <li>Sessiz ve dikkat dağıtıcı unsurların olmadığı bir ortamda olduğunuzdan emin olun</li>
-                            <li>Testin tamamlanması için yeterli zamanınız olduğundan emin olun</li>
-                            <li>Ekrana rahat bakabildiğiniz bir pozisyon alın</li>
-                            <li>Telefonunuzu sessize alın ve bildirimleri kapatın</li>
-                        </ul>
-                        
-                        <div class="d-flex justify-content-end mt-4">
-                            <button type="button" id="start-test-btn" class="btn btn-lg">Teste Başla</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <h1 class="page-title">Burdon Dikkat Testi</h1>
 
-            <div id="instructions-screen" class="screens">
+            <div id="instructions-screen" class="screens active">
                 <div class="card">
-                    <div class="card-header">
-                        <h1>Test Yönergeleri</h1>
-                    </div>
                     <div class="card-body">
                         <div class="mb-4">
-                            <h3>Test Kuralları</h3>
-                            <p>Ekranda göreceğiniz harfler arasından aşağıdaki <strong>hedef harfleri</strong> bulup işaretlemeniz gerekmektedir:</p>
-                            <div class="d-flex justify-content-center mt-3 mb-3">
-                                <span style="font-size: 2rem; margin: 0 15px; font-weight: bold; color: var(--primary);">a</span>
-                                <span style="font-size: 2rem; margin: 0 15px; font-weight: bold; color: var(--primary);">b</span>
-                                <span style="font-size: 2rem; margin: 0 15px; font-weight: bold; color: var(--primary);">d</span>
-                                <span style="font-size: 2rem; margin: 0 15px; font-weight: bold; color: var(--primary);">g</span>
+                            <p>Test toplam 3 bölümden oluşmaktadır.</p>
+                            <p>Aşağıda verilen hedef harfleri bulup işaretlemeniz gerekmektedir.</p>
+                            <p><strong>a-b-d-g</strong></p>
+                            <p>Testin toplam süresi 5 dakikadır. (300 saniye)</p>
+                            <p>5 dakika tamamlandığında test otomatik olarak sonlandırılacaktır.</p>
+                        </div>
+
+                        <div class="practice-instructions">
+                            <h3 class="mb-3">Testi Nasıl Yapacaksınız?</h3>
+                            <div class="step">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <strong>Soldan Sağa Tarayın:</strong> Her satırı <span class="highlight-text">soldan sağa</span> tarayarak hedef harfleri bulun.
+                                    <span class="arrow-indicator">→</span>
+                                </div>
                             </div>
-                            <p>Test sırasında dikkat etmeniz gereken kurallar:</p>
-                            <ul>
-                                <li>Test toplam 3 bölümden oluşmaktadır ve her bölümde 10x22 ızgarada harfler bulunacaktır</li>
-                                <li>Bir bölümü tamamladığınızda, sonraki bölüme geçmek için "Sonraki Bölüm" butonuna tıklayın</li>
-                                <li>Her bir hedef harfi (a, b, d, g) gördüğünüzde üzerine tıklayarak işaretleyin</li>
-                                <li>Bir kez işaretlediğiniz harfi geri alamazsınız, dikkatli olun</li>
-                                <li>Testin toplam süresi 5 dakikadır (300 saniye)</li>
-                                <li>Süre dolduğunda test otomatik olarak sonlanacaktır</li>
-                            </ul>
+                            <div class="step">
+                                <div class="step-number">2</div>
+                                <div class="step-content">
+                                    <strong>Hedefleri İşaretleyin:</strong> Bulduğunuz hedef harfleri işaretleyin. İşaretlenen harfler <span style="color: var(--secondary);">kırmızı</span> olacaktır.
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">3</div>
+                                <div class="step-content">
+                                    <strong>Bölümü Geçin:</strong> Bulunduğunuz bölümü tamamladığınızda «Sonraki Bölüm» butonuna tıklayarak bölümü geçin.
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">4</div>
+                                <div class="step-content">
+                                    <strong>Önemli:</strong> Bir harfe tıkladığınızda <span class="highlight-text">seçim geri alınamaz</span>.
+                                </div>
+                            </div>
                         </div>
 
                         <div class="mb-4">
@@ -533,9 +569,8 @@
                         <p>Testin toplam süresi: <strong>5 dakika (300 saniye)</strong></p>
                         </div>
 
-                        <div class="d-flex justify-content-between mt-4">
-                            <button type="button" id="back-to-welcome-btn" class="btn btn-secondary">Geri Dön</button>
-                            <button type="button" id="continue-to-test-btn" class="btn btn-lg">Testi Başlat</button>
+                        <div class="d-flex justify-content-end mt-2">
+                            <button type="button" id="continue-to-test-btn" class="btn btn-lg">Teste Başla</button>
                         </div>
                     </div>
                 </div>
@@ -546,7 +581,7 @@
                 
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h2>Burdon Dikkat Testi</h2>
+                        <div style="visibility:hidden"></div>
                         <div>
                             <strong>Hedef Harfler:</strong> 
                             <span style="font-weight: bold; color: var(--primary); margin-left: 10px;">a, b, d, g</span>
@@ -696,14 +731,19 @@
         document.addEventListener('DOMContentLoaded', () => {
 
             // Event Listeners (DOMContentLoaded içine taşındı)
-            buttons.startTest.addEventListener('click', () => {
-                showScreen('instructions');
-                renderExampleGrid(); // Örnek ızgarayı oluştur
-            });
+            if (buttons.startTest) {
+                buttons.startTest.addEventListener('click', () => {
+                    showScreen('instructions');
+                    renderExampleGrid();
+                });
+            }
             
-            buttons.backToWelcome.addEventListener('click', () => showScreen('welcome'));
+            if (buttons.backToWelcome) {
+                buttons.backToWelcome.addEventListener('click', () => showScreen('instructions'));
+            }
             buttons.continueToTest.addEventListener('click', () => {
                 showScreen('test');
+                window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
                 startTest();
             });
             buttons.finishTest.addEventListener('click', () => {
@@ -724,8 +764,9 @@
 
 
             
-            // Başlangıç ekranını göster
-            showScreen('welcome');
+            // Hoş geldiniz ekranı kaldırıldığı için başlangıçta yönergeleri göster
+            showScreen('instructions');
+            renderExampleGrid();
         });
         
         // Test verilerini sıfırlama fonksiyonu

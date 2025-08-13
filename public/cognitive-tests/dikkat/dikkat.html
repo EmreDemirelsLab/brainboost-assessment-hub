@@ -1178,12 +1178,11 @@
                    resolve(null);
                }, CONFIG.AUDIO_PRELOAD_TIMEOUT));
 
-               audio.addEventListener('canplaythrough', () => {
-                   clearTimeout(timeout);
-                   testState.preloadedAudios.set(filename, audio);
-                   console.log(`🔊 Audio loaded: ${filename}`);
-                   resolve(audio);
-               }, { once: true });
+                   audio.addEventListener('canplaythrough', () => {
+                       clearTimeout(timeout);
+                       testState.preloadedAudios.set(filename, audio);
+                       resolve(audio);
+                   }, { once: true });
 
                audio.addEventListener('error', (e) => {
                    clearTimeout(timeout);
@@ -1210,11 +1209,7 @@
 
            await Promise.allSettled(promises);
            
-           if (successCount > 0) {
-               console.log(`✅ Audio System: ${successCount}/${filenames.length} files loaded`);
-           } else {
-               console.info(`🔇 Audio System: Running silently (no audio files loaded)`);
-           }
+           // Audio summary log kaldırıldı (temiz konsol)
        }
 
        async function playAudio(filename, loop = false, volume = 1.0) {
@@ -1261,8 +1256,6 @@
 
                targetScreen.classList.add('active');
                testState.safeSet('currentScreen', screenId);
-               
-               console.log(`Screen changed to: ${screenId}`);
            } catch (e) {
                handleError(`Ekran değiştirme hatası: ${e.message}`, false);
                throw e;
@@ -1400,24 +1393,18 @@
                testState.cleanup();
                showScreen('instructionsScreen');
                
-               try {
-                   console.log('🎵 Playing giris.mp3...');
-                   const audioPlayed = await playAudio('giris.mp3');
-                   
-                   if (testState.currentAudio && !testState.currentAudio.paused) {
-                       console.log('✅ giris.mp3 başarıyla çalıyor');
-                       addAudioEndedListener(testState.currentAudio, () => {
-                           console.log('🎵 giris.mp3 tamamlandı');
-                           showButton('instructionsNextBtn');
-                       });
-                   } else {
-                       console.warn('⚠️ giris.mp3 çalmadı, button direkt gösteriliyor');
-                       showButton('instructionsNextBtn', 500);
-                   }
-               } catch (e) {
-                   console.error('Instructions audio error:', e);
-                   showButton('instructionsNextBtn', 1000);
-               }
+                try {
+                    const audioPlayed = await playAudio('giris.mp3');
+                    if (testState.currentAudio && !testState.currentAudio.paused) {
+                        addAudioEndedListener(testState.currentAudio, () => {
+                            showButton('instructionsNextBtn');
+                        });
+                    } else {
+                        showButton('instructionsNextBtn', 500);
+                    }
+                } catch (e) {
+                    showButton('instructionsNextBtn', 1000);
+                }
            },
 
            // 4. Intro demo
@@ -1438,26 +1425,21 @@
                
                testState.hasSeenIntro = true;
                
-               try {
-                   console.log('🎵 Playing ornek1.mp3...');
-                   const audioPlayed = await playAudio('ornek1.mp3');
-                   this.startIntroAnimation();
-                   
-                   if (testState.currentAudio && !testState.currentAudio.paused) {
-                       console.log('✅ ornek1.mp3 başarıyla çalıyor');
-                       addAudioEndedListener(testState.currentAudio, () => {
-                           console.log('🎵 ornek1.mp3 tamamlandı');
-                           showButton('introNextBtn');
-                       });
-                   } else {
-                       console.warn('⚠️ ornek1.mp3 çalmadı, button direkt gösteriliyor');
-                       showButton('introNextBtn', 1000);
-                   }
-               } catch (e) {
-                   console.error('Intro demo audio error:', e);
-                   this.startIntroAnimation();
-                   showButton('introNextBtn', 1000);
-               }
+                try {
+                    const audioPlayed = await playAudio('ornek1.mp3');
+                    this.startIntroAnimation();
+                    
+                    if (testState.currentAudio && !testState.currentAudio.paused) {
+                        addAudioEndedListener(testState.currentAudio, () => {
+                            showButton('introNextBtn');
+                        });
+                    } else {
+                        showButton('introNextBtn', 1000);
+                    }
+                } catch (e) {
+                    this.startIntroAnimation();
+                    showButton('introNextBtn', 1000);
+                }
            },
 
            // Intro animasyon
@@ -1604,7 +1586,6 @@
                testState.hasSeenLetter = true;
                
                try {
-                   console.log('🎵 Playing ornek2.mp3...');
                    const audioPlayed = await playAudio('ornek2.mp3');
                    this.startLetterAnimation();
                    
@@ -1687,24 +1668,18 @@
                testState.cleanup();
                showScreen('exampleTransitionScreen');
                
-               try {
-                   console.log('🎵 Playing ornekgecis.mp3...');
-                   const audioPlayed = await playAudio('ornekgecis.mp3');
-                   
-                   if (testState.currentAudio && !testState.currentAudio.paused) {
-                       console.log('✅ ornekgecis.mp3 başarıyla çalıyor');
-                       addAudioEndedListener(testState.currentAudio, () => {
-                           console.log('🎵 ornekgecis.mp3 tamamlandı');
-                           showButton('exampleTransitionBtn');
-                       });
-                   } else {
-                       console.warn('⚠️ ornekgecis.mp3 çalmadı, button direkt gösteriliyor');
-                       showButton('exampleTransitionBtn', 1000);
-                   }
-               } catch (e) {
-                   console.error('Example transition audio error:', e);
-                   showButton('exampleTransitionBtn', 1000);
-               }
+                try {
+                    const audioPlayed = await playAudio('ornekgecis.mp3');
+                    if (testState.currentAudio && !testState.currentAudio.paused) {
+                        addAudioEndedListener(testState.currentAudio, () => {
+                            showButton('exampleTransitionBtn');
+                        });
+                    } else {
+                        showButton('exampleTransitionBtn', 1000);
+                    }
+                } catch (e) {
+                    showButton('exampleTransitionBtn', 1000);
+                }
            },
 
            // 7. Örnek başlangıç
@@ -1712,53 +1687,33 @@
                testState.cleanup();
                showScreen('exampleStartScreen');
                
-               try {
-                   console.log('🎵 Playing ornekbasla.mp3...');
-                   console.log('🔍 Debug: ornekbasla.mp3 preloaded?', testState.preloadedAudios.has('ornekbasla.mp3'));
-                   
-                   const audioPlayed = await playAudio('ornekbasla.mp3');
-                   
-                   console.log('🔍 Debug: testState.currentAudio:', testState.currentAudio);
-                   console.log('🔍 Debug: currentAudio.paused:', testState.currentAudio?.paused);
-                   console.log('🔍 Debug: currentAudio.readyState:', testState.currentAudio?.readyState);
-                   console.log('🔍 Debug: currentAudio.networkState:', testState.currentAudio?.networkState);
-                   
-                   if (testState.currentAudio && !testState.currentAudio.paused) {
-                       console.log('✅ ornekbasla.mp3 başarıyla çalıyor');
-                       addAudioEndedListener(testState.currentAudio, () => {
-                           console.log('🎵 ornekbasla.mp3 tamamlandı');
-                           showButton('exampleStartBtn');
-                       });
-                   } else {
-                       console.warn('⚠️ ornekbasla.mp3 çalmadı, button direkt gösteriliyor');
-                       console.warn('🔍 Debug: Fallback - zorla audio oluşturup çalmaya çalışıyorum');
-                       
-                       // Fallback: Yeni audio objesi oluştur ve çal
-                       const fallbackAudio = new Audio('mp3/ornekbasla.mp3');
-                       fallbackAudio.addEventListener('canplaythrough', () => {
-                           console.log('🔍 Fallback audio yüklendi, çalıyor...');
-                           fallbackAudio.play().then(() => {
-                               console.log('✅ Fallback audio başarıyla çalıyor');
-                               testState.currentAudio = fallbackAudio;
-                               addAudioEndedListener(fallbackAudio, () => {
-                                   console.log('🎵 Fallback ornekbasla.mp3 tamamlandı');
-                                   showButton('exampleStartBtn');
-                               });
-                           }).catch(e => {
-                               console.error('❌ Fallback audio play error:', e);
-                               showButton('exampleStartBtn', 1000);
-                           });
-                       });
-                       fallbackAudio.addEventListener('error', (e) => {
-                           console.error('❌ Fallback audio load error:', e);
-                           showButton('exampleStartBtn', 1000);
-                       });
-                       fallbackAudio.load();
-                   }
-               } catch (e) {
-                   console.error('Example start audio error:', e);
-                   showButton('exampleStartBtn', 1000);
-               }
+                try {
+                    const audioPlayed = await playAudio('ornekbasla.mp3');
+                    if (testState.currentAudio && !testState.currentAudio.paused) {
+                        addAudioEndedListener(testState.currentAudio, () => {
+                            showButton('exampleStartBtn');
+                        });
+                    } else {
+                        // Fallback: Yeni audio objesi oluştur ve çal
+                        const fallbackAudio = new Audio('mp3/ornekbasla.mp3');
+                        fallbackAudio.addEventListener('canplaythrough', () => {
+                            fallbackAudio.play().then(() => {
+                                testState.currentAudio = fallbackAudio;
+                                addAudioEndedListener(fallbackAudio, () => {
+                                    showButton('exampleStartBtn');
+                                });
+                            }).catch(() => {
+                                showButton('exampleStartBtn', 1000);
+                            });
+                        });
+                        fallbackAudio.addEventListener('error', () => {
+                            showButton('exampleStartBtn', 1000);
+                        });
+                        fallbackAudio.load();
+                    }
+                } catch (e) {
+                    showButton('exampleStartBtn', 1000);
+                }
            },
 
            // Geri sayım - DÜZELTİLMİŞ TIMER MANAGEMENT
@@ -1941,23 +1896,18 @@
                testState.cleanup();
                showScreen('exampleCompleteScreen');
                
-               try {
-                   console.log('🎵 Playing ornekok.mp3...');
-                   await playAudio('ornekok.mp3');
-                   if (testState.currentAudio && !testState.currentAudio.paused) {
-                       console.log('✅ ornekok.mp3 başarıyla çalıyor');
-                       addAudioEndedListener(testState.currentAudio, () => {
-                           console.log('🎵 ornekok.mp3 tamamlandı');
-                           showButton('exampleCompleteBtn');
-                       });
-                   } else {
-                       console.warn('⚠️ ornekok.mp3 çalmadı, button direkt gösteriliyor');
-                       showButton('exampleCompleteBtn', 1000);
-                   }
-               } catch (e) {
-                   console.error('Example complete audio error:', e);
-                   showButton('exampleCompleteBtn', 1000);
-               }
+                try {
+                    await playAudio('ornekok.mp3');
+                    if (testState.currentAudio && !testState.currentAudio.paused) {
+                        addAudioEndedListener(testState.currentAudio, () => {
+                            showButton('exampleCompleteBtn');
+                        });
+                    } else {
+                        showButton('exampleCompleteBtn', 1000);
+                    }
+                } catch (e) {
+                    showButton('exampleCompleteBtn', 1000);
+                }
            },
 
            // 10. Ana test hazırlık
@@ -2228,7 +2178,7 @@
                                tamamlanmaZamani: new Date().toLocaleTimeString('tr-TR')
                            });
                            
-                           console.log(`✅ ${currentSection.name} tamamlandı`);
+                       // section tamamlandı
                        }
                        
                        // Yeni bölümü başlat
@@ -2258,7 +2208,7 @@
                }
            },
 
-           // Ana test bitir
+            // Ana test bitir
            async endMainTest() {
                // 🎊 TEST BİTİŞ DURUMU LOGLAMA
                const testDuration = Date.now() - testState.mainStartTime;
@@ -2266,32 +2216,20 @@
                const currentAnswers = testState.mainAnswers.length;
                const correctAnswers = testState.mainAnswers.filter(a => a.isCorrect).length;
                
-               console.log('🎊 DİKKAT TESTİ SONA ERDİ:', {
-                   bitisNedeni: testState.mainIndex >= TEST_DATA.mainQuestions.length ? 'Tüm sorular tamamlandı' : 'Süre doldu',
-                   tamamlananSoru: testState.mainIndex,
-                   toplamSoru: TEST_DATA.mainQuestions.length,
-                   tamamlanmaOrani: `${Math.round(completionRate)}%`,
-                   cevaplananSoru: currentAnswers,
-                   dogruCevap: correctAnswers,
-                   yanlisCevap: currentAnswers - correctAnswers,
-                   gecenSure: `${Math.round(testDuration / 1000)} saniye`,
-                   mevcutBolum: testState.currentSection ? testState.currentSection.name : 'Tamamlandı',
-                   bitisZamani: new Date().toLocaleTimeString('tr-TR')
-               });
+                // DİKKAT TESTİ SONA ERDİ (konsol sessiz)
                
                testState.clearAllTimers();
                
                // Son bölümü bitir (eğer devam ediyorsa)
                if (testState.currentSection) {
                    testState.sectionEndTimes[testState.currentSection.key] = Date.now();
-                   console.log(`✅ ${testState.currentSection.name} tamamlandı (test sonu)`);
+                   // section tamamlandı (test sonu)
                }
                
-               // Yarıda kalma durumu kontrol et
-               if (testState.mainIndex < TEST_DATA.mainQuestions.length) {
-                   testState.incompleteAtQuestion = testState.mainIndex + 1; // 1-based
-                   console.log(`⚠️ Test ${testState.incompleteAtQuestion}. soruda kaldı`);
-               }
+                // Yarıda kalma durumu kontrol et (konsol sessiz)
+                if (testState.mainIndex < TEST_DATA.mainQuestions.length) {
+                    testState.incompleteAtQuestion = testState.mainIndex + 1; // 1-based
+                }
                
                showScreen('resultsScreen');
                
@@ -2463,8 +2401,7 @@
                        console.log('Full results:', detailedResults);
                    } else {
                        // Kullanıcı için sınırlı konsol çıktısı
-                       console.log('✅ Test tamamlandı!');
-                       console.log('📝 Verileriniz kaydediliyor...');
+                       // sınırlı kullanıcı konsol çıktısı gösterme kaldırıldı
                    }
                    
                    // 🎉 DETAYLI FİNAL SONUÇLAR (Sadece Yönetici Roller için)
@@ -2539,8 +2476,7 @@
                    // Database formatında kaydet
                    localStorage.setItem('attentionTestResults_DatabaseFormat', JSON.stringify(databaseMappedResults));
                    
-                   console.log('🎯 DATABASE UYUMLU SONUÇLAR:', databaseMappedResults);
-                   console.log('✅ Database mapping tamamlandı - %100 uyumluluk sağlandı');
+                   // database mapping logları kaldırıldı
                    
                    // 🚀 SUPABASE PRODUCTION'A KAYDET
                    if (databaseMappedResults) {
@@ -2568,7 +2504,7 @@
                    const { data: { user }, error: authError } = await supabase.auth.getUser();
                    
                    if (authError || !user) {
-                       console.warn('⚠️ Kullanıcı giriş yapmamış, localStorage\'a kaydediliyor');
+                   // Kullanıcı giriş yapmamış; sonuçlar pending kaydedildi
                        localStorage.setItem('pendingAttentionResults', JSON.stringify(resultsData));
                        return false;
                    }
@@ -2583,7 +2519,7 @@
                        .single();
                    
                    if (userError || !userData) {
-                       console.error('❌ Kullanıcı bilgileri alınamadı:', userError);
+                   // Kullanıcı bilgileri alınamadı; sonuçlar pending kaydedildi
                        localStorage.setItem('pendingAttentionResults', JSON.stringify(resultsData));
                        return false;
                    }
@@ -2593,7 +2529,7 @@
                    console.log(`👤 Kullanıcı rolü: ${userRole}`);
                    
                    if (!['admin', 'temsilci', 'beyin_antrenoru', 'kullanici'].includes(userRole)) {
-                       console.warn('⚠️ Geçersiz kullanıcı rolü - pending olarak kaydediliyor');
+                   // Geçersiz kullanıcı rolü; sonuçlar pending kaydedildi
                        localStorage.setItem('pendingAttentionResults', JSON.stringify(resultsData));
                        return false;
                    }
@@ -2616,68 +2552,89 @@
                    const testEndTime = new Date().toISOString();
                    const testDurationSeconds = Math.round(resultsData.totalTestDuration / 1000);
                    
-                   // Dikkat test sonuçları için final data - attention_test_results tablosuna uygun
-                   const finalData = {
-                       student_id: studentId,
-                       conducted_by: conductedBy,
-                       test_start_time: testStartTime,
-                       test_end_time: testEndTime,
-                       test_duration_seconds: testDurationSeconds,
-                       completion_status: testState.incompleteAtQuestion ? 'incomplete' : 'completed',
-                       
-                       // Ana performans metrikleri
-                       total_correct: resultsData.basicStats.mainScore,
-                       total_wrong: resultsData.basicStats.mainTotal - resultsData.basicStats.mainScore,
-                       total_missed: testState.incompleteAtQuestion ? (50 - resultsData.basicStats.mainTotal) : 0,
-                       accuracy_percentage: Math.round(resultsData.accuracyScore * 100) / 100,
-                       average_response_time_ms: Math.min(999999, Math.round(resultsData.basicStats.averageReactionTime)),
-                       
-                       // Dikkat-specific alanlar
-                       attention_span_score: Math.round(resultsData.accuracyScore), // Doğruluk skoru olarak
-                       focus_stability: Math.round(resultsData.speedScore), // Hız skoru olarak
-                       vigilance_score: Math.round((resultsData.accuracyScore + resultsData.speedScore) / 2), // Ortalama
-                       
-                       // Tepki süresi analizi
-                       fastest_response_ms: Math.min(999999, testState.reactionTimes.length > 0 ? Math.min(...testState.reactionTimes) : 0),
-                       slowest_response_ms: Math.min(999999, testState.reactionTimes.length > 0 ? Math.max(...testState.reactionTimes) : 0),
-                       response_time_variance: Math.min(999999, this.calculateVariance(testState.reactionTimes)),
-                       
-                       // Hata analizi
-                       false_positive_count: testState.wrongSelections.length,
-                       false_negative_count: testState.incompleteAtQuestion ? (50 - resultsData.basicStats.mainTotal) : 0,
-                       omission_errors: testState.incompleteAtQuestion ? (50 - resultsData.basicStats.mainTotal) : 0,
-                       commission_errors: testState.wrongSelections.length,
-                       
-                       // Zaman bazlı performans
-                       performance_decline_rate: this.calculatePerformanceDecline(),
-                       fatigue_index: Math.max(0, Math.min(100, (testDurationSeconds / 180) * 100)), // 3 dakikaya göre yorgunluk
-                       
-                       // Detaylı veriler (JSONB)
-                       detailed_responses: JSON.stringify({
-                           mainAnswers: testState.mainAnswers,
-                           practiceAnswers: testState.practiceAnswers,
-                           reactionTimes: testState.reactionTimes
-                       }),
-                       time_series_analysis: JSON.stringify({
-                           sectionStats: resultsData.sectionStats,
-                           sectionStartTimes: testState.sectionStartTimes,
-                           sectionEndTimes: testState.sectionEndTimes
-                       }),
-                       performance_trends: JSON.stringify({
-                           questionTypeMistakes: testState.questionTypeMistakes,
-                           typeStats: resultsData.typeStats,
-                           wrongSelections: testState.wrongSelections
-                       }),
-                       error_patterns: JSON.stringify({
-                           numberTypeErrors: testState.wrongSelections.filter(w => w.questionType === 's'),
-                           letterTypeErrors: testState.wrongSelections.filter(w => w.questionType === 'h'),
-                           mixedTypeErrors: testState.wrongSelections.filter(w => w.questionType === 's/h')
-                       }),
-                       
-                       notes: testState.incompleteAtQuestion ? 
-                           `Test ${testState.incompleteAtQuestion}. soruda yarıda kaldı` : 
-                           'Test başarıyla tamamlandı'
-                   };
+                    // Güvenli hesaplamalar ve clamp/guard
+                    const TOTAL_QUESTIONS = 50;
+                    const attempted = Math.max(0, Number(resultsData.basicStats?.mainTotal) || 0);
+                    const correct = Math.max(0, Number(resultsData.basicStats?.mainScore) || 0);
+                    const wrong = Math.max(0, attempted - correct);
+                    const missed = Math.max(0, TOTAL_QUESTIONS - attempted);
+                    const isTimeout = attempted < TOTAL_QUESTIONS;
+                    const avgRt = Math.max(0, Math.min(999999.99, Number(resultsData.basicStats?.averageReactionTime) || 0));
+                    const avgRtInt = Math.min(999999, Math.round(avgRt));
+                    const fastest = Math.min(999999, Math.max(0, testState.reactionTimes.length > 0 ? Math.min(...testState.reactionTimes) : 0));
+                    const slowest = Math.min(999999, Math.max(0, testState.reactionTimes.length > 0 ? Math.max(...testState.reactionTimes) : 0));
+                    const variance = Math.max(0, Math.min(999999.99, Number(this.calculateVariance(testState.reactionTimes)) || 0));
+                    const accOverall = TOTAL_QUESTIONS > 0 ? (correct / TOTAL_QUESTIONS) * 100 : 0;
+                    const speedScoreRaw = Number(resultsData.speedScore) || 0;
+                    const clampPct = (v) => Math.max(0, Math.min(100, Number.isFinite(v) ? v : 0));
+                    const round2 = (v) => Math.round(clampPct(v) * 100) / 100;
+                    const attentionSpan = round2(accOverall);
+                    const focusStability = round2(speedScoreRaw);
+                    const vigilance = round2((attentionSpan + focusStability) / 2);
+                    const perfDeclineRaw = Number(this.calculatePerformanceDecline());
+                    const perfDecline = round2(perfDeclineRaw);
+                    const fatigue = round2((testDurationSeconds / 180) * 100);
+
+                    // Dikkat test sonuçları için final data - attention_test_results tablosuna uygun
+                    const finalData = {
+                        student_id: studentId,
+                        conducted_by: conductedBy,
+                        test_start_time: testStartTime,
+                        test_end_time: testEndTime,
+                        test_duration_seconds: testDurationSeconds,
+                        completion_status: 'completed',
+
+                        // Ana performans metrikleri
+                        total_correct: correct,
+                        total_wrong: wrong,
+                        total_missed: missed,
+                        accuracy_percentage: round2(accOverall),
+                        average_response_time_ms: avgRtInt,
+
+                        // Dikkat-specific alanlar
+                        attention_span_score: attentionSpan,
+                        focus_stability: focusStability,
+                        vigilance_score: vigilance,
+
+                        // Tepki süresi analizi
+                        fastest_response_ms: fastest,
+                        slowest_response_ms: slowest,
+                        response_time_variance: variance,
+
+                        // Hata analizi
+                        false_positive_count: wrong,
+                        false_negative_count: missed,
+                        omission_errors: missed,
+                        commission_errors: wrong,
+
+                        // Zaman bazlı performans
+                        performance_decline_rate: perfDecline,
+                        fatigue_index: fatigue,
+
+                        // Detaylı veriler (JSONB)
+                        detailed_responses: JSON.stringify({
+                            mainAnswers: testState.mainAnswers,
+                            practiceAnswers: testState.practiceAnswers,
+                            reactionTimes: testState.reactionTimes
+                        }),
+                        time_series_analysis: JSON.stringify({
+                            sectionStats: resultsData.sectionStats,
+                            sectionStartTimes: testState.sectionStartTimes,
+                            sectionEndTimes: testState.sectionEndTimes
+                        }),
+                        performance_trends: JSON.stringify({
+                            questionTypeMistakes: testState.questionTypeMistakes,
+                            typeStats: resultsData.typeStats,
+                            wrongSelections: testState.wrongSelections
+                        }),
+                        error_patterns: JSON.stringify({
+                            numberTypeErrors: testState.wrongSelections.filter(w => w.questionType === 's'),
+                            letterTypeErrors: testState.wrongSelections.filter(w => w.questionType === 'h'),
+                            mixedTypeErrors: testState.wrongSelections.filter(w => w.questionType === 's/h')
+                        }),
+
+                        notes: isTimeout ? undefined : undefined
+                    };
                    
                    console.log('📝 Supabase\'e kaydedilecek Dikkat test verisi:', finalData);
                    
@@ -2790,30 +2747,52 @@
                    const reactionTimesArray = testState.reactionTimes || [];
                    console.log(`📊 Reaction times bulundu: ${reactionTimesArray.length} adet`);
                    
-                   const mappedData = {
-                       // ✅ TEMEL VERİLER - Tablo kolonlarına uygun mapping
-                       total_correct: rawData.mainScore || 0,
-                       total_wrong: (rawData.mainTotal || 0) - (rawData.mainScore || 0),
-                       total_missed: 0, // Dikkat testinde kaçırılan soru yok
-                       accuracy_percentage: Math.round((rawData.accuracyScore || 0) * 100) / 100,
-                       attention_span_score: Math.round((rawData.speedScore || 0) * 100) / 100,
-                       average_response_time_ms: Math.min(999999, Math.round(rawData.averageReactionTime || 0)),
-                       test_duration_seconds: Math.round((rawData.testDuration || 0) / 1000), // ms → saniye
-                       completion_status: rawData.incompleteAtQuestion ? 'incomplete' : 'completed',
-                       
-                       // ✅ EKSİK KOLONLAR - Eski sistemden taşınan hesaplamalar
-                       focus_stability: Math.round(rawData.accuracyScore || 0), // Doğruluk = Focus %
-                       vigilance_score: Math.round(((rawData.mainScore || 0) / (rawData.mainTotal || 1)) * 100), // Genel başarı %
-                       fastest_response_ms: Math.min(999999, reactionTimesArray.length > 0 ? Math.min(...reactionTimesArray) : 0),
-                       slowest_response_ms: Math.min(999999, reactionTimesArray.length > 0 ? Math.max(...reactionTimesArray) : 0),
-                       response_time_variance: Math.min(999999, this.calculateVariance(reactionTimesArray)),
-                       false_positive_count: (rawData.mainTotal || 0) - (rawData.mainScore || 0), // Yanlış cevaplar
-                       false_negative_count: 0, // Dikkat testinde kaçırılan yok
-                       omission_errors: 0, // Dikkat testinde omission yok
-                       commission_errors: (rawData.mainTotal || 0) - (rawData.mainScore || 0), // Yanlış seçimler
-                       performance_decline_rate: this.calculatePerformanceDecline(sections),
-                       fatigue_index: this.calculateFatigueIndex(sections, reactionTimesArray),
-                       
+                    const TOTAL_QUESTIONS = 50;
+                    const attempted = Math.max(0, Number(rawData.mainTotal) || 0);
+                    const correct = Math.max(0, Number(rawData.mainScore) || 0);
+                    const wrong = Math.max(0, attempted - correct);
+                    const missed = Math.max(0, TOTAL_QUESTIONS - attempted);
+                    const isTimeout = attempted < TOTAL_QUESTIONS;
+                    const avgRt = Math.max(0, Math.min(999999.99, Number(rawData.averageReactionTime) || 0));
+                    const avgRtInt = Math.min(999999, Math.round(avgRt));
+                    const fastest = Math.min(999999, Math.max(0, reactionTimesArray.length > 0 ? Math.min(...reactionTimesArray) : 0));
+                    const slowest = Math.min(999999, Math.max(0, reactionTimesArray.length > 0 ? Math.max(...reactionTimesArray) : 0));
+                    const variance = Math.max(0, Math.min(999999.99, Number(this.calculateVariance(reactionTimesArray)) || 0));
+                    const accOverall = TOTAL_QUESTIONS > 0 ? (correct / TOTAL_QUESTIONS) * 100 : 0;
+                    const speedScoreRaw = Number(rawData.speedScore) || 0;
+                    const clampPct = (v) => Math.max(0, Math.min(100, Number.isFinite(v) ? v : 0));
+                    const round2 = (v) => Math.round(clampPct(v) * 100) / 100;
+                    const attentionSpan = round2(accOverall);
+                    const focusStability = round2(speedScoreRaw);
+                    const vigilance = round2((attentionSpan + focusStability) / 2);
+                    const perfDeclineRaw = Number(this.calculatePerformanceDecline(sections));
+                    const perfDecline = round2(perfDeclineRaw);
+                    const fatigue = round2((Math.round((rawData.testDuration || 0) / 1000) / 180) * 100);
+
+                    const mappedData = {
+                        // ✅ TEMEL VERİLER - Tablo kolonlarına uygun mapping
+                        total_correct: correct,
+                        total_wrong: wrong,
+                        total_missed: missed,
+                        accuracy_percentage: round2(accOverall),
+                        attention_span_score: attentionSpan,
+                        average_response_time_ms: avgRtInt,
+                        test_duration_seconds: Math.round((rawData.testDuration || 0) / 1000), // ms → saniye
+                        completion_status: 'completed',
+
+                        // ✅ EKSİK KOLONLAR - Eski sistemden taşınan hesaplamalar
+                        focus_stability: focusStability,
+                        vigilance_score: vigilance,
+                        fastest_response_ms: fastest,
+                        slowest_response_ms: slowest,
+                        response_time_variance: variance,
+                        false_positive_count: wrong,
+                        false_negative_count: missed,
+                        omission_errors: missed,
+                        commission_errors: wrong,
+                        performance_decline_rate: perfDecline,
+                        fatigue_index: fatigue,
+
                        // ✅ JSONB VERİLER - Tablo kolonlarına uygun mapping
                        detailed_responses: questionDetails || [],
                        time_series_analysis: {
@@ -2831,7 +2810,7 @@
                        test_end_time: new Date().toISOString(),
                        
                        // ✅ METAVERİ
-                       notes: `Dikkat testi - ${rawData.incompleteAtQuestion ? 'Yarıda kesildi' : 'Tamamlandı'}`
+                        notes: `Dikkat testi - ${rawData.incompleteAtQuestion ? 'Süre bitti' : 'Tamamlandı'}`
                    };
                    
                    // Validation - Kritik alanları kontrol et
@@ -2999,6 +2978,22 @@
                 try {
                     console.log('🚀 Supabase Production kayıt başlatılıyor...');
                     
+                    // 1) URL parametrelerini localStorage'a senkronize et (ilk yüklemede)
+                    try {
+                        const url = new URL(window.location.href);
+                        const qp = url.searchParams;
+                        const sessionIdQP = qp.get('session_id');
+                        const studentIdQP = qp.get('student_id');
+                        const conductedByQP = qp.get('conducted_by');
+                        const sbUrlQP = qp.get('sb_url');
+                        const sbAnonQP = qp.get('sb_anon');
+                        if (sessionIdQP) localStorage.setItem('bb-session-id', sessionIdQP);
+                        if (studentIdQP) localStorage.setItem('bb-student-id', studentIdQP);
+                        if (conductedByQP) localStorage.setItem('bb-conducted-by', conductedByQP);
+                        if (sbUrlQP) localStorage.setItem('sb-url', sbUrlQP);
+                        if (sbAnonQP) localStorage.setItem('sb-anon-key', sbAnonQP);
+                    } catch (e) { console.warn('Query sync failed:', e); }
+
                     // localStorage'dan session bilgilerini al
                     const sessionId = localStorage.getItem('bb-session-id');
                     const studentId = localStorage.getItem('bb-student-id');
@@ -3114,6 +3109,8 @@
                
                // Cleanup
                testState.cleanup();
+               // Bayrağı set et: unload uyarısını bastır
+               window.__attentionTestCompleted = true;
                
                // Test sonuçlarını kaydet
                try {
@@ -3134,10 +3131,16 @@
                        };
                    }
                    
-                   console.log('✅ Dikkat testi tamamlandı, hafıza testine geçiliyor...');
+                   // sonraki teste geçiliyor
                    
-                   // Aynı pencerede hafıza testini yükle
-                   window.location.href = '../hafiza/hafiza.html';
+                   // Aynı pencerede hafıza testini yükle (query paramlarını taşı)
+                   try {
+                       const params = new URLSearchParams(window.location.search);
+                       const nextUrl = '../hafiza/hafiza.html' + (params.toString() ? ('?' + params.toString()) : '');
+                       window.location.href = nextUrl;
+                   } catch (_) {
+                       window.location.href = '../hafiza/hafiza.html';
+                   }
                    
                } catch (error) {
                    console.error('❌ Test completion hatası:', error);
@@ -3198,22 +3201,9 @@
                const autoSave = localStorage.getItem('attentionTestAutoSave');
                
                if (testStatus === 'interrupted' && incompleteData) {
-                   const data = JSON.parse(incompleteData);
-                   console.log(`⚠️ YARIDA KALMIŞ TEST BULUNDU:`);
-                   console.log(`📋 ${data.completedQuestions}/${data.totalQuestions} soru tamamlanmış`);
-                   console.log(`💾 Kayıt tarihi: ${data.savedAt}`);
-                   console.log(`🔄 Kesinti nedeni: ${data.interruptReason}`);
-                   
-                   // Console'da özet bilgi ver
-                   if (data.completedQuestions > 0) {
-                       const accuracy = Math.round((data.mainScore / data.mainTotal) * 100);
-                       console.log(`✅ Doğru cevaplar: ${data.mainScore}/${data.mainTotal} (${accuracy}%)`);
-                       console.log(`⏱️ Geçen süre: ${Math.round(data.testDuration / 1000)} saniye`);
-                   }
+                   // Yarım kalmış test bilgilerini artık loglamıyoruz (temiz ekran)
                } else if (testStatus === 'in_progress' && (progressSave || autoSave)) {
-                   console.log(`🔄 Devam eden test kayıtları bulundu (periyodik/otomatik kayıt)`);
-                   const data = JSON.parse(progressSave || autoSave);
-                   console.log(`📋 Son kayıt: ${data.currentQuestion}/50 soru`);
+                   // Devam eden test kayıtları log göstermiyoruz (temiz ekran)
                } else if (testStatus === 'completed') {
                    console.log(`✅ Son test başarıyla tamamlanmış`);
                } else {
@@ -3283,6 +3273,10 @@
        // Sayfa kapanma - UYARI VE ACİL KAYIT
        window.addEventListener('beforeunload', function(e) {
            try {
+               // Test tamamlandı bayrağı ile uyarıyı engelle
+               if (window.__attentionTestCompleted) {
+                   return;
+               }
                // Eğer test devam ediyorsa uyar ve kaydet
                if (testState.mainStartTime && testState.mainIndex > 0 && testState.mainIndex < TEST_DATA.mainQuestions.length) {
                    saveEmergencyData();
@@ -3300,46 +3294,11 @@
            }
        });
 
-       // Visibility change - pause/resume + ara kayıt
+       // Visibility change - akışı durdurma/başlatma yok, sadece log
        document.addEventListener('visibilitychange', function() {
-           if (document.hidden) {
-               // Sayfa gizlenince (tab değişimi, minimize, etc.)
-               if (testState.currentAudio) {
-                   testState.currentAudio.pause();
-               }
-               
-               // Test devam ediyorsa ara kayıt yap
-               if (testState.mainStartTime && testState.mainIndex > 0) {
-                   try {
-                       const autoSave = {
-                           type: 'auto_save',
-                           savedAt: new Date().toISOString(),
-                           currentQuestion: testState.mainIndex + 1, // 1-based
-                           completedQuestions: testState.mainIndex,
-                           mainAnswers: testState.mainAnswers,
-                           reactionTimes: testState.reactionTimes,
-                           questionTypeMistakes: testState.questionTypeMistakes,
-                           wrongSelections: testState.wrongSelections,
-                           testDuration: Date.now() - testState.mainStartTime,
-                           reason: 'visibility_hidden'
-                       };
-                       
-                       localStorage.setItem('attentionTestAutoSave', JSON.stringify(autoSave));
-                       console.log(`💾 Otomatik kayıt: ${testState.mainIndex}. soru`);
-                   } catch (e) {
-                       console.warn('Auto save failed:', e);
-                   }
-               }
-           } else {
-               // Sayfa tekrar görünür olunca
-               if (testState.currentAudio && testState.currentAudio.paused) {
-                   testState.currentAudio.play().catch(e => {
-                       console.warn('Resume audio failed:', e);
-                   });
-               }
-               
-               console.log('📱 Sayfa tekrar aktif');
-           }
+           console.log('👁️ Dikkat testi görünürlük:', document.hidden ? 'gizli' : 'görünür');
+           // Not: İstek gereği ses/timer/süre/akış kesintiye uğratılmıyor.
+           // Otomatik ara kayıt davranışı da görünürlük olayına bağlı değil.
        });
 
 

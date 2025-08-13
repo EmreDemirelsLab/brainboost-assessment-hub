@@ -72,9 +72,11 @@ export default function Reports() {
   const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
   const [selectedTest, setSelectedTest] = useState<string | null>(null);
   const [students, setStudents] = useState<any[]>([]);
+  const [studentTestCounts, setStudentTestCounts] = useState<{[key: string]: {burdon: number, d2: number, cognitive: number}}>({});
   const [burdonResults, setBurdonResults] = useState<BurdonTestResult[]>([]);
   const [d2Results, setD2Results] = useState<D2TestResult[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedResult, setSelectedResult] = useState<BurdonTestResult | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -136,6 +138,12 @@ export default function Reports() {
   }, [user?.currentRole, user?.id]); // Rol değişince yeniden çek
 
   useEffect(() => {
+    if (students.length > 0) {
+      fetchAllStudentTestCounts();
+    }
+  }, [students]);
+
+  useEffect(() => {
     if (selectedStudent && selectedTest === 'burdon') {
       console.log('Fetching burdon results for student:', selectedStudent.id);
       setLoading(true);
@@ -152,6 +160,53 @@ export default function Reports() {
       fetchModalData(selectedResultId);
     }
   }, [selectedResultId, modalOpen]);
+
+  const fetchAllStudentTestCounts = async () => {
+    const counts: {[key: string]: {burdon: number, d2: number, cognitive: number}} = {};
+    
+    // Tüm öğrenciler için paralel sorgu oluştur
+    const promises = students.map(async (student) => {
+      // Her öğrenci için 3 test tipini paralel sorgula
+      const [burdonResult, d2Result, cognitiveResult] = await Promise.all([
+        // Burdon test sayısı
+        supabase
+          .from('burdon_test_results')
+          .select('*', { count: 'exact', head: true })
+          .eq('student_id', student.id),
+        
+        // D2 test sayısı
+        supabase
+          .from('d2_test_results')
+          .select('*', { count: 'exact', head: true })
+          .eq('student_id', student.id),
+        
+        // Cognitive test sayısı
+        supabase
+          .from('cognitive_test_result' as any)
+          .select('*', { count: 'exact', head: true })
+          .eq('student_id', student.id)
+      ]);
+      
+      return {
+        studentId: student.id,
+        counts: {
+          burdon: burdonResult.count || 0,
+          d2: d2Result.count || 0,
+          cognitive: cognitiveResult.count || 0
+        }
+      };
+    });
+    
+    // Tüm öğrenci sorgularını paralel çalıştır
+    const results = await Promise.all(promises);
+    
+    // Sonuçları counts objesine dönüştür
+    results.forEach(result => {
+      counts[result.studentId] = result.counts;
+    });
+    
+    setStudentTestCounts(counts);
+  };
 
   const fetchStudents = async () => {
     try {
@@ -241,6 +296,7 @@ export default function Reports() {
       });
     } finally {
       setLoading(false);
+      setInitialLoading(false);
     }
   };
 
@@ -278,45 +334,37 @@ export default function Reports() {
 
       if (resultsError) throw resultsError;
 
-      // Sonra kullanıcı ve öğrenci bilgilerini ayrı ayrı al
-      const formattedResults: BurdonTestResult[] = [];
-      
-      for (const result of results || []) {
-        let studentName = 'Bilinmeyen Öğrenci';
-        let conductorName = 'Bilinmeyen Kullanıcı';
+      // Tüm kullanıcı bilgilerini paralel olarak al
+      const userIds = new Set<string>();
+      results?.forEach(result => {
+        if (result.student_id) userIds.add(result.student_id);
+        if (result.conducted_by) userIds.add(result.conducted_by);
+      });
 
-        // Öğrenci bilgisini al
-        if (result.student_id) {
-          const { data: studentData } = await supabase
-            .from('users')
-            .select('first_name, last_name')
-            .eq('id', result.student_id)
-            .single();
-          
-          if (studentData) {
-            studentName = `${studentData.first_name} ${studentData.last_name}`;
-          }
-        }
-
-        // Test yapan kişi bilgisini al
-        if (result.conducted_by) {
-          const { data: conductorData } = await supabase
-            .from('users')
-            .select('first_name, last_name')
-            .eq('id', result.conducted_by)
-            .single();
-          
-          if (conductorData) {
-            conductorName = `${conductorData.first_name} ${conductorData.last_name}`;
-          }
-        }
-
-        formattedResults.push({
-          ...result,
-          student_name: studentName,
-          conducted_by_name: conductorName
+      // Tüm unique kullanıcıları tek sorguda al
+      const userMap: Record<string, {first_name: string, last_name: string}> = {};
+      if (userIds.size > 0) {
+        const { data: usersData } = await supabase
+          .from('users')
+          .select('id, first_name, last_name')
+          .in('id', Array.from(userIds));
+        
+        usersData?.forEach(user => {
+          userMap[user.id] = { first_name: user.first_name, last_name: user.last_name };
         });
       }
+
+      // Sonuçları formatla
+      const formattedResults: BurdonTestResult[] = (results || []).map(result => {
+        const studentUser = userMap[result.student_id];
+        const conductorUser = userMap[result.conducted_by];
+        
+        return {
+          ...result,
+          student_name: studentUser ? `${studentUser.first_name} ${studentUser.last_name}` : 'Bilinmeyen Öğrenci',
+          conducted_by_name: conductorUser ? `${conductorUser.first_name} ${conductorUser.last_name}` : 'Bilinmeyen Kullanıcı'
+        };
+      });
 
       console.log('✅ Formatted burdon results:', formattedResults);
       setBurdonResults(formattedResults);
@@ -370,45 +418,37 @@ export default function Reports() {
 
       if (resultsError) throw resultsError;
 
-      // Sonra kullanıcı ve öğrenci bilgilerini ayrı ayrı al
-      const formattedResults: D2TestResult[] = [];
-      
-      for (const result of results || []) {
-        let studentName = 'Bilinmeyen Öğrenci';
-        let conductorName = 'Bilinmeyen Kullanıcı';
+      // Tüm kullanıcı bilgilerini paralel olarak al
+      const userIds = new Set<string>();
+      results?.forEach(result => {
+        if (result.student_id) userIds.add(result.student_id);
+        if (result.conducted_by) userIds.add(result.conducted_by);
+      });
 
-        // Öğrenci bilgisini al
-        if (result.student_id) {
-          const { data: studentData } = await supabase
-            .from('users')
-            .select('first_name, last_name')
-            .eq('id', result.student_id)
-            .single();
-          
-          if (studentData) {
-            studentName = `${studentData.first_name} ${studentData.last_name}`;
-          }
-        }
-
-        // Test yapan kişi bilgisini al
-        if (result.conducted_by) {
-          const { data: conductorData } = await supabase
-            .from('users')
-            .select('first_name, last_name')
-            .eq('id', result.conducted_by)
-            .single();
-          
-          if (conductorData) {
-            conductorName = `${conductorData.first_name} ${conductorData.last_name}`;
-          }
-        }
-
-        formattedResults.push({
-          ...result,
-          student_name: studentName,
-          conducted_by_name: conductorName
+      // Tüm unique kullanıcıları tek sorguda al
+      const userMap: Record<string, {first_name: string, last_name: string}> = {};
+      if (userIds.size > 0) {
+        const { data: usersData } = await supabase
+          .from('users')
+          .select('id, first_name, last_name')
+          .in('id', Array.from(userIds));
+        
+        usersData?.forEach(user => {
+          userMap[user.id] = { first_name: user.first_name, last_name: user.last_name };
         });
       }
+
+      // Sonuçları formatla
+      const formattedResults: D2TestResult[] = (results || []).map(result => {
+        const studentUser = userMap[result.student_id];
+        const conductorUser = userMap[result.conducted_by];
+        
+        return {
+          ...result,
+          student_name: studentUser ? `${studentUser.first_name} ${studentUser.last_name}` : 'Bilinmeyen Öğrenci',
+          conducted_by_name: conductorUser ? `${conductorUser.first_name} ${conductorUser.last_name}` : 'Bilinmeyen Kullanıcı'
+        };
+      });
 
       console.log('✅ Formatted D2 results:', formattedResults);
       setD2Results(formattedResults);
@@ -442,44 +482,37 @@ export default function Reports() {
 
       if (resultsError) throw resultsError;
 
-      const formattedResults = [];
-      
-      for (const result of results || []) {
-        let studentName = 'Bilinmeyen Öğrenci';
-        let conductorName = 'Bilinmeyen';
+      // Tüm kullanıcı bilgilerini paralel olarak al
+      const userIds = new Set<string>();
+      results?.forEach(result => {
+        if (result.student_id) userIds.add(result.student_id);
+        if (result.conducted_by) userIds.add(result.conducted_by);
+      });
 
-        // Öğrenci bilgisini al
-        if (result.student_id) {
-          const { data: studentData } = await supabase
-            .from('users')
-            .select('first_name, last_name')
-            .eq('id', result.student_id)
-            .single();
-          
-          if (studentData) {
-            studentName = `${studentData.first_name} ${studentData.last_name}`;
-          }
-        }
-
-        // Test yapan kişi bilgisini al
-        if (result.conducted_by) {
-          const { data: conductorData } = await supabase
-            .from('users')
-            .select('first_name, last_name')
-            .eq('id', result.conducted_by)
-            .single();
-          
-          if (conductorData) {
-            conductorName = `${conductorData.first_name} ${conductorData.last_name}`;
-          }
-        }
-
-        formattedResults.push({
-          ...result,
-          student_name: studentName,
-          conducted_by_name: conductorName
-        } as any);
+      // Tüm unique kullanıcıları tek sorguda al
+      const userMap: Record<string, {first_name: string, last_name: string}> = {};
+      if (userIds.size > 0) {
+        const { data: usersData } = await supabase
+          .from('users')
+          .select('id, first_name, last_name')
+          .in('id', Array.from(userIds));
+        
+        usersData?.forEach(user => {
+          userMap[user.id] = { first_name: user.first_name, last_name: user.last_name };
+        });
       }
+
+      // Sonuçları formatla
+      const formattedResults = (results || []).map(result => {
+        const studentUser = userMap[result.student_id];
+        const conductorUser = userMap[result.conducted_by];
+        
+        return {
+          ...result,
+          student_name: studentUser ? `${studentUser.first_name} ${studentUser.last_name}` : 'Bilinmeyen Öğrenci',
+          conducted_by_name: conductorUser ? `${conductorUser.first_name} ${conductorUser.last_name}` : 'Bilinmeyen'
+        } as any;
+      });
 
       console.log('✅ Formatted cognitive results:', formattedResults);
       setCognitiveResults(formattedResults);
@@ -499,42 +532,39 @@ export default function Reports() {
     try {
       setLoading(true);
       
-      // Burdon test sonucunu çek
-      const { data: testResult, error: testError } = await supabase
-        .from('burdon_test_results')
-        .select('*')
-        .eq('id', resultId)
-        .single();
+      // Tüm verileri paralel olarak çek
+      const [testResultResp, ...userResponses] = await Promise.all([
+        // Test sonucunu çek
+        supabase
+          .from('burdon_test_results')
+          .select('*')
+          .eq('id', resultId)
+          .single()
+      ]);
 
-      if (testError) throw testError;
+      if (testResultResp.error) throw testResultResp.error;
+      const testResult = testResultResp.data;
 
-      // Student bilgilerini çek
-      const { data: studentData, error: studentError } = await supabase
-        .from('users')
-        .select(`
-          id,
-          first_name,
-          last_name,
-          demographic_info
-        `)
-        .eq('id', testResult.student_id)
-        .single();
-
-      if (studentError) throw studentError;
-
-      // Supervisor/Trainer ismini çek
-      let trainerName = 'Beyin Antrenörü';
-      if (testResult.conducted_by) {
-        const { data: trainerData } = await supabase
+      // Öğrenci ve test yapan kişi bilgilerini paralel çek
+      const [studentResp, trainerResp] = await Promise.all([
+        supabase
           .from('users')
-          .select('first_name, last_name')
-          .eq('id', testResult.conducted_by)
-          .single();
-        
-        if (trainerData) {
-          trainerName = `${trainerData.first_name} ${trainerData.last_name}`;
-        }
-      }
+          .select('id, first_name, last_name, demographic_info')
+          .eq('id', testResult.student_id)
+          .single(),
+        testResult.conducted_by ? 
+          supabase
+            .from('users')
+            .select('first_name, last_name')
+            .eq('id', testResult.conducted_by)
+            .single()
+          : Promise.resolve({ data: null, error: null })
+      ]);
+
+      if (studentResp.error) throw studentResp.error;
+      const studentData = studentResp.data;
+      const trainerData = trainerResp.data;
+      const trainerName = trainerData ? `${trainerData.first_name} ${trainerData.last_name}` : 'Beyin Antrenörü';
 
       // Student verisini format et
       const demographicInfo = studentData.demographic_info as any;
@@ -587,7 +617,7 @@ export default function Reports() {
     try {
       setLoading(true);
       
-      // D2 test sonucunu çek
+      // Test sonucunu çek
       const { data: testResult, error: testError } = await supabase
         .from('d2_test_results')
         .select('*')
@@ -596,33 +626,26 @@ export default function Reports() {
 
       if (testError) throw testError;
 
-      // Student bilgilerini çek
-      const { data: studentData, error: studentError } = await supabase
-        .from('users')
-        .select(`
-          id,
-          first_name,
-          last_name,
-          demographic_info
-        `)
-        .eq('id', testResult.student_id)
-        .single();
-
-      if (studentError) throw studentError;
-
-      // Supervisor/Trainer ismini çek
-      let trainerName = 'Beyin Antrenörü';
-      if (testResult.conducted_by) {
-        const { data: trainerData } = await supabase
+      // Öğrenci ve test yapan kişi bilgilerini paralel çek
+      const [studentResp, trainerResp] = await Promise.all([
+        supabase
           .from('users')
-          .select('first_name, last_name')
-          .eq('id', testResult.conducted_by)
-          .single();
-        
-        if (trainerData) {
-          trainerName = `${trainerData.first_name} ${trainerData.last_name}`;
-        }
-      }
+          .select('id, first_name, last_name, demographic_info')
+          .eq('id', testResult.student_id)
+          .single(),
+        testResult.conducted_by ? 
+          supabase
+            .from('users')
+            .select('first_name, last_name')
+            .eq('id', testResult.conducted_by)
+            .single()
+          : Promise.resolve({ data: null, error: null })
+      ]);
+
+      if (studentResp.error) throw studentResp.error;
+      const studentData = studentResp.data;
+      const trainerData = trainerResp.data;
+      const trainerName = trainerData ? `${trainerData.first_name} ${trainerData.last_name}` : 'Beyin Antrenörü';
 
       // Student verisini format et
       const demographicInfo = studentData.demographic_info as any;
@@ -1239,27 +1262,7 @@ export default function Reports() {
     logout();
   };
 
-  if (loading) {
-    return (
-      <DashboardLayout
-        user={user ? {
-          name: `${user.firstName} ${user.lastName}`,
-          email: user.email,
-          roles: user.roles,
-          currentRole: user.currentRole,
-        } : undefined}
-        onRoleSwitch={handleRoleSwitch}
-        onLogout={handleLogout}
-      >
-        <div className="flex items-center justify-center h-64">
-          <div className="flex items-center space-x-3">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-            <div className="text-lg">Raporlar yükleniyor...</div>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
+  // Loading durumunu kaldırdık, artık sayfayı hep gösteriyoruz
 
   if (selectedResult) {
     return (
@@ -1466,35 +1469,113 @@ export default function Reports() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {filteredStudents.length === 0 ? (
+              {initialLoading ? (
+                <div className="text-center py-8">
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                    <span className="text-muted-foreground">Yükleniyor...</span>
+                  </div>
+                </div>
+              ) : filteredStudents.length === 0 ? (
                 <div className="text-center py-8">
                   <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground">Öğrenci bulunamadı.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredStudents.map((student) => (
-                    <Card 
-                      key={student.id} 
-                      className="cursor-pointer hover:shadow-lg transition-shadow"
-                      onClick={() => setSelectedStudent(student)}
-                    >
-                      <CardHeader>
-                        <CardTitle className="text-lg">{student.full_name}</CardTitle>
-                        <CardDescription>
-                          {student.student_number && `Öğrenci No: ${student.student_number}`}
-                          {student.grade_level && ` • ${student.grade_level}. Sınıf`}
-                          <br />
-                          <span className="text-xs text-muted-foreground">📧 {student.users?.email}</span>
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <Button variant="outline" className="w-full">
-                          Testleri Görüntüle
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ))}
+                <div className="space-y-2">
+                  {filteredStudents.map((student) => {
+                    const testCount = studentTestCounts[student.id] || { burdon: 0, d2: 0, cognitive: 0 };
+                    const hasAnyTest = testCount.burdon > 0 || testCount.d2 > 0 || testCount.cognitive > 0;
+                    
+                    return (
+                      <div
+                        key={student.id}
+                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/5 transition-all"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <span className="text-primary font-semibold">
+                              {student.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="font-medium">{student.full_name}</p>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              {student.student_number && !student.student_number.startsWith('STU') && <span>{student.student_number}</span>}
+                              {student.grade_level && <span>{student.student_number && !student.student_number.startsWith('STU') ? '• ' : ''}{student.grade_level}. Sınıf</span>}
+                              {hasAnyTest && (
+                                <span>
+                                  • {testCount.burdon + testCount.d2 + testCount.cognitive} test
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {testCount.burdon > 0 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedStudent(student);
+                                setSelectedTest('burdon');
+                              }}
+                              className="flex items-center gap-1.5"
+                            >
+                              <FileText className="h-3.5 w-3.5" />
+                              Burdon
+                              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                                {testCount.burdon}
+                              </Badge>
+                            </Button>
+                          )}
+                          {testCount.d2 > 0 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedStudent(student);
+                                setSelectedTest('d2');
+                              }}
+                              className="flex items-center gap-1.5"
+                            >
+                              <Search className="h-3.5 w-3.5" />
+                              D2
+                              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                                {testCount.d2}
+                              </Badge>
+                            </Button>
+                          )}
+                          {testCount.cognitive > 0 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                setSelectedStudent(student);
+                                await fetchCognitiveResults(student.id);
+                                setSelectedTest('cognitive');
+                              }}
+                              className="flex items-center gap-1.5"
+                            >
+                              <Brain className="h-3.5 w-3.5" />
+                              Bilişsel
+                              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                                {testCount.cognitive}
+                              </Badge>
+                            </Button>
+                          )}
+                          {!hasAnyTest && (
+                            <span className="text-sm text-muted-foreground italic">
+                              Henüz test yapılmamış
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
@@ -1504,101 +1585,7 @@ export default function Reports() {
     );
   }
 
-  // Test seçilmemişse test listesi göster
-  if (!selectedTest) {
-    return (
-      <DashboardLayout
-        user={user ? {
-          name: `${user.firstName} ${user.lastName}`,
-          email: user.email,
-          roles: user.roles,
-          currentRole: user.currentRole,
-        } : undefined}
-        onRoleSwitch={handleRoleSwitch}
-        onLogout={handleLogout}
-      >
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="outline" onClick={() => setSelectedStudent(null)}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Öğrenci Listesi
-              </Button>
-              <div>
-                <h1 className="text-3xl font-bold">{selectedStudent.full_name} - Test Raporları</h1>
-                <p className="text-muted-foreground">
-                  Hangi testin raporlarını görüntülemek istiyorsunuz?
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => {
-              console.log('Burdon card clicked for student:', selectedStudent.id);
-              setSelectedTest('burdon');
-            }}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Burdon Dikkat Testi
-                </CardTitle>
-                <CardDescription>
-                  Burdon dikkat testi sonuçlarını görüntüleyin ve analiz edin.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button variant="outline" className="w-full">
-                  Raporları Görüntüle
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => {
-              console.log('D2 card clicked for student:', selectedStudent.id);
-              setSelectedTest('d2');
-            }}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Search className="h-5 w-5" />
-                  D2 Konsantrasyon Testi
-                </CardTitle>
-                <CardDescription>
-                  D2 konsantrasyon testi sonuçlarını görüntüleyin ve analiz edin.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button variant="outline" className="w-full">
-                  Raporları Görüntüle
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={async () => {
-              console.log('Cognitive card clicked for student:', selectedStudent.id);
-              await fetchCognitiveResults(selectedStudent.id);
-              setSelectedTest('cognitive');
-            }}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Brain className="h-5 w-5" />
-                  Bilişsel Beceri Testi
-                </CardTitle>
-                <CardDescription>
-                  Kapsamlı bilişsel beceri testi sonuçlarını görüntüleyin ve analiz edin.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button variant="outline" className="w-full">
-                  Raporları Görüntüle
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
+  // Test seçim ekranını kaldırdık - artık direkt test sonuçlarına gidiyoruz
 
   // Burdon test seçildiyse
   if (selectedTest === 'burdon') {
@@ -1616,9 +1603,12 @@ export default function Reports() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="outline" onClick={() => setSelectedTest(null)}>
+            <Button variant="outline" onClick={() => {
+              setSelectedStudent(null);
+              setSelectedTest(null);
+            }}>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Test Seçimi
+              Öğrenci Listesi
             </Button>
             <div>
               <h1 className="text-3xl font-bold">{selectedStudent.full_name} - Burdon Test Raporları</h1>
@@ -1763,9 +1753,12 @@ export default function Reports() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button variant="outline" onClick={() => setSelectedTest(null)}>
+              <Button variant="outline" onClick={() => {
+                setSelectedStudent(null);
+                setSelectedTest(null);
+              }}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Test Seçimi
+                Öğrenci Listesi
               </Button>
               <div>
                 <h1 className="text-3xl font-bold">{selectedStudent.full_name} - D2 Test Raporları</h1>
@@ -1992,9 +1985,12 @@ export default function Reports() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button variant="outline" onClick={() => setSelectedTest(null)}>
+              <Button variant="outline" onClick={() => {
+                setSelectedStudent(null);
+                setSelectedTest(null);
+              }}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Test Seçimi
+                Öğrenci Listesi
               </Button>
               <div>
                 <h1 className="text-3xl font-bold">{selectedStudent.full_name} - Bilişsel Beceri Test Raporları</h1>

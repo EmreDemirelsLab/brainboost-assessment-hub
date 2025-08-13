@@ -82,7 +82,7 @@ function StudentsInner() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [students, setStudents] = useState<Student[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   
   // Modal states
   const [selectedUser, setSelectedUser] = useState<Student | null>(null);
@@ -297,24 +297,7 @@ function StudentsInner() {
     return <Badge variant="secondary" className="bg-success text-success-foreground">Aktif</Badge>;
   };
 
-  if (loading) {
-    return (
-      <DashboardLayout
-        user={user ? {
-          name: `${user.firstName} ${user.lastName}`,
-          email: user.email,
-          roles: user.roles,
-          currentRole: user.currentRole,
-        } : undefined}
-        onRoleSwitch={handleRoleSwitch}
-        onLogout={handleLogout}
-      >
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg">Öğrenciler yükleniyor...</div>
-        </div>
-      </DashboardLayout>
-    );
-  }
+  // Loading durumunda bile sayfayı göster, sadece tablo içeriğinde loading göster
 
   return (
     <DashboardLayout
@@ -400,27 +383,39 @@ function StudentsInner() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {filteredStudents.length === 0 ? (
-              <div className="text-center py-8">
-                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Öğrenci bulunamadı.</p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Ad Soyad</TableHead>
+                  <TableHead>Sınıf</TableHead>
+                  <TableHead>Okul</TableHead>
+                  <TableHead>Veli</TableHead>
+                  <TableHead>İletişim</TableHead>
+                  <TableHead>Durum</TableHead>
+                  <TableHead>İşlemler</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
                   <TableRow>
-                    <TableHead>Öğrenci No</TableHead>
-                    <TableHead>Ad Soyad</TableHead>
-                    <TableHead>Sınıf</TableHead>
-                    <TableHead>Okul</TableHead>
-                    <TableHead>Veli</TableHead>
-                    <TableHead>İletişim</TableHead>
-                    <TableHead>Durum</TableHead>
-                    <TableHead>İşlemler</TableHead>
+                    <TableCell colSpan={7} className="text-center py-8">
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                        <span className="text-muted-foreground">Yükleniyor...</span>
+                      </div>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredStudents.map((student) => {
+                ) : filteredStudents.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8">
+                      <div>
+                        <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground">Öğrenci bulunamadı.</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredStudents.map((student) => {
                     const demographicInfo = student.demographic_info || {};
                     const studentNumber = demographicInfo.student_number || `STU-${student.id.slice(-8)}`;
                     const birthDate = demographicInfo.birth_date || demographicInfo.date_of_birth;
@@ -432,9 +427,6 @@ function StudentsInner() {
                     
                     return (
                       <TableRow key={student.id}>
-                        <TableCell className="font-medium">
-                          {studentNumber}
-                        </TableCell>
                         <TableCell>
                           <div>
                             <div className="font-medium">
@@ -506,10 +498,10 @@ function StudentsInner() {
                       </TableCell>
                     </TableRow>
                   );
-                  })}
-                </TableBody>
-              </Table>
-            )}
+                  })
+                )}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
 

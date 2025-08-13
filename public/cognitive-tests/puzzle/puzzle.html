@@ -46,6 +46,27 @@
         }
 
         window.__initSupabase = function initSupabaseFromLocalStorage() {
+          // ÖNCE: URL parametrelerini localStorage'a senkronize et
+          try {
+            const url = new URL(window.location.href);
+            const qp = url.searchParams;
+            const sessionIdQP = qp.get('session_id');
+            const studentIdQP = qp.get('student_id');
+            const conductedByQP = qp.get('conducted_by');
+            const sbUrlQP = qp.get('sb_url');
+            const sbAnonQP = qp.get('sb_anon');
+            
+            if (sessionIdQP) localStorage.setItem('bb-session-id', sessionIdQP);
+            if (studentIdQP) localStorage.setItem('bb-student-id', studentIdQP);
+            if (conductedByQP) localStorage.setItem('bb-conducted-by', conductedByQP);
+            if (sbUrlQP) localStorage.setItem('sb-url', sbUrlQP);
+            if (sbAnonQP) localStorage.setItem('sb-anon-key', sbAnonQP);
+            
+            console.log('🔄 URL parametreleri localStorage\'a senkronize edildi');
+          } catch (e) {
+            console.warn('Query sync hatası:', e);
+          }
+          
           if (tryInit()) return;
 
           // Retry döngüsü
@@ -1418,6 +1439,72 @@
         const totalSteps = 57; // 3 + 4 + 4 + 4 + 4 + 4 + 9 + 9 + 16
         let completedSteps = 0;
         
+        // Görülmeyen parçaları hesapla (5 dakika dolduğunda)
+        function calculateUnansweredPieces() {
+            const totalPiecesPerTest = {
+                test1: 4, test2: 4, test3: 4, test4: 4, test5: 4,
+                test6: 6, test7: 9, test8: 9, test9: 16
+            };
+            
+            let totalUnanswered = 0;
+            
+            Object.keys(testResults).forEach(testKey => {
+                if (testKey === 'summary') return;
+                
+                const test = testResults[testKey];
+                if (test && totalPiecesPerTest[testKey]) {
+                    const expectedPieces = totalPiecesPerTest[testKey];
+                    const answeredPieces = test.questions ? test.questions.length : 0;
+                    const unansweredInTest = Math.max(0, expectedPieces - answeredPieces);
+                    
+                    if (unansweredInTest > 0) {
+                        console.log(`⏭️ ${testKey}: ${unansweredInTest} parça görülmedi (${answeredPieces}/${expectedPieces} tamamlandı)`);
+                        
+                        // Görülmeyen parçaları questions array'e ekle
+                        for (let i = 0; i < unansweredInTest; i++) {
+                            const roundNum = answeredPieces + i + 1;
+                            test.questions.push({
+                                round: roundNum,
+                                answered: false,
+                                isCorrect: false,
+                                responseTime: 0,
+                                timeoutOccurred: false,
+                                skippedDueToTimeLimit: true, // 5 dakika dolduğu için atlandı
+                                selectedElement: null,
+                                correctElement: null,
+                                timestamp: Date.now()
+                            });
+                        }
+                    }
+                    
+                    totalUnanswered += unansweredInTest;
+                }
+            });
+            
+            console.log(`📊 TOPLAM GÖRÜLMEYEN PARÇA: ${totalUnanswered}`);
+            return totalUnanswered;
+        }
+        
+        // Toplam cevapsız parça sayısını hesapla
+        function calculateTotalUnansweredPieces() {
+            let totalUnanswered = 0;
+            
+            Object.keys(testResults).forEach(testKey => {
+                if (testKey === 'summary') return;
+                
+                const test = testResults[testKey];
+                if (test && test.questions) {
+                    test.questions.forEach(q => {
+                        if (q.skippedDueToTimeLimit) {
+                            totalUnanswered++;
+                        }
+                    });
+                }
+            });
+            
+            return totalUnanswered;
+        }
+        
         // Progress Bar Değişkenleri
         let questionTimer = null;
         let totalTimer = null;
@@ -1731,18 +1818,17 @@
             return accuracy;
         }
 
-        // Ortalama tepki süresini hesapla (sadece doğru cevaplar için)
+        // Ortalama tepki süresini hesapla (tüm sorular: cevap yoksa 15s)
         function calculateAverageResponseTime(testName) {
             const test = testResults[testName];
             if (!test || !test.questions.length) return 0;
-            
-            const correctAnswers = test.questions.filter(q => q.isCorrect && !q.timeoutOccurred);
-            if (correctAnswers.length === 0) return 0;
-            
-            const totalTime = correctAnswers.reduce((sum, q) => sum + q.responseTime, 0);
-            const avgTime = totalTime / correctAnswers.length;
-            
-            console.log(`🕒 ${testName.toUpperCase()} ORTALAMA TEPKİ SÜRESİ: ${avgTime.toFixed(2)} saniye (${correctAnswers.length} doğru cevap)`);
+            const allResponses = test.questions.map(q => {
+                const rt = typeof q.responseTime === 'number' ? q.responseTime : 15; // saniye
+                return Math.max(0, rt);
+            });
+            const totalTime = allResponses.reduce((sum, v) => sum + v, 0);
+            const avgTime = totalTime / test.questions.length;
+            console.log(`🕒 ${testName.toUpperCase()} ORTALAMA TEPKİ SÜRESİ (tüm sorular): ${avgTime.toFixed(2)} saniye (${test.questions.length} soru)`);
             return avgTime;
         }
 
@@ -1766,29 +1852,28 @@
             
             let totalCorrect = 0;
             let totalQuestions = 0;
-            let totalResponseTime = 0;
-            let correctResponseCount = 0;
+            let totalResponseTime = 0; // saniye
+            let totalQuestionCount = 0;
             let totalTestDuration = 0;
             
             category.tests.forEach(testName => {
                 const test = testResults[testName];
                 if (test && test.questions.length > 0) {
                     const correctAnswers = test.questions.filter(q => q.isCorrect);
-                    const correctWithTime = correctAnswers.filter(q => !q.timeoutOccurred);
-                    
                     totalCorrect += correctAnswers.length;
                     totalQuestions += test.questions.length;
                     totalTestDuration += test.testDuration || 0;
-                    
-                    if (correctWithTime.length > 0) {
-                        totalResponseTime += correctWithTime.reduce((sum, q) => sum + q.responseTime, 0);
-                        correctResponseCount += correctWithTime.length;
-                    }
+                    // Tüm sorular: cevap yoksa 15s
+                    test.questions.forEach(q => {
+                        const rt = typeof q.responseTime === 'number' ? q.responseTime : 15;
+                        totalResponseTime += Math.max(0, rt);
+                        totalQuestionCount += 1;
+                    });
                 }
             });
             
             const accuracy = totalQuestions > 0 ? (totalCorrect / totalQuestions) * 100 : 0;
-            const avgResponseTime = correctResponseCount > 0 ? totalResponseTime / correctResponseCount : 0;
+            const avgResponseTime = totalQuestionCount > 0 ? totalResponseTime / totalQuestionCount : 0;
             
             console.log(`📈 ${category.description.toUpperCase()} İSTATİSTİKLERİ:`);
             console.log(`   📊 Doğruluk: ${totalCorrect}/${totalQuestions} = %${accuracy.toFixed(1)}`);
@@ -1820,8 +1905,8 @@
             let totalCorrect = 0;
             let totalWrong = 0;
             let totalTimeout = 0;
-            let totalResponseTime = 0;
-            let correctResponseCount = 0;
+            let totalResponseTime = 0; // saniye
+            let totalQuestionCount = 0;
             let totalTestDuration = 0;
             
             // Her test için verileri topla
@@ -1833,17 +1918,16 @@
                     test.questions.forEach(q => {
                         if (q.isCorrect) {
                             totalCorrect++;
-                            if (!q.timeoutOccurred) {
-                                totalResponseTime += q.responseTime;
-                                correctResponseCount++;
-                            }
+                        } else if (q.timeoutOccurred) {
+                            // Timeout olanları sadece timeout olarak say
+                            totalTimeout++;
                         } else {
+                            // Gerçekten yanlış cevaplananlar
                             totalWrong++;
                         }
-                        
-                        if (q.timeoutOccurred) {
-                            totalTimeout++;
-                        }
+                        const rt = typeof q.responseTime === 'number' ? q.responseTime : 15;
+                        totalResponseTime += Math.max(0, rt);
+                        totalQuestionCount += 1;
                     });
                     
                     totalTestDuration += test.testDuration || 0;
@@ -1855,10 +1939,15 @@
             summary.wrongPieces = totalWrong;
             summary.timeoutPieces = totalTimeout;
             summary.totalCompletionTime = totalTestDuration;
-            summary.averageResponseTime = correctResponseCount > 0 ? totalResponseTime / correctResponseCount : 0;
+            summary.averageResponseTime = totalQuestionCount > 0 ? totalResponseTime / totalQuestionCount : 0;
             
             // Genel doğruluk yüzdesi
             summary.overallAccuracy = summary.totalPieces > 0 ? (totalCorrect / summary.totalPieces) * 100 : 0;
+            
+            // totalMissed = timeout olanlar + hiç görülmeyenler
+            const unansweredCount = calculateTotalUnansweredPieces();
+            summary.totalMissed = totalTimeout + unansweredCount;
+            console.log(`📊 totalMissed hesaplaması: ${totalTimeout} timeout + ${unansweredCount} unanswered = ${summary.totalMissed}`);
             
             // Kategori bazlı skorları hesapla
             const fourPieceStats = calculateCategoryStats('fourPiece');
@@ -1988,7 +2077,7 @@
              
              console.log(`\n🧩 ${testName} - PARÇA ${roundNumber} SONUCU:`);
              console.log(`   ✅ Doğru mu: ${resultText}`);
-             console.log(`   ⏱️ Tepki Süresi: ${responseTime.toFixed(0)}ms (${(responseTime/1000).toFixed(2)}s)`);
+             console.log(`   ⏱️ Tepki Süresi: ${responseTime.toFixed(2)} saniye`);
              console.log(`   🎯 Tıklanan Parça: ${roundNumber} (${pieceId})`);
              console.log(`   📊 Test İlerlemesi: ${currentData ? currentData.correct : 0}/${testType.pieces} doğru`);
              console.log(`   📈 Anlık Doğruluk: %${currentData ? currentData.accuracy.toFixed(1) : 0}`);
@@ -2119,7 +2208,7 @@
             console.log(`   ✅ Doğru Cevaplar: ${test.correct}/${test.totalPieces}`);
             console.log(`   ❌ Yanlış Cevaplar: ${test.wrong}/${test.totalPieces}`);
             console.log(`   📈 Doğruluk Oranı: %${test.accuracy.toFixed(1)}`);
-            console.log(`   ⏱️ Ortalama Tepki Süresi: ${test.averageResponseTime.toFixed(0)}ms`);
+            console.log(`   ⏱️ Ortalama Tepki Süresi: ${test.averageResponseTime.toFixed(2)} saniye`);
             console.log(`   ⏰ TEST SÜRESİ: ${(test.duration / 1000).toFixed(2)} saniye`);
             console.log(`   📅 Başlangıç: ${new Date(test.startTime).toLocaleTimeString()}`);
             console.log(`   🏁 Bitiş: ${new Date(test.endTime).toLocaleTimeString()}`);
@@ -2127,15 +2216,13 @@
             // Parça detayları - UI sırasına göre
             console.log(`\n📋 ${testId.toUpperCase()} PARÇA DETAYLARI:`);
             
-            // Parçaları UI sırasına göre sıralayalım
+            // Parçaları round numarasına göre sıralayalım
             const sortedPieces = Object.values(test.pieces).sort((a, b) => {
-                // Piece ID'den round numarası çıkar ve sırala
-                const aRound = getPieceNumber(testId, a.pieceId);
-                const bRound = getPieceNumber(testId, b.pieceId);
-                return aRound - bRound;
+                // Round numarasına göre sırala
+                return (a.roundNumber || 0) - (b.roundNumber || 0);
             });
             
-            sortedPieces.forEach((piece, index) => {
+            sortedPieces.forEach((piece) => {
                 let status, statusText;
                 if (piece.isTimeout) {
                     status = '⏰';
@@ -2148,9 +2235,8 @@
                     statusText = 'Yanlış';
                 }
                 
-                const attempts = piece.attempts > 1 ? ` (${piece.attempts} deneme)` : '';
-                const pieceNumber = index + 1; // UI sırası (1, 2, 3, 4...)
-                console.log(`   ${status} Parça ${pieceNumber} (${piece.pieceId}): ${piece.responseTime.toFixed(0)}ms${attempts} - ${statusText}`);
+                const pieceNumber = piece.roundNumber || 0; // Round numarası
+                console.log(`   ${status} Parça ${pieceNumber} (${piece.pieceId}): ${piece.responseTime.toFixed(2)} saniye - ${statusText}`);
             });
             
             // Excel kategorisine göre özel bilgi
@@ -2185,13 +2271,6 @@
             
             // Sadece question timer'ı durdur, alttaki progress bar çalışmaya devam etsin
             stopQuestionTimer();
-            
-            // Önceki test'in veri kaydını bitir
-            const previousSection = sections[currentSection];
-            if (previousSection && previousSection.includes('test') && previousSection !== 'test-preparation-screen' && previousSection !== 'test-completion-screen') {
-                const testId = previousSection.replace('-section', '');
-                onTestComplete(testId);
-            }
             
             document.getElementById(sections[currentSection]).classList.remove('active');
             currentSection++;
@@ -2628,6 +2707,9 @@
                 gameActive = true;
                 roundStartTime = Date.now(); // Round başlangıç zamanını kaydet
                 
+                // Parça timer'ını başlat (tepki süresi için)
+                startPieceTimer();
+                
                 // Soru timer'ını başlat
                 startQuestionTimer(1);
                 
@@ -2846,17 +2928,29 @@
                 // Sonucu göster - her zaman yeşil
                 event.target.classList.add('correct');
                 gameActive = false;
+				completedSteps++;
                 
                 // Sonraki parçaya geç
                 setTimeout(() => {
                     event.target.classList.remove('correct');
+                    currentRound++;
                     
-                    // proceedToNextRound fonksiyonu round artırma işlemini yapacak
-                    proceedToNextRound(2);
+                    // Global değişkeni senkronize et (timeout için)
+                    testResults.test2.currentRound = currentRound;
+                    
+                    if (currentRound <= test2Rules.length) {
+                        startRound(currentRound);
+                    } else {
+                        // Test 2 tamamlandı, veri kaydını bitir
+                        onTestComplete('test2');
+                        setTimeout(() => {
+                            nextSection();
+                        }, 1000);
+                    }
                 }, 1500);
             }
             
-            // Global fonksiyon olarak tanımla (proceedToNextRound için)
+            // Global fonksiyon olarak tanımla (timeout/proceedToNextRound için)
             window.test2StartNextRound = function() {
                 // Local currentRound'u global ile senkronize et
                 currentRound = testResults.test2.currentRound;
@@ -2876,6 +2970,9 @@
                 gameActive = true;
                 roundStartTime = Date.now(); // Round başlangıç zamanını kaydet
                 
+                // Parça timer'ını başlat (tepki süresi için)
+                startPieceTimer();
+                
                 // Soru timer'ını başlat
                 startQuestionTimer(2);
                 
@@ -2892,17 +2989,7 @@
                 }
             }
             
-            // Global fonksiyon - timeout durumunda çağrılacak
-            window.test2StartNextRound = function() {
-                // Test 2 round'larını güncellemeli ama testResults'taki currentRound zaten artırıldı
-                currentRound = testResults.test2.currentRound;
-                
-                if (currentRound <= test2Rules.length) {
-                    startRound(currentRound);
-                } else {
-                                            // Test 2 tamamlandı, zaten nextSection çağrılacak
-                }
-            };
+            
             
             // Test 2 başlat
             initGame();
@@ -3095,7 +3182,8 @@
                     if (currentRound <= test3Rules.length) {
                         startRound(currentRound);
                     } else {
-                        // Test 3 tamamlandı, sonraki bölüme geç
+                        // Test 3 tamamlandı, veri kaydını bitir
+                        onTestComplete('test3');
                         setTimeout(() => {
                             nextSection();
                         }, 1000);
@@ -3106,6 +3194,9 @@
             function startRound(roundNumber) {
                 gameActive = true;
                 roundStartTime = Date.now(); // Round başlangıç zamanını kaydet
+                
+                // Parça timer'ını başlat (tepki süresi için)
+                startPieceTimer();
                 
                 // Soru timer'ını başlat
                 startQuestionTimer(3);
@@ -3321,7 +3412,8 @@
                     if (currentRound <= test4Rules.length) {
                         startRound(currentRound);
                     } else {
-                        // Test 4 tamamlandı, sonraki bölüme geç
+                        // Test 4 tamamlandı, veri kaydını bitir
+                        onTestComplete('test4');
                         setTimeout(() => {
                             nextSection();
                         }, 1000);
@@ -3332,6 +3424,9 @@
             function startRound(roundNumber) {
                 gameActive = true;
                 roundStartTime = Date.now(); // Round başlangıç zamanını kaydet
+                
+                // Parça timer'ını başlat (tepki süresi için)
+                startPieceTimer();
                 
                 // Soru timer'ını başlat
                 startQuestionTimer(4);
@@ -3456,7 +3551,8 @@
                     if (currentRound <= totalRounds) {
                         showCurrentRound();
                     } else {
-                        // Test 5 tamamlandı, sonraki bölüme geç
+                        // Test 5 tamamlandı, veri kaydını bitir
+                        onTestComplete('test5');
                         setTimeout(() => {
                             nextSection();
                         }, 1000);
@@ -3468,6 +3564,9 @@
             function showCurrentRound() {
                 gameActive = true;
                 roundStartTime = Date.now(); // Round başlangıç zamanını kaydet
+                
+                // Parça timer'ını başlat (tepki süresi için)
+                startPieceTimer();
                 
                 // Soru timer'ını başlat
                 startQuestionTimer(5);
@@ -3627,7 +3726,8 @@
                     if (currentRound <= test6Rules.length) {
                         startRound(currentRound);
                     } else {
-                        // Test 6 tamamlandı, sonraki bölüme geç
+                        // Test 6 tamamlandı, veri kaydını bitir
+                        onTestComplete('test6');
                         setTimeout(() => {
                             completedSteps += 6;
                             nextSection();
@@ -3639,6 +3739,9 @@
             function startRound(roundNumber) {
                 gameActive = true;
                 roundStartTime = Date.now(); // Round başlangıç zamanını kaydet
+                
+                // Parça timer'ını başlat (tepki süresi için)
+                startPieceTimer();
                 
                 // Soru timer'ını başlat
                 startQuestionTimer(6);
@@ -3775,7 +3878,8 @@
                     if (currentRound <= test7Rules.length) {
                         startRound(currentRound);
                     } else {
-                        // Test 7 tamamlandı
+                        // Test 7 tamamlandı, veri kaydını bitir
+                        onTestComplete('test7');
                         setTimeout(() => {
                             completedSteps += 9;
                             nextSection();
@@ -3787,6 +3891,9 @@
             function startRound(roundNumber) {
                 gameActive = true;
                 roundStartTime = Date.now(); // Round başlangıç zamanını kaydet
+                
+                // Parça timer'ını başlat (tepki süresi için)
+                startPieceTimer();
                 
                 // Soru timer'ını başlat
                 startQuestionTimer(7);
@@ -3916,7 +4023,8 @@
                     if (currentRound <= test8Rules.length) {
                         startRound(currentRound);
                     } else {
-                        // Test 8 tamamlandı
+                        // Test 8 tamamlandı, veri kaydını bitir
+                        onTestComplete('test8');
                         setTimeout(() => {
                             completedSteps += 9;
                             nextSection();
@@ -3928,6 +4036,9 @@
             function startRound(roundNumber) {
                 gameActive = true;
                 roundStartTime = Date.now(); // Round başlangıç zamanını kaydet
+                
+                // Parça timer'ını başlat (tepki süresi için)
+                startPieceTimer();
                 
                 // Soru timer'ını başlat
                 startQuestionTimer(8);
@@ -4077,6 +4188,9 @@
             function startRound(roundNumber) {
                 gameActive = true;
                 roundStartTime = Date.now(); // Round başlangıç zamanını kaydet
+                
+                // Parça timer'ını başlat (tepki süresi için)
+                startPieceTimer();
                 
                 // Soru timer'ını başlat
                 startQuestionTimer(9);
@@ -4263,8 +4377,8 @@
             // Yeni veri sistemi ile timeout durumunu kaydet
             if (correctElement) {
                 console.log(`🔍 DEBUG TIMEOUT: testKey=${testKey}, correctElement=${correctElement}, timeoutRound=${timeoutRound}`);
-                recordPieceClick(testKey, correctElement, false, 15000, true); // isTimeout = true
-                logQuestionResultWithRound(testKey, correctElement, false, 15000, timeoutRound, true); // isTimeout = true
+                recordPieceClick(testKey, correctElement, false, 15, true); // 15 saniye timeout (saniye cinsinden)
+                logQuestionResultWithRound(testKey, correctElement, false, 15, timeoutRound, true); // 15 saniye timeout
             } else {
                 console.log(`❌ DEBUG TIMEOUT: correctElement bulunamadı! testKey=${testKey}, testNum=${testNum}, timeoutRound=${timeoutRound}`);
                 console.log(`❌ testRules[${testNum}]:`, testRules[testNum]);
@@ -4277,7 +4391,7 @@
             
             
             // Test tamamlandı mı kontrol et
-            if (testResults[testKey].currentRound > testResults[testKey].totalRounds) {
+            if (testResults[testKey].currentRound >= testResults[testKey].totalRounds) {
 
                 // Test tamamlandı, veri kaydını bitir
                 onTestComplete(testKey);
@@ -4315,22 +4429,26 @@
             // Round sayısını artır
             currentTest.currentRound++;
             
-            // Test tamamlandı mı kontrol et
+            // Test tamamlanmadıysa timer'ı başlat
+            if (currentTest.currentRound <= currentTest.totalRounds) {
+                // ÖNEMLİ: Yeni round için tepki süresini sıfırla
+                startPieceTimer();
+            }
+            
+            // Eğer test bitti ise tamamla ve sonraki bölüme geç
             if (currentTest.currentRound > currentTest.totalRounds) {
-                // Test tamamlandı, veri kaydını bitir
                 onTestComplete(testKey);
-                
-                // Sonraki test'e geç
                 if (testNum < 9) {
-                    nextSection();
+                    setTimeout(() => {
+                        nextSection();
+                    }, 1000);
                 } else {
-                    showTestCompletion();
+                    setTimeout(() => {
+                        showTestCompletion();
+                    }, 1000);
                 }
                 return;
             }
-            
-            // Aynı testte sonraki round'a geç
-
             
             // Test'e özel sonraki round başlatma mantığı
             if (testNum === 1) {
@@ -4383,12 +4501,39 @@
         
         function handleTotalTimeout() {
             // 5 dakika doldu - testi bitir
-            console.log('🔴 Toplam test süresi doldu, test bitiriliyok');
+            console.log('🔴 Toplam test süresi doldu, test bitiriliyor');
+            console.log('⏰ Mevcut test durumu:', {
+                currentSection: currentSection,
+                currentTest: getCurrentTestFromSection(currentSection),
+                currentRound: testResults[`test${getCurrentTestFromSection(currentSection)}`]?.currentRound
+            });
+            
+            // Tüm timer'ları durdur
             stopQuestionTimer();
             stopTotalTimer();
             
-            // Test completion screen'a git
+            // Geçerli test tamamlanmış olarak işaretle
+            const currentTest = getCurrentTestFromSection(currentSection);
+            if (currentTest > 0) {
+                const testKey = `test${currentTest}`;
+                if (testData.tests[testKey]) {
+                    onTestComplete(testKey);
+                }
+            }
+            
+            // Test completion screen'a git ve DURDUR
             showTestCompletion();
+            
+            // Otomatik yönlendirme KALDIRILDI: Kullanıcı 'Testi Tamamladınız' ekranından İleri ile geçecek
+        }
+        
+        // Hangi testte olduğumuzu section'dan bul
+        function getCurrentTestFromSection(section) {
+            // section 6 = test1, section 7 = test2, ..., section 14 = test9
+            if (section >= 6 && section <= 14) {
+                return section - 5;
+            }
+            return 0;
         }
         
         function resetTimersForNewTest() {
@@ -4847,9 +4992,19 @@
                 progressContainer.style.display = 'none';
             }
             
-            // Genel sonuçları hesapla ve logla
-            updateOverallStatistics();
+            // 5 dakika dolmuşsa görülmeyen parçaları hesapla
+            calculateUnansweredPieces();
+            
+            // Genel sonuçları hesapla ve logla (totalMissed dahil)
+            updateSummaryStats();
             displayTestResults();
+            
+            // Veriyi global olarak erişilebilir yap
+            window.puzzleTestResults = generateExcelData();
+            
+            // 🚀 SUPABASE'E KAYDET (Test completion'da)
+            console.log('💾 Test tamamlandı, Supabase\'e kaydediliyor...');
+            savePuzzleTestToSupabase();
             
             // TÜM test section'larını kapat (sadece test9 değil)
             document.querySelectorAll('.puzzle-section').forEach(section => {
@@ -4919,8 +5074,14 @@
                 
                 console.log('✅ Puzzle testi tamamlandı, akıl mantık testine geçiliyor...');
                 
-                // Aynı pencerede akıl mantık testini yükle
-                window.location.href = '../akil-mantik/akil-mantik.html';
+                // Aynı pencerede akıl mantık testini yükle (query paramlarını taşı)
+                try {
+                    const params = new URLSearchParams(window.location.search);
+                    const nextUrl = '../akil-mantik/akil-mantik.html' + (params.toString() ? ('?' + params.toString()) : '');
+                    window.location.href = nextUrl;
+                } catch (_) {
+                    window.location.href = '../akil-mantik/akil-mantik.html';
+                }
                 
             } catch (error) {
                 console.error('❌ Test completion hatası:', error);
@@ -4948,6 +5109,37 @@
         
         // Sayfa yüklendiğinde title screen göster
         window.addEventListener('DOMContentLoaded', () => {
+            // URL parametrelerini localStorage'a senkronize et (backup)
+            try {
+                const url = new URL(window.location.href);
+                const qp = url.searchParams;
+                const sessionIdQP = qp.get('session_id');
+                const studentIdQP = qp.get('student_id');
+                const conductedByQP = qp.get('conducted_by');
+                const sbUrlQP = qp.get('sb_url');
+                const sbAnonQP = qp.get('sb_anon');
+                
+                if (sessionIdQP) localStorage.setItem('bb-session-id', sessionIdQP);
+                if (studentIdQP) localStorage.setItem('bb-student-id', studentIdQP);
+                if (conductedByQP) localStorage.setItem('bb-conducted-by', conductedByQP);
+                if (sbUrlQP) localStorage.setItem('sb-url', sbUrlQP);
+                if (sbAnonQP) localStorage.setItem('sb-anon-key', sbAnonQP);
+                
+                console.log('🔄 DOMContentLoaded: URL parametreleri localStorage\'a senkronize edildi');
+                
+                // Eğer URL'den parametreler gelmişse ve henüz session yoksa, otomatik başlat
+                if (sessionIdQP && studentIdQP && !window.puzzleTestStarted) {
+                    console.log('🚀 URL parametreleri ile otomatik test başlatılıyor...');
+                    window.puzzleTestStarted = true;
+                    
+                    // Test verilerini başlat
+                    testData.userId = studentIdQP;
+                    testData.testStartTime = Date.now();
+                }
+            } catch (e) {
+                console.warn('DOMContentLoaded Query sync hatası:', e);
+            }
+            
             // Title screen zaten aktif
         });
 
@@ -5022,15 +5214,19 @@
 
             const test = testData.tests[testId];
             
-            // Parça verilerini kaydet
-            test.pieces[pieceId] = {
+            // Her round için unique bir key oluştur (round-1, round-2, vs.)
+            const roundKey = `round-${Object.keys(test.pieces).length + 1}`;
+            
+            // Parça verilerini round key ile kaydet
+            test.pieces[roundKey] = {
                 pieceId: pieceId,
+                roundNumber: Object.keys(test.pieces).length + 1,
                 clickTime: Date.now(),
                 responseTime: responseTime,
                 isCorrect: isCorrect,
                 isTimeout: isTimeout, // Timeout durumu
                 answered: !isTimeout, // Timeout ise cevaplamadı
-                attempts: (test.pieces[pieceId]?.attempts || 0) + 1
+                attempts: 1
             };
 
             // Test istatistiklerini güncelle
@@ -5045,22 +5241,24 @@
             let correct = 0;
             let wrong = 0;
             let totalResponseTime = 0;
-            let validResponses = 0;
+            let responseCount = 0;
 
             Object.values(test.pieces).forEach(piece => {
                 if (piece.isCorrect) {
                     correct++;
-                    totalResponseTime += piece.responseTime;
-                    validResponses++;
                 } else {
                     wrong++;
                 }
+                // Tüm parçaların tepki süresini dahil et (timeout dahil)
+                totalResponseTime += piece.responseTime || 0;
+                responseCount++;
             });
 
             test.correct = correct;
             test.wrong = wrong;
             test.accuracy = test.totalPieces > 0 ? (correct / test.totalPieces) * 100 : 0;
-            test.averageResponseTime = validResponses > 0 ? totalResponseTime / validResponses : 0;
+            // Tüm soruların ortalamasını al (cevap verilmeyen 15 saniye dahil)
+            test.averageResponseTime = responseCount > 0 ? totalResponseTime / responseCount : 0;
         }
 
         // Test başlangıcını kaydet
@@ -5082,6 +5280,12 @@
         function finishTestRecording(testId) {
             const test = testData.tests[testId];
             if (!test) return;
+            
+            // Test zaten tamamlanmışsa tekrar işleme yapma
+            if (test.completed) {
+                console.log(`⚠️ Test ${testId} zaten tamamlanmış, tekrar işlem yapılmıyor`);
+                return;
+            }
             
             test.endTime = Date.now();
             test.duration = test.endTime - test.startTime;
@@ -5138,25 +5342,27 @@
                     }
                     
                     Object.values(test.pieces).forEach(piece => {
+                        // Tüm parçaların tepki süresini dahil et (timeout dahil)
+                        totalResponseTime += piece.responseTime || 0;
+                        validResponses++;
+                        
                         if (piece.isCorrect) {
-                            totalResponseTime += piece.responseTime;
-                            validResponses++;
                             correctTimes.push(piece.responseTime);
-                            
-                            // Kategori bazlı tepki süreleri
-                            if (testType.category === '4piece') {
-                                fourPieceResponseTime += piece.responseTime;
-                                fourPieceValidResponses++;
-                            } else if (testType.category === '6piece') {
-                                sixPieceResponseTime += piece.responseTime;
-                                sixPieceValidResponses++;
-                            } else if (testType.category === '9piece') {
-                                ninePieceResponseTime += piece.responseTime;
-                                ninePieceValidResponses++;
-                            } else if (testType.category === '16piece') {
-                                sixteenPieceResponseTime += piece.responseTime;
-                                sixteenPieceValidResponses++;
-                            }
+                        }
+                        
+                        // Kategori bazı tepki süreleri (tüm parçalar için)
+                        if (testType.category === '4piece') {
+                            fourPieceResponseTime += piece.responseTime || 0;
+                            fourPieceValidResponses++;
+                        } else if (testType.category === '6piece') {
+                            sixPieceResponseTime += piece.responseTime || 0;
+                            sixPieceValidResponses++;
+                        } else if (testType.category === '9piece') {
+                            ninePieceResponseTime += piece.responseTime || 0;
+                            ninePieceValidResponses++;
+                        } else if (testType.category === '16piece') {
+                            sixteenPieceResponseTime += piece.responseTime || 0;
+                            sixteenPieceValidResponses++;
                         }
                     });
                 }
@@ -5251,7 +5457,7 @@
                     userId: testData.userId || 'Anonymous',
                     testDate: new Date().toISOString(),
                     totalDuration: (testData.testEndTime || 0) - (testData.testStartTime || 0),
-                    totalTests: Object.keys(testData.tests).length
+                    totalTests: Object.keys(testData.tests).filter(id => id !== 'practice').length
                 },
                 
                 // Test Kategorileri
@@ -5297,8 +5503,8 @@
                 // Detaylı Test Verileri
                 detailedResults: {},
                 
-                // Özet İstatistikler (updateOverallStatistics ile dolu)
-                summary: testData.summary,
+                // Özet İstatistikler - testResults.summary'yi kullan (totalMissed dahil)
+                summary: {...testData.summary, ...testResults.summary},
 
                 // Ek Analitik JSON Alanları
                 detailedResponses: [],           // normalize edilmiş tüm parça kayıtları
@@ -5312,20 +5518,21 @@
                 const category = excelData.categories[categoryKey];
                 let categoryCorrect = 0;
                 let categoryWrong = 0;
-                let categoryTotalTime = 0;
-                let categoryValidResponses = 0;
+                let categoryTotalDuration = 0;
+                let categoryResponseTimeSum = 0;
+                let categoryResponseCount = 0;
 
                 category.tests.forEach(testId => {
                     const test = testData.tests[testId];
                     if (test && test.completed) {
                         categoryCorrect += test.correct;
                         categoryWrong += test.wrong;
-                        categoryTotalTime += test.duration;
+                        categoryTotalDuration += test.duration;
                         
+                        // Her parçanın tepki süresini topla (saniye cinsinden)
                         Object.values(test.pieces).forEach(piece => {
-                            if (piece.isCorrect) {
-                                categoryValidResponses++;
-                            }
+                            categoryResponseTimeSum += piece.responseTime || 0;
+                            categoryResponseCount++;
                         });
                     }
                 });
@@ -5333,12 +5540,14 @@
                 category.correctAnswers = categoryCorrect;
                 category.wrongAnswers = categoryWrong;
                 category.accuracy = category.totalPieces > 0 ? (categoryCorrect / category.totalPieces) * 100 : 0;
-                category.averageTime = categoryValidResponses > 0 ? categoryTotalTime / categoryValidResponses : 0;
-                category.totalDuration = categoryTotalTime; // Kategori toplam süresi
+                // Ortalama tepki süresini saniye cinsinden hesapla
+                category.averageTime = categoryResponseCount > 0 ? categoryResponseTimeSum / categoryResponseCount : 0;
+                category.totalDuration = categoryTotalDuration; // Kategori toplam süresi
             });
 
             // 2) Detaylı test verilerini ekle
             Object.keys(testData.tests).forEach(testId => {
+                if (testId === 'practice') return; // Örnek uygulamayı hariç tut
                 const test = testData.tests[testId];
                 excelData.detailedResults[testId] = {
                     testType: test.testType.type,
@@ -5358,6 +5567,7 @@
             const perRoundSeries = []; // zaman serisi için sıralı dizi
 
             Object.keys(testData.tests).forEach(testId => {
+                if (testId === 'practice') return; // Örnek uygulamayı hariç tut
                 const test = testData.tests[testId];
                 if (!test || !test.pieces) return;
                 let roundCounter = 0;
@@ -5432,7 +5642,10 @@
             };
 
             // Test sırasına göre doğruluk listesi
-            const testOrderTrend = Object.keys(testData.tests).sort().map(testId => {
+            const testOrderTrend = Object.keys(testData.tests)
+                .filter(testId => testId !== 'practice')
+                .sort()
+                .map(testId => {
                 const t = testData.tests[testId];
                 return {
                     testId,
@@ -5501,7 +5714,7 @@
             console.log(`   ✅ Toplam Doğru: ${results.summary.totalCorrect}/${results.summary.totalPieces}`);
             console.log(`   ❌ Toplam Yanlış: ${results.summary.totalWrong}/${results.summary.totalPieces}`);
             console.log(`   📈 Genel Başarı Oranı: %${results.summary.overallAccuracy.toFixed(1)}`);
-            console.log(`   ⏱️ Ortalama Tepki Süresi: ${results.summary.averageResponseTime.toFixed(0)}ms`);
+            console.log(`   ⏱️ Ortalama Tepki Süresi: ${results.summary.averageResponseTime.toFixed(2)} saniye`);
             
             console.log('\n📦 KATEGORİ BAZLI SONUÇLAR (EXCEL FORMAT):');
             
@@ -5510,7 +5723,7 @@
             console.log(`   🔲 4 PARÇALI PUZZLELAR (Dörtparçalı):`);
             console.log(`      ✅ Doğru: ${fourPiece.correctAnswers}/${fourPiece.totalPieces}`);
             console.log(`      📈 Başarı: %${fourPiece.accuracy.toFixed(1)}`);
-            console.log(`      ⏱️ Ortalama Tepki: ${fourPiece.averageTime.toFixed(0)}ms`);
+            console.log(`      ⏱️ Ortalama Tepki: ${fourPiece.averageTime.toFixed(2)} saniye`);
             console.log(`      ⏰ Toplam Süre: ${(fourPiece.totalDuration / 1000).toFixed(2)}s`);
             console.log(`      🧩 Testler: ${fourPiece.tests.join(', ')}`);
             
@@ -5519,7 +5732,7 @@
             console.log(`   🔷 6 PARÇALI PUZZLE (Altıparçalı):`);
             console.log(`      ✅ Doğru: ${sixPiece.correctAnswers}/${sixPiece.totalPieces}`);
             console.log(`      📈 Başarı: %${sixPiece.accuracy.toFixed(1)}`);
-            console.log(`      ⏱️ Ortalama Tepki: ${sixPiece.averageTime.toFixed(0)}ms`);
+            console.log(`      ⏱️ Ortalama Tepki: ${sixPiece.averageTime.toFixed(2)} saniye`);
             console.log(`      ⏰ Toplam Süre: ${(sixPiece.totalDuration / 1000).toFixed(2)}s`);
             console.log(`      🧩 Testler: ${sixPiece.tests.join(', ')}`);
             
@@ -5528,7 +5741,7 @@
             console.log(`   🔳 9 PARÇALI PUZZLELAR (Dokuzparçalı):`);
             console.log(`      ✅ Doğru: ${ninePiece.correctAnswers}/${ninePiece.totalPieces}`);
             console.log(`      📈 Başarı: %${ninePiece.accuracy.toFixed(1)}`);
-            console.log(`      ⏱️ Ortalama Tepki: ${ninePiece.averageTime.toFixed(0)}ms`);
+            console.log(`      ⏱️ Ortalama Tepki: ${ninePiece.averageTime.toFixed(2)} saniye`);
             console.log(`      ⏰ Toplam Süre: ${(ninePiece.totalDuration / 1000).toFixed(2)}s`);
             console.log(`      🧩 Testler: ${ninePiece.tests.join(', ')}`);
             
@@ -5537,7 +5750,7 @@
             console.log(`   🔴 16 PARÇALI PUZZLE (Onaltıparçalı):`);
             console.log(`      ✅ Doğru: ${sixteenPiece.correctAnswers}/${sixteenPiece.totalPieces}`);
             console.log(`      📈 Başarı: %${sixteenPiece.accuracy.toFixed(1)}`);
-            console.log(`      ⏱️ Ortalama Tepki: ${sixteenPiece.averageTime.toFixed(0)}ms`);
+            console.log(`      ⏱️ Ortalama Tepki: ${sixteenPiece.averageTime.toFixed(2)} saniye`);
             console.log(`      ⏰ Toplam Süre: ${(sixteenPiece.totalDuration / 1000).toFixed(2)}s`);
             console.log(`      🧩 Testler: ${sixteenPiece.tests.join(', ')}`);
             
@@ -5546,7 +5759,7 @@
                 const test = results.detailedResults[testId];
                 console.log(`   🧩 ${testId.toUpperCase()} (${test.testType}):`);
                 console.log(`      ✅ ${test.correctAnswers}/${test.totalPieces} doğru (%${test.accuracy.toFixed(1)})`);
-                console.log(`      ⏱️ ${test.averageResponseTime.toFixed(0)}ms ortalama tepki süresi`);
+                console.log(`      ⏱️ ${test.averageResponseTime.toFixed(2)} saniye ortalama tepki süresi`);
                 console.log(`      ⏰ ${(test.duration / 1000).toFixed(2)} saniye test süresi`);
             });
             
@@ -5573,10 +5786,13 @@
         function onPieceClick(pieceId, targetPieceId) {
             if (!currentTestId || !pieceClickStartTime) return;
             
-            const responseTime = Date.now() - pieceClickStartTime;
+            // Tepki süresini milisaniyeden saniyeye çevir
+            const rtMs = Date.now() - pieceClickStartTime;
+            // Maksimum 15 saniye ile sınırla
+            const responseTime = Math.min(rtMs / 1000, 15);
             const isCorrect = pieceId === targetPieceId;
             
-            // Veriyi kaydet
+            // Veriyi kaydet (saniye cinsinden)
             recordPieceClick(currentTestId, pieceId, isCorrect, responseTime);
             
             // UI sırasını kaydet (tıklama anında)
@@ -5601,105 +5817,19 @@
             if (testId === 'test9') {
                 console.log('✅ TEST9 TAMAMLANDI - Supabase kayıt başlatılıyor...');
                 setTimeout(async () => {
+                    // Görülmeyen parçaları hesapla (test9 sonunda da çağır)
+                    calculateUnansweredPieces();
+                    
+                    // Genel sonuçları güncelle (totalMissed dahil)
+                    updateSummaryStats();
+                    
                     displayTestResults();
                     
                     // Veriyi global olarak erişilebilir yap
                     window.puzzleTestResults = generateExcelData();
                     
-                    // 🚀 SUPABASE PRODUCTION'A KAYDET (DİKKAT TESTİ GİBİ)
-                    console.log('💾 Puzzle testi tamamlandı, Supabase Production\'a kaydediliyor...');
-                    console.log('🔍 ADIM 1: Supabase client kontrolü...');
-                    
-                                // Supabase client kontrolü (Global veya window.supabase)
-            if (!window.supabaseClient && !window.supabase) {
-                console.error('❌ ADIM 1 HATA: Supabase client yüklenmemiş! Puzzle test sonuçları kaydedilemedi.');
-                console.error('❌ window.supabaseClient değeri:', window.supabaseClient);
-                console.error('❌ window.supabase değeri:', window.supabase);
-                return;
-            }
-            console.log('✅ ADIM 1 BAŞARILI: Supabase client mevcut');
-                    
-                    console.log('🔍 ADIM 2: Puzzle test verilerini hazırlama...');
-                    // Puzzle test verilerini hazırla
-                    const puzzleResults = window.getPuzzleResults();
-                    console.log('📊 ADIM 2 - Puzzle Results:', puzzleResults);
-                    console.log('📊 ADIM 2 - getPuzzleResults fonksiyonu var mı?', typeof window.getPuzzleResults);
-                    
-                    if (!puzzleResults) {
-                        console.error('❌ ADIM 2 HATA: puzzleResults null/undefined');
-                        return;
-                    }
-                    console.log('✅ ADIM 2 BAŞARILI: Puzzle results alındı');
-                    
-                    if (puzzleResults) {
-                        console.log('🔍 ADIM 3: Database uyumlu veri hazırlama...');
-                        console.log('📊 testData:', testData);
-                        console.log('📊 testData.testStartTime:', testData.testStartTime);
-                        console.log('📊 totalTestStartTime:', totalTestStartTime);
-                        console.log('📊 puzzleResults:', puzzleResults);
-                        console.log('📊 puzzleResults.summary:', puzzleResults.summary);
-                        console.log('📊 puzzleResults.categories:', puzzleResults.categories);
-                        
-                        // Güvenli tarih hesaplama - totalTestStartTime kullan (global timer başlangıcı)
-                        const startTime = totalTestStartTime || testData.testStartTime || Date.now() - 120000; // 2 dakika öncesi fallback
-                        const endTime = Date.now();
-                        console.log('📊 Hesaplanan startTime:', startTime, new Date(startTime));
-                        console.log('📊 Hesaplanan endTime:', endTime, new Date(endTime));
-                        
-                        const mappedData = {
-                            test_start_time: new Date(startTime).toISOString(),
-                            test_end_time: new Date(endTime).toISOString(),
-                            test_duration_seconds: Math.round((endTime - startTime) / 1000),
-                            completion_status: 'completed',
-                            
-                            // Ana performans metrikleri - güvenli erişim
-                            total_correct: puzzleResults.summary?.totalCorrect || 0,
-                            total_wrong: puzzleResults.summary?.totalWrong || 0,
-                            total_missed: puzzleResults.summary?.totalMissed || 0,
-                            accuracy_percentage: Math.round((puzzleResults.summary?.overallAccuracy || 0) * 100) / 100,
-                            average_response_time_ms: Math.round(puzzleResults.summary?.averageResponseTime || 0),
-                            
-                            // Puzzle-specific alanlar - güvenli erişim
-                            four_piece_score: Math.round(puzzleResults.categories?.fourPiece?.accuracy || 0),
-                            six_piece_score: Math.round(puzzleResults.categories?.sixPiece?.accuracy || 0),
-                            nine_piece_score: Math.round(puzzleResults.categories?.ninePiece?.accuracy || 0),
-                            sixteen_piece_score: Math.round(puzzleResults.categories?.sixteenPiece?.accuracy || 0),
-                            
-                            // Cognitive scores - güvenli erişim
-                            spatial_reasoning_score: Math.round(puzzleResults.summary?.spatialReasoningScore || 0),
-                            pattern_recognition_score: Math.round(puzzleResults.summary?.patternRecognitionScore || 0),
-                            problem_solving_score: Math.round(puzzleResults.summary?.problemSolvingScore || 0),
-                            cognitive_flexibility_score: Math.round(puzzleResults.summary?.cognitiveFlexibilityScore || 0),
-                            
-                            // Tepki süresi analizi - güvenli erişim
-                            fastest_response_ms: puzzleResults.summary?.fastestResponse || 0,
-                            slowest_response_ms: puzzleResults.summary?.slowestResponse || 0,
-                            response_time_variance: puzzleResults.summary?.responseTimeVariance || 0,
-                            
-                            // JSONB alanlar - güvenli erişim
-                            // NOT: time_series_analysis ve performance_trends summary altında değil, top-level'dadır.
-                            detailed_responses: puzzleResults.detailedResults || {},
-                            time_series_analysis: puzzleResults.timeSeriesAnalysis || {},
-                            performance_trends: puzzleResults.performanceTrends || {},
-                            error_patterns: puzzleResults.errorPatterns || {}
-                        };
-                        
-                        console.log('✅ ADIM 3 BAŞARILI: Database uyumlu veri hazırlandı');
-                        console.log('🎯 DATABASE UYUMLU PUZZLE SONUÇLARI:', mappedData);
-                        
-                        // Supabase Production'a kaydet
-                        console.log('🔍 ADIM 4: Supabase kayıt fonksiyonu çağrılıyor...');
-                        console.log('📊 saveToSupabaseProduction fonksiyonu var mı?', typeof saveToSupabaseProduction);
-                        try {
-                            console.log('🚀 ADIM 4: saveToSupabaseProduction çağrılıyor...');
-                            const result = await saveToSupabaseProduction(mappedData);
-                            console.log('✅ ADIM 4 SONUÇ:', result);
-                        } catch (error) {
-                            console.error('❌ ADIM 4 HATA: Supabase kayıt hatası:', error);
-                            console.error('❌ ADIM 4 HATA DETAYI:', error.message);
-                            console.error('❌ ADIM 4 HATA STACK:', error.stack);
-                        }
-                    }
+                    // Supabase'e kaydet
+                    await savePuzzleTestToSupabase();
                 }, 1000);
             }
         }
@@ -5707,6 +5837,90 @@
         // Parça tıklama zamanını başlat
         function startPieceTimer() {
             pieceClickStartTime = Date.now();
+        }
+        
+        // Puzzle testini Supabase'e kaydet
+        async function savePuzzleTestToSupabase() {
+            console.log('💾 Puzzle testi Supabase kayıt başlatılıyor...');
+            console.log('🔍 ADIM 1: Supabase client kontrolü...');
+            
+            // Supabase client kontrolü (Global veya window.supabase)
+            if (!window.supabaseClient && !window.supabase) {
+                console.error('❌ ADIM 1 HATA: Supabase client yüklenmemiş! Puzzle test sonuçları kaydedilemedi.');
+                console.error('❌ window.supabaseClient değeri:', window.supabaseClient);
+                console.error('❌ window.supabase değeri:', window.supabase);
+                return;
+            }
+            console.log('✅ ADIM 1 BAŞARILI: Supabase client mevcut');
+            
+            console.log('🔍 ADIM 2: Puzzle test verilerini hazırlama...');
+            // Puzzle test verilerini hazırla
+            const puzzleResults = window.getPuzzleResults();
+            console.log('📊 ADIM 2 - Puzzle Results:', puzzleResults);
+            
+            if (!puzzleResults) {
+                console.error('❌ ADIM 2 HATA: puzzleResults null/undefined');
+                return;
+            }
+            console.log('✅ ADIM 2 BAŞARILI: Puzzle results alındı');
+            
+            console.log('🔍 ADIM 3: Database uyumlu veri hazırlama...');
+            
+            // Güvenli tarih hesaplama
+            const startTime = totalTestStartTime || testData.testStartTime || Date.now() - 120000;
+            const endTime = Date.now();
+            
+            const mappedData = {
+                test_start_time: new Date(startTime).toISOString(),
+                test_end_time: new Date(endTime).toISOString(),
+                test_duration_seconds: Math.round((endTime - startTime) / 1000),
+                completion_status: 'completed',
+                
+                // Ana performans metrikleri (practice hariç; toplam 60 parça kuralı)
+                total_correct: puzzleResults.summary?.totalCorrect || 0,
+                total_wrong: puzzleResults.summary?.totalWrong || 0,
+                total_missed: Math.max(0, 60 - ((puzzleResults.summary?.totalCorrect || 0) + (puzzleResults.summary?.totalWrong || 0))),
+                accuracy_percentage: Math.round(puzzleResults.summary?.overallAccuracy || 0),
+                average_response_time_ms: Math.round((puzzleResults.summary?.averageResponseTime || 0) * 1000),
+                
+                // Puzzle-specific alanlar
+                four_piece_score: Math.round(puzzleResults.categories?.fourPiece?.accuracy || 0),
+                six_piece_score: Math.round(puzzleResults.categories?.sixPiece?.accuracy || 0),
+                nine_piece_score: Math.round(puzzleResults.categories?.ninePiece?.accuracy || 0),
+                sixteen_piece_score: Math.round(puzzleResults.categories?.sixteenPiece?.accuracy || 0),
+                
+                // Cognitive scores
+                spatial_reasoning_score: Math.round(puzzleResults.summary?.spatialReasoningScore || 0),
+                pattern_recognition_score: Math.round(puzzleResults.summary?.patternRecognitionScore || 0),
+                problem_solving_score: Math.round(puzzleResults.summary?.problemSolvingScore || 0),
+                cognitive_flexibility_score: Math.round(puzzleResults.summary?.cognitiveFlexibilityScore || 0),
+                
+                // Tepki süresi analizi (saniyeden milisaniyeye çevir ve yuvarla)
+                fastest_response_ms: Math.round((puzzleResults.summary?.fastestResponse || 0) * 1000),
+                slowest_response_ms: Math.round((puzzleResults.summary?.slowestResponse || 0) * 1000),
+                response_time_variance: Math.round((puzzleResults.summary?.responseTimeVariance || 0) * 1000),
+                
+                // JSONB alanlar
+                detailed_responses: puzzleResults.detailedResults || {},
+                time_series_analysis: puzzleResults.timeSeriesAnalysis || {},
+                performance_trends: puzzleResults.performanceTrends || {},
+                error_patterns: puzzleResults.errorPatterns || {}
+            };
+            
+            console.log('✅ ADIM 3 BAŞARILI: Database uyumlu veri hazırlandı');
+            console.log('🎯 DATABASE UYUMLU PUZZLE SONUÇLARI:', mappedData);
+            
+            // Supabase Production'a kaydet
+            console.log('🔍 ADIM 4: Supabase kayıt fonksiyonu çağrılıyor...');
+            try {
+                const result = await saveToSupabaseProduction(mappedData);
+                console.log('✅ ADIM 4 SONUÇ:', result);
+                return result;
+            } catch (error) {
+                console.error('❌ ADIM 4 HATA: Supabase kayıt hatası:', error);
+                console.error('❌ ADIM 4 HATA DETAYI:', error.message);
+                return false;
+            }
         }
 
         // Test başladığında kullanıcı ID'sini ayarla
@@ -5744,13 +5958,11 @@
                     
                     if (!supabaseUrl || !supabaseKey) {
                         console.error('❌ SUPABASE ADIM 1.1 HATA: localStorage\'da config bulunamadı');
-                        localStorage.setItem('pendingPuzzleResults', JSON.stringify(mappedData));
                         return false;
                     }
                     
                     if (!window.supabase) {
                         console.error('❌ SUPABASE ADIM 1.1 HATA: window.supabase mevcut değil');
-                        localStorage.setItem('pendingPuzzleResults', JSON.stringify(mappedData));
                         return false;
                     }
                     
@@ -5759,7 +5971,6 @@
                 
                 if (!supabase) {
                     console.error('❌ SUPABASE ADIM 1 HATA: Client oluşturulamadı');
-                    localStorage.setItem('pendingPuzzleResults', JSON.stringify(mappedData));
                     return false;
                 }
                 
@@ -5778,33 +5989,13 @@
                 });
                 
                 if (!sessionId || !studentId || !conductedBy) {
-                    console.warn('⚠️ SUPABASE ADIM 2: localStorage bridge eksik, fallback oluşturuluyor...');
-                    console.error('Eksik bilgiler:', {
-                        sessionId: !sessionId,
-                        studentId: !studentId,
-                        conductedBy: !conductedBy
+                    console.error('❌ SUPABASE ADIM 2: localStorage bridge eksik. Test, geçersiz bağlamda başlatılmış olabilir.');
+                    console.error('🔍 Eksik değerler:', {
+                        sessionId: sessionId || 'EKSIK',
+                        studentId: studentId || 'EKSIK',
+                        conductedBy: conductedBy || 'EKSIK'
                     });
-                    
-                    // Fallback session creation için crypto.randomUUID() kullan
-                    const fallbackSessionId = 'puzzle-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-                    const fallbackUserId = 'user-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-                    
-                    // Fallback localStorage bridge kur
-                    localStorage.setItem('bb-session-id', fallbackSessionId);
-                    localStorage.setItem('bb-student-id', fallbackUserId);
-                    localStorage.setItem('bb-conducted-by', fallbackUserId);
-                    localStorage.setItem('bb-session-start', new Date().toISOString());
-                    localStorage.setItem('sb-url', 'https://gamjzzomkosvqhficabt.supabase.co');
-                    localStorage.setItem('sb-anon-key', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhbWp6em9ta29zdnFoZmljYWJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI4ODc3MDAsImV4cCI6MjA2ODQ2MzcwMH0.r8KkywdhNSP1hxzSAlKo8SB5jOEb0KQRUBfZ9Va0p9I');
-                    
-                    // Değişkenleri güncelle
-                    sessionId = fallbackSessionId;
-                    studentId = fallbackUserId;
-                    conductedBy = fallbackUserId;
-                    
-                    console.log('✅ SUPABASE ADIM 2: Fallback bridge oluşturuldu');
-                    console.log('🆔 Fallback Session ID:', fallbackSessionId.slice(0, 12) + '...');
-                    console.log('👤 Fallback User ID:', fallbackUserId.slice(0, 12) + '...');
+                    return false;
                 }
                 
                 console.log('✅ SUPABASE ADIM 2: localStorage bridge aktif');
@@ -5825,6 +6016,13 @@
                 
                 console.log('✅ SUPABASE ADIM 3: Final veri hazırlandı');
                 console.log('📝 Supabase\'e kaydedilecek veri:', finalData);
+                
+                // Detaylı değer kontrolü
+                Object.entries(finalData).forEach(([key, value]) => {
+                    if (typeof value === 'number' && !Number.isInteger(value)) {
+                        console.warn(`⚠️ UYARI: ${key} alanı ondalık sayı: ${value}`);
+                    }
+                });
                 
                 // 4. SUPABASE KAYIT
                 console.log('🔍 SUPABASE ADIM 4: Database INSERT işlemi başlatılıyor...');
@@ -5858,8 +6056,6 @@
                 
                 // 10. BAŞARILI KAYIT
                 console.log('🎉 SUPABASE ADIM 7: BAŞARILI KAYIT!');
-                localStorage.removeItem('pendingPuzzleResults');
-                localStorage.removeItem('failedPuzzleResults');
                 localStorage.setItem('lastTestedStudent', finalData.student_id);
                 
                 console.log('✅ SUPABASE ADIM 7: Puzzle test Supabase kayıt başarılı!', insertData);

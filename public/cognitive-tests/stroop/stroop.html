@@ -889,6 +889,7 @@
                 state.currentStage = stageNum;
                 state.isInExample = true;
                 state.currentWordIndex = 0;
+                let exampleCorrectCount = 0;
 
                 console.log(`🎯 Aşama ${stageNum} örnek testi başlatılıyor...`);
 
@@ -919,14 +920,24 @@
 
                 // Örnek kelimeleri göster
                 for (let i = 0; i < stage.exampleWords.length; i++) {
-                    console.log(`📝 Örnek kelime ${i + 1}/${stage.exampleWords.length}: ${stage.exampleWords[i]}`);
-                    await showExampleWord(stage.exampleWords[i], stage.exampleColors[i], stage.exampleTimings[i]);
+                    const w = stage.exampleWords[i];
+                    const c = stage.exampleColors[i];
+                    const t = stage.exampleTimings[i];
+                    const required = isExampleResponseRequired(stageNum, w, c);
+                    console.log(`📝 Örnek kelime ${i + 1}/${stage.exampleWords.length}: ${w} | required=${required ? 'EVET' : 'HAYIR'}`);
+                    const res = await showExampleWord(w, c, t, required);
+                    if (res && res.correct) exampleCorrectCount++;
                 }
 
                 console.log(`✅ Aşama ${stageNum} örnek testi tamamlandı`);
-
-                // Örnek tamamlandı ekranı
-                showExampleComplete(stageNum);
+                // Örnek tamamlandı ekranı veya tekrar
+                if ((stageNum === 2 || stageNum === 3) && exampleCorrectCount < 2) {
+                    console.log(`⚠️ Yetersiz doğru cevap: ${exampleCorrectCount}. Örnek tekrar edilecek.`);
+                    state.isInExample = false;
+                    showExampleFail(stageNum);
+                } else {
+                    showExampleComplete(stageNum);
+                }
             } catch (error) {
                 console.error(`❌ Örnek test hatası:`, error);
                 handleError(`Örnek test hatası: ${error.message}`);
@@ -966,12 +977,12 @@
             });
         }
 
-        function showExampleWord(word, color, timing) {
+        function showExampleWord(word, color, timing, responseRequired = true) {
             return new Promise((resolve) => {
                 const wordDisplay = document.getElementById('wordDisplay');
                 if (!wordDisplay) {
                     console.error('wordDisplay elementi bulunamadı!');
-                    resolve();
+                    resolve({ responded: false, correct: false });
                     return;
                 }
                 
@@ -998,7 +1009,8 @@
                         
                         // Kelimeyi temizle ve geçiş yap
                         wordDisplay.innerHTML = '';
-                        setTimeout(() => resolve(), 500); // Biraz daha uzun bekleme
+                        const correct = responseRequired ? true : false;
+                        setTimeout(() => resolve({ responded: true, correct }), 500); // Biraz daha uzun bekleme
                     }
                 };
                 
@@ -1012,7 +1024,8 @@
                         
                         document.removeEventListener('keydown', spaceHandler);
                         wordDisplay.innerHTML = '';
-                        setTimeout(() => resolve(), 500); // Biraz daha uzun bekleme
+                        const correct = responseRequired ? false : true;
+                        setTimeout(() => resolve({ responded: false, correct }), 500); // Biraz daha uzun bekleme
                     }
                 }, timing);
             });
@@ -1027,6 +1040,25 @@
                 'black': 'color-black'
             };
             return colorMap[color] || 'color-black';
+        }
+
+        // Örnek uygulama için kelime→renk eşlemesi ve kural
+        function mapWordToColor(word) {
+            const mapping = {
+                'KIRMIZI': 'red',
+                'MAVİ': 'blue',
+                'YEŞİL': 'green',
+                'SARI': 'yellow'
+            };
+            return mapping[word] || 'black';
+        }
+
+        function isExampleResponseRequired(stageNum, word, color) {
+            if (stageNum === 1) return true;
+            const wordColor = mapWordToColor(word);
+            if (stageNum === 2) return wordColor === color;      // Eşleşiyorsa bas
+            if (stageNum === 3) return wordColor !== color;      // Eşleşmiyorsa bas
+            return false;
         }
 
         // 5. Örnek Tamamlandı Ekranı
@@ -1067,6 +1099,50 @@
             } catch (error) {
                 console.error(`❌ Örnek tamamlandı ekranı hatası:`, error);
                 handleError(`Örnek tamamlandı ekranı hatası: ${error.message}`);
+            }
+        }
+
+        // Örnek uygulama başarısız ekranı ve tekrar akışı
+        function showExampleFail(stageNum) {
+            try {
+                console.log(`⚠️ Aşama ${stageNum} örnek başarısız ekranı gösteriliyor`);
+                const container = document.querySelector('.container');
+                container.innerHTML = `
+                    <!-- Loading Overlay -->
+                    <div class="loading-overlay" id="loadingOverlay">
+                        <div class="loading-spinner"></div>
+                        <div class="loading-text" id="loadingText">Yükleniyor...</div>
+                    </div>
+
+                    <!-- Error Overlay -->
+                    <div class="error-overlay" id="errorOverlay">
+                        <div class="error-message" id="errorMessage">Bir hata oluştu</div>
+                    </div>
+
+                    <div id="exampleFailScreen" class="screen active">
+                        <div class="instruction-box">
+                            <div class="highlight-text">
+                                Yeterli doğru cevabı vermediniz, örnek uygulama tekrar edilecektir.
+                            </div>
+                        </div>
+                        <button class="btn btn-bottom-right visible" onclick="retryStageExample(${stageNum})">Tamam</button>
+                    </div>
+                `;
+            } catch (error) {
+                console.error(`❌ Örnek başarısız ekranı hatası:`, error);
+                handleError(`Örnek başarısız ekranı hatası: ${error.message}`);
+            }
+        }
+
+        function retryStageExample(stageNum) {
+            try {
+                console.log('🔄 Örnek uygulama tekrar edilecek...');
+                if (stageNum === 1) return goToStage1ExampleReady();
+                if (stageNum === 2) return goToStage2ExampleReady();
+                if (stageNum === 3) return goToStage3ExampleReady();
+            } catch (e) {
+                console.warn('retryStageExample hata:', e);
+                goToStage1ExampleReady();
             }
         }
 
@@ -1735,6 +1811,22 @@
                 }
                 console.log('✅ STROOP ADIM 1: Client hazır:', !!supabase);
 
+                // 1) URL parametrelerini localStorage'a senkronize et (ilk yüklemede)
+                try {
+                    const url = new URL(window.location.href);
+                    const qp = url.searchParams;
+                    const sessionIdQP = qp.get('session_id');
+                    const studentIdQP = qp.get('student_id');
+                    const conductedByQP = qp.get('conducted_by');
+                    const sbUrlQP = qp.get('sb_url');
+                    const sbAnonQP = qp.get('sb_anon');
+                    if (sessionIdQP) localStorage.setItem('bb-session-id', sessionIdQP);
+                    if (studentIdQP) localStorage.setItem('bb-student-id', studentIdQP);
+                    if (conductedByQP) localStorage.setItem('bb-conducted-by', conductedByQP);
+                    if (sbUrlQP) localStorage.setItem('sb-url', sbUrlQP);
+                    if (sbAnonQP) localStorage.setItem('sb-anon-key', sbAnonQP);
+                } catch (e) { console.warn('Query sync failed:', e); }
+
                 // 2) localStorage bridge - session bilgilerini al
                 console.log('🔍 STROOP ADIM 2: localStorage bridge kontrol...');
                 const sessionId = localStorage.getItem('bb-session-id');
@@ -2065,8 +2157,14 @@
                 
                 console.log('✅ Stroop testi tamamlandı, puzzle testine geçiliyor...');
                 
-                // Aynı pencerede puzzle testini yükle
-                window.location.href = '../puzzle/puzzle.html';
+                // Aynı pencerede puzzle testini yükle (query paramlarını taşı)
+                try {
+                    const params = new URLSearchParams(window.location.search);
+                    const nextUrl = '../puzzle/puzzle.html' + (params.toString() ? ('?' + params.toString()) : '');
+                    window.location.href = nextUrl;
+                } catch (_) {
+                    window.location.href = '../puzzle/puzzle.html';
+                }
                 
             } catch (error) {
                 console.error('❌ Test completion hatası:', error);
@@ -2108,14 +2206,8 @@
         });
 
         document.addEventListener('visibilitychange', function() {
-            if (document.hidden) {
-                console.log('👁️ Sayfa gizlendi');
-                if (state.currentAudio) {
-                    state.currentAudio.pause();
-                }
-            } else {
-                console.log('👁️ Sayfa görünür oldu');
-            }
+            console.log('👁️ Stroop görünürlük:', document.hidden ? 'gizli' : 'görünür');
+            // İstek gereği: görünürlük değişse de ses/timer/akış kesintiye uğratılmayacak.
         });
 
         document.addEventListener('keydown', function(e) {

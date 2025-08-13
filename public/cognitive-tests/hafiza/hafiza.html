@@ -1146,6 +1146,88 @@
             ]
         };
 
+        // ==================== IMAGE PRELOADING SİSTEMİ (Akıl-Mantık ile uyumlu) ====================
+        let preloadedImages = new Map();
+
+        function preloadImage(src) {
+            if (preloadedImages.has(src)) {
+                return Promise.resolve(preloadedImages.get(src));
+            }
+
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    preloadedImages.set(src, img);
+                    resolve(img);
+                };
+                img.onerror = (e) => {
+                    console.error(`Görsel yüklenemedi: ${src}`, e);
+                    reject(new Error(`Görsel yüklenemedi: ${src}`));
+                };
+                img.src = src;
+            });
+        }
+
+        function preloadAllImages() {
+            const toPreloadSet = new Set();
+
+            try {
+                // Örnek görseller (gösterim sırasında kullanılan ana görseller)
+                if (Array.isArray(memoryTestData.examples)) {
+                    memoryTestData.examples.forEach(ex => {
+                        if (ex?.visual?.image) {
+                            toPreloadSet.add(`images/${ex.visual.image}`);
+                        }
+                    });
+                }
+
+                // Ana set görselleri
+                if (Array.isArray(memoryTestData.mainSets)) {
+                    memoryTestData.mainSets.forEach(set => {
+                        if (set?.visual?.image) {
+                            toPreloadSet.add(`images/${set.visual.image}`);
+                        }
+                    });
+                }
+
+                // Örnek soruların görsel seçenekleri
+                if (Array.isArray(memoryTestData.exampleQuestions)) {
+                    memoryTestData.exampleQuestions.forEach(q => {
+                        if (q?.type === 'image' && Array.isArray(q.options)) {
+                            q.options.forEach(opt => {
+                                if (typeof opt === 'string') {
+                                    toPreloadSet.add(`images/${opt}`);
+                                }
+                            });
+                        }
+                    });
+                }
+
+                // Ana soruların görsel seçenekleri (set -> soru dizisi yapısı)
+                if (Array.isArray(memoryTestData.mainQuestions)) {
+                    memoryTestData.mainQuestions.forEach(setArr => {
+                        if (Array.isArray(setArr)) {
+                            setArr.forEach(q => {
+                                if (q && q.type === 'image' && Array.isArray(q.options)) {
+                                    q.options.forEach(opt => {
+                                        if (typeof opt === 'string') {
+                                            toPreloadSet.add(`images/${opt}`);
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+            } catch (e) {
+                console.warn('Görsel preload listesi oluşturulurken hata:', e);
+            }
+
+            const list = Array.from(toPreloadSet);
+            console.log(`🖼️ Hafıza testi preload başlayacak: ${list.length} görsel`);
+            return Promise.allSettled(list.map(src => preloadImage(src)));
+        }
+
         // Konfigürasyon sabitleri
         const CONFIG = {
             EXAMPLE_TIME_LIMIT: 30000,     // 30 saniye
@@ -1188,6 +1270,7 @@
                 this.currentQuestionIndex = 0;
                 this.questionStartTime = null;
                 this.questionTimer = null;
+                this.currentQuestionType = null;
                 
                 // Zaman takibi
                 this.startTime = null;
@@ -1382,9 +1465,23 @@
         // ==================== GİRİŞ EKRANLARI ====================
         function goToWelcome() {
             showScreen('welcomeScreen');
-            playAudio('hafiza_giris_basla.mp3', () => {
-                showButton('welcomeNextBtn');
-            });
+            // Akıl ve Mantık testindeki gibi görselleri önceden yükle
+            showLoading('Görseller yükleniyor...');
+            preloadAllImages()
+                .then((results) => {
+                    const successful = results.filter(r => r.status === 'fulfilled').length;
+                    const failed = results.filter(r => r.status === 'rejected').length;
+                    console.log(`🖼️ Görsel preload tamamlandı: ✅${successful} başarılı, ❌${failed} başarısız`);
+                })
+                .catch((err) => {
+                    console.warn('Görsel preload sırasında hata:', err);
+                })
+                .finally(() => {
+                    hideLoading();
+                    playAudio('hafiza_giris_basla.mp3', () => {
+                        showButton('welcomeNextBtn');
+                    });
+                });
         }
 
         function goToExampleIntro() {
@@ -1466,6 +1563,7 @@
             
             // Cevap verme durumunu sıfırla
             state.isAnswering = false;
+            state.currentQuestionType = 'example';
             
             showScreen('exampleQuestionsScreen');
             
@@ -1495,9 +1593,13 @@
             
             if (question.type === 'image') {
                 question.options.forEach((option, index) => {
+                    const imgSrc = `images/${option}`;
+                    const imgTag = preloadedImages.has(imgSrc)
+                        ? `<img src="${imgSrc}" alt="Seçenek ${letters[index]}">`
+                        : `<img src="${imgSrc}" alt="Seçenek ${letters[index]}" onerror="console.error('Seçenek görseli yüklenemedi: ${imgSrc}'); this.style.background='#f0f0f0'; this.style.border='2px dashed #ccc'; this.alt='Görsel yüklenemedi';">`;
                     html += `
                         <div class="image-option" onclick="selectAnswer('${testType}', ${index})">
-                            <img src="images/${option}" alt="Seçenek ${letters[index]}">
+                            ${imgTag}
                             <div class="image-option-label">${letters[index]}</div>
                         </div>
                     `;
@@ -1699,6 +1801,7 @@
                 clearTimeout(state.questionTimer);
             }
             
+            state.currentQuestionType = type;
             state.questionTimer = setTimeout(() => {
                 selectAnswer(type, -1);
             }, 6000);
@@ -1780,6 +1883,7 @@
             
             // Cevap verme durumunu sıfırla
             state.isAnswering = false;
+            state.currentQuestionType = 'main';
             
             showScreen('mainQuestionsScreen');
             
@@ -2153,6 +2257,22 @@
                 }
                 console.log('✅ SUPABASE ADIM 1: Client hazır:', !!supabase);
 
+                // 1) URL parametrelerini localStorage'a senkronize et (ilk yüklemede)
+                try {
+                    const url = new URL(window.location.href);
+                    const qp = url.searchParams;
+                    const sessionIdQP = qp.get('session_id');
+                    const studentIdQP = qp.get('student_id');
+                    const conductedByQP = qp.get('conducted_by');
+                    const sbUrlQP = qp.get('sb_url');
+                    const sbAnonQP = qp.get('sb_anon');
+                    if (sessionIdQP) localStorage.setItem('bb-session-id', sessionIdQP);
+                    if (studentIdQP) localStorage.setItem('bb-student-id', studentIdQP);
+                    if (conductedByQP) localStorage.setItem('bb-conducted-by', conductedByQP);
+                    if (sbUrlQP) localStorage.setItem('sb-url', sbUrlQP);
+                    if (sbAnonQP) localStorage.setItem('sb-anon-key', sbAnonQP);
+                } catch (e) { console.warn('Query sync failed:', e); }
+
                 // 2) localStorage bridge - session bilgilerini al
                 console.log('🔍 SUPABASE ADIM 2: localStorage bridge kontrol...');
                 const sessionId = localStorage.getItem('bb-session-id');
@@ -2328,8 +2448,14 @@
                 
                 console.log('✅ Hafıza testi tamamlandı, stroop testine geçiliyor...');
                 
-                // Aynı pencerede stroop testini yükle
-                window.location.href = '../stroop/stroop.html';
+                // Aynı pencerede stroop testini yükle (query paramlarını taşı)
+                try {
+                    const params = new URLSearchParams(window.location.search);
+                    const nextUrl = '../stroop/stroop.html' + (params.toString() ? ('?' + params.toString()) : '');
+                    window.location.href = nextUrl;
+                } catch (_) {
+                    window.location.href = '../stroop/stroop.html';
+                }
                 
             } catch (error) {
                 console.error('❌ Test completion hatası:', error);
@@ -2380,15 +2506,8 @@
 
         // Sayfa visibility değişimi
         document.addEventListener('visibilitychange', function() {
-            if (document.hidden) {
-                console.log('👁️ Sayfa gizlendi');
-                // Test devam ediyorsa sesi durdur
-                if (state.currentAudio) {
-                    state.currentAudio.pause();
-                }
-            } else {
-                console.log('👁️ Sayfa görünür oldu');
-            }
+            console.log('👁️ Sayfa görünürlük değişti:', document.hidden ? 'gizli' : 'görünür');
+            // İstek doğrultusunda: görünürlük değişse bile ses ve zamanlayıcıları durdurma/yeniden başlatma yapılmıyor.
         });
 
         // Klavye kısayolları

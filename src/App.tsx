@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { finalizeAndAggregate } from "@/components/cognitive-assessment/aggregator";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -96,6 +97,67 @@ const App = () => {
       metaGoogle.setAttribute('content', 'notranslate');
       document.head.appendChild(metaGoogle);
     }
+  }, []);
+
+  // Global aggregator listener: listens on every route
+  useEffect(() => {
+    let isRunning = false;
+
+    const runAggregatorSafely = async () => {
+      if (isRunning) return;
+      isRunning = true;
+      try {
+        console.log('🧩 Global aggregator: isteği alındı');
+        const res = await finalizeAndAggregate();
+        if (!res.ok) {
+          console.error('❌ Aggregator başarısız:', res);
+        } else {
+          console.log('✅ Aggregator OK, id:', res.id);
+        }
+      } finally {
+        isRunning = false;
+      }
+    };
+
+    const handleMsg = (event: MessageEvent) => {
+      try {
+        if (event && typeof event.origin === 'string' && event.origin && event.origin !== window.location.origin) {
+          return;
+        }
+        if (event?.data?.type === 'run-aggregator') {
+          runAggregatorSafely();
+        }
+      } catch {}
+    };
+
+    window.addEventListener('message', handleMsg);
+
+    // localStorage fallback: bb-session-end yazıldığında tetikle
+    const handleStorage = (e: StorageEvent) => {
+      try {
+        if (e.key === 'bb-session-end' && e.newValue) {
+          runAggregatorSafely();
+        }
+      } catch {}
+    };
+    window.addEventListener('storage', handleStorage);
+
+    // BroadcastChannel fallback
+    let bc: BroadcastChannel | null = null;
+    try {
+      bc = new BroadcastChannel('bb-aggregator');
+      bc.onmessage = (e: MessageEvent) => {
+        if ((e as any)?.data?.type === 'run-aggregator') {
+          runAggregatorSafely();
+        }
+      };
+    } catch {}
+
+    return () => {
+      window.removeEventListener('message', handleMsg);
+      window.removeEventListener('storage', handleStorage);
+      try { bc?.close(); } catch {}
+    };
   }, []);
 
   return (

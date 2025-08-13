@@ -1212,34 +1212,56 @@
             }
         }
 
-        // Loading göstergesi - dikkat testinden alınmış
+        // Loading göstergesi - flash engellemek için gecikmeli gösterim + minimum görünürlük
         let loadingTimeout = null;
+        let loadingShowDelayTimer = null;
+        let loadingShownAt = 0;
+        let loadingMinDisplay = 0;
+        const LOADING_SHOW_DELAY_MS = 300; // hızlı yüklemede spinner hiç görünmesin
         
-        function showLoading(message = 'Yükleniyor...', minDisplayTime = 500) {
+        function showLoading(message = 'Yükleniyor...', minDisplayTime = 0) {
             const overlay = document.getElementById('loadingOverlay');
             const text = document.getElementById('loadingText');
             
-            if (overlay) {
-                if (text) text.textContent = message;
-                if (loadingTimeout) {
-                    clearTimeout(loadingTimeout);
-                    loadingTimeout = null;
-                }
+            if (!overlay) return;
+            if (text) text.textContent = message;
+            
+            // Önceki zamanlayıcıları temizle
+            if (loadingTimeout) { clearTimeout(loadingTimeout); loadingTimeout = null; }
+            if (loadingShowDelayTimer) { clearTimeout(loadingShowDelayTimer); loadingShowDelayTimer = null; }
+            
+            loadingMinDisplay = typeof minDisplayTime === 'number' ? Math.max(0, minDisplayTime) : 0;
+            
+            // Spinner'ı gecikmeli göster: hızlı yüklemede hiç görünmesin
+            loadingShowDelayTimer = setTimeout(() => {
                 overlay.classList.add('show');
-            }
+                loadingShownAt = Date.now();
+                loadingShowDelayTimer = null;
+            }, LOADING_SHOW_DELAY_MS);
         }
 
         function hideLoading(delay = 0) {
             const overlay = document.getElementById('loadingOverlay');
-            if (overlay) {
-                if (delay > 0) {
-                    loadingTimeout = setTimeout(() => {
-                        overlay.classList.remove('show');
-                        loadingTimeout = null;
-                    }, delay);
-                } else {
+            if (!overlay) return;
+            
+            // Henüz gösterilmeden yükleme bittiyse: timer'ı iptal et, hiçbir şey gösterme
+            if (loadingShowDelayTimer) {
+                clearTimeout(loadingShowDelayTimer);
+                loadingShowDelayTimer = null;
+                return;
+            }
+            
+            const elapsed = loadingShownAt ? (Date.now() - loadingShownAt) : 0;
+            const needMore = Math.max(0, loadingMinDisplay - elapsed);
+            const totalDelay = Math.max(delay || 0, needMore);
+            
+            if (totalDelay > 0) {
+                loadingTimeout = setTimeout(() => {
                     overlay.classList.remove('show');
-                }
+                    loadingTimeout = null;
+                }, totalDelay);
+            } else {
+                overlay.classList.remove('show');
             }
         }
 
@@ -1288,7 +1310,6 @@
                 const img = new Image();
                 img.onload = () => {
                     preloadedImages.set(src, img);
-                    console.log(`✅ Görsel yüklendi: ${src}`);
                     resolve(img);
                 };
                 img.onerror = (e) => {
@@ -1519,22 +1540,17 @@
             const audio = new Audio(`mp3/${filename}`);
             testState.currentAudio = audio;
             
-            console.log('Ses dosyası çalınıyor:', filename);
-            
             audio.addEventListener('ended', () => {
-                console.log('Ses dosyası bitti:', filename);
                 testState.currentAudio = null;
                 if (callback) callback();
             });
             
             audio.addEventListener('error', (e) => {
-                console.error('Ses dosyası yüklenemedi:', filename, e);
                 testState.currentAudio = null;
                 if (callback) callback();
             });
             
             audio.play().catch(error => {
-                console.log('Ses çalma hatası:', error);
                 testState.currentAudio = null;
                 if (callback) callback();
             });
@@ -1603,8 +1619,8 @@
             
             showScreen('welcomeScreen');
             
-            // 🖼️ GÖRSEL ÖN YÜKLEME BAŞLAT
-            showLoading('Görseller yükleniyor...', 1000);
+            // 🖼️ GÖRSEL ÖN YÜKLEME BAŞLAT (flash engelleme: min görünürlük 600ms, gösterim 300ms gecikmeli)
+            showLoading('Görseller yükleniyor...', 600);
             preloadAllImages().then((results) => {
                 const successful = results.filter(r => r.status === 'fulfilled').length;
                 const failed = results.filter(r => r.status === 'rejected').length;
@@ -2510,7 +2526,6 @@
             
             // Test bitiş sesini çal (biraz gecikmeyle)
             setTimeout(() => {
-                console.log('Test bitti, ses dosyası çalınacak:', testData.audioFiles.testComplete);
                 playAudio(testData.audioFiles.testComplete);
             }, 500);
             
@@ -2554,6 +2569,22 @@
               }
               supabase = window.supabase.createClient(url, key);
             }
+
+            // 1) URL parametrelerini localStorage'a senkronize et (ilk yüklemede)
+            try {
+              const url = new URL(window.location.href);
+              const qp = url.searchParams;
+              const sessionIdQP = qp.get('session_id');
+              const studentIdQP = qp.get('student_id');
+              const conductedByQP = qp.get('conducted_by');
+              const sbUrlQP = qp.get('sb_url');
+              const sbAnonQP = qp.get('sb_anon');
+              if (sessionIdQP) localStorage.setItem('bb-session-id', sessionIdQP);
+              if (studentIdQP) localStorage.setItem('bb-student-id', studentIdQP);
+              if (conductedByQP) localStorage.setItem('bb-conducted-by', conductedByQP);
+              if (sbUrlQP) localStorage.setItem('sb-url', sbUrlQP);
+              if (sbAnonQP) localStorage.setItem('sb-anon-key', sbAnonQP);
+            } catch (e) { console.warn('Query sync failed:', e); }
 
             // localStorage bridge - session bilgilerini al
             console.log('🔍 AKIL-MANTIK: localStorage bridge kontrol...');
@@ -2670,19 +2701,42 @@
             localStorage.removeItem('pendingAkilMantik');
             localStorage.removeItem('failedAkilMantik');
             
-            // 🔥 SON TEST - AGGREGATOR ÇAĞRISI
-            console.log('🔍 AGGREGATOR: Son test tamamlandı, aggregator çağrılıyor...');
+            // 🔥 SON TEST - AGGREGATOR DİREKT ÇALIŞTIR
+            console.log('🔍 AGGREGATOR: Son test tamamlandı, aggregator direkt çalıştırılıyor...');
             try {
-              // Session end time'ı set et
               localStorage.setItem('bb-session-end', new Date().toISOString());
               
-              // Aggregator'ı çağır
-              await callAggregator();
+              // Aggregator'ı direkt çalıştır
+              const aggregatorResult = await runCognitiveAggregator();
               
-              showNotification('Tüm test sonuçlarınız başarıyla kaydedildi ve analiz edildi!', 'success');
+              if (aggregatorResult.ok) {
+                console.log('✅ AGGREGATOR BAŞARILI! Cognitive result ID:', aggregatorResult.id);
+                console.log('📊 Bilişsel skorlar:', aggregatorResult.scores);
+                showNotification('✅ Bilişsel değerlendirme tamamlandı!', 'success');
+                
+                // Başarılı olunca localStorage'ı temizle
+                localStorage.removeItem('bb-session-id');
+                localStorage.removeItem('bb-session-start');
+                localStorage.removeItem('bb-session-end');
+                localStorage.removeItem('bb-student-id');
+                localStorage.removeItem('bb-conducted-by');
+              } else {
+                console.error('❌ AGGREGATOR BAŞARISIZ:', aggregatorResult);
+                showNotification(`Analiz hatası: ${aggregatorResult.reason}`, 'error');
+                
+                // Parent'a da haber vermeyi dene (fallback)
+                if (window.opener && typeof window.opener.postMessage === 'function') {
+                  window.opener.postMessage({ type: 'run-aggregator' }, '*');
+                }
+              }
             } catch (aggError) {
               console.error('❌ Aggregator hatası:', aggError);
-              showNotification('Test sonuçları kaydedildi ancak analiz sırasında hata oluştu.', 'warning');
+              showNotification('Test sonuçları kaydedildi, analiz başlatılamadı.', 'warning');
+              
+              // Parent'a da haber vermeyi dene (fallback)
+              if (window.opener && typeof window.opener.postMessage === 'function') {
+                window.opener.postMessage({ type: 'run-aggregator' }, '*');
+              }
             }
             
             return true;
@@ -2695,116 +2749,276 @@
           }
         }
 
-        // 🔥 AGGREGATOR ÇAĞRISI FONKSİYONU
-        async function callAggregator() {
-          console.log('🚀 AGGREGATOR: Başlatılıyor...');
-          
+        // Inline Aggregator Fonksiyonu
+        async function runCognitiveAggregator() {
           try {
-            // Supabase client kontrolü
+            const sessionId = localStorage.getItem('bb-session-id') || '';
+            const studentId = localStorage.getItem('bb-student-id') || '';
+            const conductedBy = localStorage.getItem('bb-conducted-by') || '';
+            const startISO = localStorage.getItem('bb-session-start') || '';
+            const endISO = localStorage.getItem('bb-session-end') || '';
+
+            if (!sessionId || !studentId || !conductedBy || !startISO || !endISO) {
+              return { ok: false, reason: 'missing_session_info' };
+            }
+
+            // Tarih doğrulama
+            const startMs = new Date(startISO).getTime();
+            const endMs = new Date(endISO).getTime();
+            if (!isFinite(startMs) || !isFinite(endMs)) {
+              return { ok: false, reason: 'invalid_time', details: { startISO, endISO } };
+            }
+
+            const durationSeconds = Math.max(0, Math.round((endMs - startMs) / 1000));
+
+            // Supabase client al
+            const supabase = window.supabase || window.Supabase;
+            if (!supabase || !supabase.createClient) {
+              return { ok: false, reason: 'supabase_not_loaded' };
+            }
+
             const sbUrl = localStorage.getItem('sb-url');
             const sbKey = localStorage.getItem('sb-anon-key');
-            
             if (!sbUrl || !sbKey) {
-              throw new Error('Supabase config eksik');
+              return { ok: false, reason: 'missing_supabase_config' };
             }
-            
-            // Session bilgileri kontrolü
-            const sessionId = localStorage.getItem('bb-session-id');
-            const studentId = localStorage.getItem('bb-student-id');
-            const conductedBy = localStorage.getItem('bb-conducted-by');
-            
-            if (!sessionId || !studentId || !conductedBy) {
-              throw new Error('Session bilgileri eksik');
-            }
-            
-            console.log('📊 AGGREGATOR: Tüm test sonuçları toplanıyor...');
-            console.log(`🆔 Session ID: ${sessionId.slice(0, 8)}...`);
-            
-            // Aggregator logic - inline implementation
-            const supabase = window.supabase.createClient(sbUrl, sbKey);
-            
-            // 5 test sonucunu oku
-            console.log('📖 Test sonuçları okunuyor...');
+
+            const client = supabase.createClient(sbUrl, sbKey);
+
+            // 5 test sonucunu oku (son kaydı)
+            console.log('📖 Alt test sonuçları okunuyor...');
             const [attResult, memResult, strResult, pzlResult, logicResult] = await Promise.all([
-              supabase.from('attention_test_results').select('*').eq('session_id', sessionId).order('test_end_time', { ascending: false }).limit(1).maybeSingle(),
-              supabase.from('memory_test_results').select('*').eq('session_id', sessionId).order('test_end_time', { ascending: false }).limit(1).maybeSingle(),
-              supabase.from('stroop_test_results').select('*').eq('session_id', sessionId).order('test_end_time', { ascending: false }).limit(1).maybeSingle(),
-              supabase.from('puzzle_test_results').select('*').eq('session_id', sessionId).order('test_end_time', { ascending: false }).limit(1).maybeSingle(),
-              supabase.from('akil_mantik_test_results').select('*').eq('session_id', sessionId).order('test_end_time', { ascending: false }).limit(1).maybeSingle()
+              client.from('attention_test_results').select('*').eq('session_id', sessionId).order('test_end_time', { ascending: false }).limit(1).maybeSingle(),
+              client.from('memory_test_results').select('*').eq('session_id', sessionId).order('test_end_time', { ascending: false }).limit(1).maybeSingle(),
+              client.from('stroop_test_results').select('*').eq('session_id', sessionId).order('test_end_time', { ascending: false }).limit(1).maybeSingle(),
+              client.from('puzzle_test_results').select('*').eq('session_id', sessionId).order('test_end_time', { ascending: false }).limit(1).maybeSingle(),
+              client.from('akil_mantik_test_results').select('*').eq('session_id', sessionId).order('test_end_time', { ascending: false }).limit(1).maybeSingle()
             ]);
-            
+
             // Hata kontrolü
-            if (attResult.error || memResult.error || strResult.error || pzlResult.error || logicResult.error) {
-              throw new Error('Test sonuçları okunamadı');
+            const missing = [];
+            if (attResult.error || !attResult.data) missing.push('attention');
+            if (memResult.error || !memResult.data) missing.push('memory');
+            if (strResult.error || !strResult.data) missing.push('stroop');
+            if (pzlResult.error || !pzlResult.data) missing.push('puzzle');
+            if (logicResult.error || !logicResult.data) missing.push('akil_mantik');
+
+            if (missing.length > 0) {
+              return { ok: false, reason: 'missing_subtests', details: { missing } };
             }
-            
-            if (!attResult.data || !memResult.data || !strResult.data || !pzlResult.data || !logicResult.data) {
-              throw new Error('Bazı test sonuçları bulunamadı');
-            }
-            
-            console.log('✅ Tüm test sonuçları bulundu');
-            
-            // Basit skorlama - DOĞRU FIELD İSİMLERİ
-            const scores = {
-              dikkat_skoru: Math.round((attResult.data.accuracy_percentage || 0) * 100) / 100,
-              hafiza_skoru: Math.round((memResult.data.accuracy_percentage || 0) * 100) / 100,
-              isleme_hizi_skoru: Math.round(((100 - (strResult.data.average_response_time_ms || 1000) / 10) || 0) * 100) / 100,
-              gorsel_isleme_skoru: Math.round(((pzlResult.data.four_piece_score || 0) + (pzlResult.data.six_piece_score || 0)) / 2 * 100) / 100,
-              akil_mantik_yurutme_skoru: Math.round((logicResult.data.success_rate || 0) * 100) / 100,
-              bilissel_esneklik_skoru: Math.round(((strResult.data.accuracy_percentage || 0) + (pzlResult.data.cognitive_flexibility_score || 0)) / 2 * 100) / 100
+
+            console.log('✅ Tüm alt test sonuçları bulundu');
+
+            // Skorları hesapla
+            const scores = computeCognitiveScores(
+              attResult.data,
+              memResult.data,
+              strResult.data,
+              pzlResult.data,
+              logicResult.data
+            );
+
+            // Alt test özetleri
+            const altOzet = {
+              attention_id: attResult.data.id,
+              memory_id: memResult.data.id,
+              stroop_id: strResult.data.id,
+              puzzle_id: pzlResult.data.id,
+              akil_mantik_id: logicResult.data.id,
+              attention_summary: {
+                accuracy: attResult.data.accuracy_percentage || attResult.data.success_rate,
+                avg_rt_ms: attResult.data.avg_response_time_ms || attResult.data.average_response_time_ms,
+              },
+              memory_summary: {
+                overall: memResult.data.success_rate || memResult.data.accuracy_percentage,
+                short_visual: memResult.data.short_visual_accuracy,
+                short_auditory: memResult.data.short_auditory_accuracy,
+                long_visual: memResult.data.long_visual_accuracy,
+                long_auditory: memResult.data.long_auditory_accuracy,
+              },
+              stroop_summary: {
+                accuracy: strResult.data.accuracy_percentage || strResult.data.success_rate,
+                avg_rt_ms: strResult.data.avg_response_time_ms || strResult.data.average_response_time_ms,
+                interference_ms: strResult.data.interference_ms,
+              },
+              puzzle_summary: {
+                avg_rt_ms: pzlResult.data.average_response_time_ms,
+                four: pzlResult.data.four_piece_score,
+                six: pzlResult.data.six_piece_score,
+                nine: pzlResult.data.nine_piece_score,
+                sixteen: pzlResult.data.sixteen_piece_score,
+                spatial: pzlResult.data.spatial_reasoning_score,
+                pattern: pzlResult.data.pattern_recognition_score,
+                problem: pzlResult.data.problem_solving_score,
+                flexibility: pzlResult.data.cognitive_flexibility_score,
+                rt_variance: pzlResult.data.response_time_variance,
+              },
+              logic_summary: {
+                success_rate: logicResult.data.success_rate,
+                avg_rt_ms: logicResult.data.avg_response_time_ms,
+                section_acc: {
+                  dortlu_yatay: logicResult.data.dortlu_yatay_accuracy_percentage,
+                  dortlu_kare: logicResult.data.dortlu_kare_accuracy_percentage,
+                  altili_kare: logicResult.data.altili_kare_accuracy_percentage,
+                  l_format: logicResult.data.l_format_accuracy_percentage,
+                  dokuzlu_format: logicResult.data.dokuzlu_format_accuracy_percentage,
+                },
+              },
             };
-            
-            console.log('🧠 Bilişsel skorlar hesaplandı:', scores);
-            
-            // cognitive_test_result tablosuna kaydet
-            const startTime = localStorage.getItem('bb-session-start') || new Date().toISOString();
-            const endTime = localStorage.getItem('bb-session-end') || new Date().toISOString();
-            const duration = Math.round((new Date(endTime).getTime() - new Date(startTime).getTime()) / 1000);
-            
-            const cognitiveResult = {
-              session_id: sessionId,
+
+            // cognitive_test_result tablosuna kaydet (upsert)
+            console.log('💾 Bilişsel test sonucu kaydediliyor...');
+            console.log('Gönderilecek veri:', {
               student_id: studentId,
               conducted_by: conductedBy,
-              test_start_time: startTime,
-              test_end_time: endTime,
-              duration_seconds: duration,
-              ...scores,
-              alt_test_ozetleri: {
-                attention: attResult.data,
-                memory: memResult.data,
-                stroop: strResult.data,
-                puzzle: pzlResult.data,
-                logic: logicResult.data
-              }
-            };
+              session_id: sessionId,
+              test_start_time: startISO,
+              test_end_time: endISO,
+              duration_seconds: durationSeconds,
+              scores: scores
+            });
             
-            console.log('💾 Bilişsel test sonucu kaydediliyor...');
-            const { data: insertData, error: insertError } = await supabase
+            const { data: insertData, error: insertError } = await client
               .from('cognitive_test_result')
-              .insert([cognitiveResult])
+              .insert([{
+                student_id: studentId,
+                conducted_by: conductedBy,
+                session_id: sessionId,
+                test_start_time: startISO,
+                test_end_time: endISO,
+                duration_seconds: durationSeconds,
+                dikkat_skoru: scores.dikkat_skoru,
+                hafiza_skoru: scores.hafiza_skoru,
+                isleme_hizi_skoru: scores.isleme_hizi_skoru,
+                gorsel_isleme_skoru: scores.gorsel_isleme_skoru,
+                akil_mantik_yurutme_skoru: scores.akil_mantik_yurutme_skoru,
+                bilissel_esneklik_skoru: scores.bilissel_esneklik_skoru,
+                alt_test_ozetleri: altOzet,
+              }])
               .select();
-            
+
             if (insertError) {
-              console.error('❌ Bilişsel test sonucu kayıt hatası:', insertError);
-              throw insertError;
+              console.error('❌ cognitive_test_result INSERT HATASI:', insertError);
+              console.error('Hata detayları:', {
+                code: insertError.code,
+                message: insertError.message,
+                details: insertError.details,
+                hint: insertError.hint
+              });
+              return { ok: false, reason: 'insert_error', details: insertError };
             }
-            
-            console.log('🎉 AGGREGATOR: Başarıyla tamamlandı!', insertData);
-            
-            // Session temizleme
-            console.log('🧹 Session temizleniyor...');
-            localStorage.removeItem('bb-session-id');
-            localStorage.removeItem('bb-session-start');
-            localStorage.removeItem('bb-session-end');
-            localStorage.removeItem('bb-student-id');
-            localStorage.removeItem('bb-conducted-by');
-            
-            return { ok: true, id: insertData[0].id, scores };
-            
-          } catch (error) {
-            console.error('❌ AGGREGATOR HATASI:', error);
-            throw error;
+
+            console.log('🎉 Bilişsel değerlendirme başarıyla tamamlandı!', insertData);
+            return { ok: true, id: insertData?.[0]?.id, scores };
+
+          } catch (e) {
+            return { ok: false, reason: 'unexpected_error', details: String(e?.message || e) };
           }
+        }
+
+        // Bilişsel skorları hesaplama fonksiyonu
+        function computeCognitiveScores(att, mem, str, pzl, logic) {
+          // Helper fonksiyonlar
+          const clamp01 = (x) => Math.max(0, Math.min(1, x));
+          const toPct = (x) => Math.round(x * 10000) / 100;
+          const pct = (x) => Math.round(x * 100) / 100;
+          const normalize = (value, minVal, maxVal, reverse = false) => {
+            if (maxVal === minVal) return 0;
+            const t = clamp01((value - minVal) / (maxVal - minVal));
+            return reverse ? 1 - t : t;
+          };
+          const num = (v, def = 0) => {
+            if (v == null) return def;
+            if (typeof v === 'number' && isFinite(v)) return v;
+            const n = Number(v);
+            return isFinite(n) ? n : def;
+          };
+
+          // Attention core
+          const attAcc = num(att?.overall_accuracy ?? att?.accuracy_percentage ?? att?.success_rate, 0);
+          const attAvgRtMs = num(att?.avg_response_time_ms ?? att?.average_response_time_ms, 0);
+          const attSpeedN = normalize(attAvgRtMs, 300, 3000, true);
+          const attentionCore = 0.6 * clamp01(attAcc / 100) + 0.4 * attSpeedN;
+
+          // Stroop
+          const strAcc = num(str?.accuracy_percentage ?? str?.success_rate, 0);
+          const strAvgRt = num(str?.avg_response_time_ms ?? str?.average_response_time_ms, 0);
+          const strSpeedN = normalize(strAvgRt, 300, 3000, true);
+          const interference = num(str?.interference_ms ?? 0);
+          const interN = normalize(interference, 0, 1000, true);
+          const stroopComp = 0.7 * clamp01(strAcc / 100) + 0.15 * strSpeedN + 0.15 * interN;
+
+          // Memory
+          const shortVis = num(mem?.short_visual_accuracy ?? 0);
+          const shortAud = num(mem?.short_auditory_accuracy ?? 0);
+          const longVis = num(mem?.long_visual_accuracy ?? 0);
+          const longAud = num(mem?.long_auditory_accuracy ?? 0);
+          const memOverall = num(mem?.success_rate ?? mem?.accuracy_percentage, 0);
+          const providedCount = [shortVis, shortAud, longVis, longAud].filter(v => v > 0).length;
+          const memoryCore = providedCount > 0
+            ? clamp01((shortVis + shortAud + longVis + longAud) / (providedCount * 100))
+            : clamp01(memOverall / 100);
+
+          // Puzzle
+          const pFour = num(pzl?.four_piece_score ?? 0);
+          const pSix = num(pzl?.six_piece_score ?? 0);
+          const pNine = num(pzl?.nine_piece_score ?? 0);
+          const pSixteen = num(pzl?.sixteen_piece_score ?? 0);
+          const pAvgRT = num(pzl?.average_response_time_ms ?? 0);
+          const pSpeedN = normalize(pAvgRT, 300, 4000, true);
+          const pSpatial = num(pzl?.spatial_reasoning_score ?? 0);
+          const pPattern = num(pzl?.pattern_recognition_score ?? 0);
+          const pProblem = num(pzl?.problem_solving_score ?? 0);
+          const pFlex = num(pzl?.cognitive_flexibility_score ?? 0);
+          const pAccAvgProvided = [pFour, pSix, pNine, pSixteen].filter(v => v > 0).length;
+          const puzzleAcc = pAccAvgProvided > 0 
+            ? clamp01((pFour + pSix + pNine + pSixteen) / (pAccAvgProvided * 100)) 
+            : 0;
+
+          // Logic (Akıl-Mantık)
+          const logicSR = num(logic?.success_rate ?? 0);
+          const logicAvgRt = num(logic?.avg_response_time_ms ?? 0);
+          const logicSpeedN = normalize(logicAvgRt, 300, 4000, true);
+          const logicFour = num(logic?.dortlu_yatay_accuracy_percentage ?? 0);
+          const logicSquare = num(logic?.dortlu_kare_accuracy_percentage ?? 0);
+          const logicSixAcc = num(logic?.altili_kare_accuracy_percentage ?? 0);
+          const logicLAcc = num(logic?.l_format_accuracy_percentage ?? 0);
+          const logicNineAcc = num(logic?.dokuzlu_format_accuracy_percentage ?? 0);
+          const logicVisProvided = [logicFour, logicSquare, logicSixAcc, logicLAcc, logicNineAcc].filter(v => v > 0).length;
+          const logicVisualAcc = logicVisProvided > 0
+            ? clamp01((logicFour + logicSquare + logicSixAcc + logicLAcc + logicNineAcc) / (logicVisProvided * 100))
+            : 0;
+
+          // 1) Dikkat Skoru
+          const dikkat = toPct(0.6 * attentionCore + 0.4 * stroopComp);
+
+          // 2) Hafıza Skoru
+          const hafiza = toPct(0.85 * memoryCore + 0.15 * clamp01(logicSR / 100));
+
+          // 3) İşleme Hızı Skoru
+          const islemeHizi = toPct(0.4 * attSpeedN + 0.3 * strSpeedN + 0.3 * pSpeedN);
+
+          // 4) Görsel İşleme Skoru
+          const gorselIsleme = toPct(0.7 * puzzleAcc + 0.3 * logicVisualAcc);
+
+          // 5) Akıl ve Mantık Yürütme Skoru
+          const puzzleReasoningSupport = clamp01((pSpatial + pPattern + pProblem) / (3 * 100));
+          const akilMantik = toPct(0.7 * clamp01(logicSR / 100) + 0.3 * puzzleReasoningSupport);
+
+          // 6) Bilişsel Esneklik
+          const stroopFlexN = interN;
+          const rtVar = num(pzl?.response_time_variance ?? 0);
+          const rtVarN = normalize(rtVar, 0, 2_000_000, true);
+          const bilisselEsneklik = toPct(0.5 * clamp01(pFlex / 100) + 0.3 * stroopFlexN + 0.2 * rtVarN);
+
+          return {
+            dikkat_skoru: pct(dikkat),
+            hafiza_skoru: pct(hafiza),
+            isleme_hizi_skoru: pct(islemeHizi),
+            gorsel_isleme_skoru: pct(gorselIsleme),
+            akil_mantik_yurutme_skoru: pct(akilMantik),
+            bilissel_esneklik_skoru: pct(bilisselEsneklik),
+          };
         }
         
         // Örnek uygulama tekrar fonksiyonu
@@ -3033,23 +3247,9 @@
             }
         });
 
-        // Visibility change - pause/resume
+        // Visibility change - akışa müdahale yok, sadece log
         document.addEventListener('visibilitychange', function() {
-            if (document.hidden) {
-                // Sayfa gizlenince (tab değişimi, minimize, etc.)
-                if (testState.currentAudio) {
-                    testState.currentAudio.pause();
-                }
-                console.log('📱 Sayfa gizlendi');
-            } else {
-                // Sayfa tekrar görünür olunca
-                if (testState.currentAudio && testState.currentAudio.paused) {
-                    testState.currentAudio.play().catch(e => {
-                        console.warn('Resume audio failed:', e);
-                    });
-                }
-                console.log('📱 Sayfa tekrar aktif');
-            }
+            console.log('👁️ Akıl-Mantık görünürlük:', document.hidden ? 'gizli' : 'görünür');
         });
 
         // Klavye kısayolları
@@ -3066,7 +3266,6 @@
             if (e.key === ' ' && e.ctrlKey) {
                 e.preventDefault();
                 stopCurrentAudio();
-                console.log('🔇 Ses manuel olarak durduruldu');
             }
             
             // Ctrl+R ile state temizleme (debug için)

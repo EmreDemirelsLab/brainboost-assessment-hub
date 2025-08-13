@@ -35,7 +35,7 @@ export default function AddUser() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   
   // Modal states
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -80,7 +80,9 @@ export default function AddUser() {
   }
 
   useEffect(() => {
-    fetchUsers();
+    if (user) {
+      fetchUsers();
+    }
   }, [user]);
 
   const handleRoleSwitch = (role: any) => {
@@ -249,24 +251,7 @@ export default function AddUser() {
     return new Date(dateString).toLocaleDateString('tr-TR');
   };
 
-  if (loading) {
-    return (
-      <DashboardLayout
-        user={user ? {
-          name: `${user.firstName} ${user.lastName}`,
-          email: user.email,
-          roles: user.roles,
-          currentRole: user.currentRole,
-        } : undefined}
-        onRoleSwitch={handleRoleSwitch}
-        onLogout={handleLogout}
-      >
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg">Kullanıcılar yükleniyor...</div>
-        </div>
-      </DashboardLayout>
-    );
-  }
+  // Loading durumunda bile sayfayı göster, sadece tablo içeriğinde loading göster
 
   return (
     <DashboardLayout
@@ -376,7 +361,16 @@ export default function AddUser() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {getFilteredUsers().length === 0 ? (
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8">
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                          <span className="text-muted-foreground">Yükleniyor...</span>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : getFilteredUsers().length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-8">
                         <div className="text-muted-foreground">
